@@ -84,9 +84,17 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return ApiResult.ok(decoded as Map<String, dynamic>, statusCode: response.statusCode);
       } else {
-        final msg = (decoded is Map && decoded.containsKey('msg'))
-            ? decoded['msg'] as String
-            : 'Error ${response.statusCode}';
+        String msg = 'Error ${response.statusCode}';
+        if (decoded is Map) {
+          if (decoded.containsKey('msg')) {
+            msg = decoded['msg'] as String;
+          } else if (decoded.containsKey('errors') && decoded['errors'] is List && (decoded['errors'] as List).isNotEmpty) {
+            final firstError = (decoded['errors'] as List).first;
+            if (firstError is Map && firstError.containsKey('msg')) {
+              msg = firstError['msg'] as String;
+            }
+          }
+        }
         return ApiResult.error(msg, statusCode: response.statusCode);
       }
     } catch (_) {

@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/polired_logo.dart';
 import '../../widgets/primary_button.dart';
+import '../../utils/app_snackbar.dart';
+import '../../utils/validators.dart';
 
 /// Login Screen — reinterpretación del HTML de referencia en Flutter.
 /// Layout: logo + título centrado, campos de email/password, botón, footer.
@@ -51,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = true);
 
     final auth = context.read<AuthProvider>();
-    final ok = await auth.login(_emailCtrl.text, _passCtrl.text);
+    final ok = await auth.login(_emailCtrl.text.trim(), _passCtrl.text);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -59,9 +61,34 @@ class _LoginScreenState extends State<LoginScreen>
     if (ok) {
       context.go('/home');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage ?? 'Error al iniciar sesión')),
-      );
+      final msg = auth.errorMessage ?? 'Error al iniciar sesión';
+      final lowerMsg = msg.toLowerCase();
+      
+      if (lowerMsg.contains('activada') || lowerMsg.contains('activa') || lowerMsg.contains('verificar') || lowerMsg.contains('confirma')) {
+        AppSnackbar.show(
+          context,
+          message: 'Tu cuenta aún no ha sido activada. Revisa tu correo electrónico.',
+          type: SnackbarType.info,
+        );
+      } else if (lowerMsg.contains('inexistente') || lowerMsg.contains('no encontrado') || lowerMsg.contains('registrado')) {
+        AppSnackbar.show(
+          context,
+          message: 'Usuario inexistente. Verifica tus datos.',
+          type: SnackbarType.error,
+        );
+      } else if (lowerMsg.contains('incorrecta') || lowerMsg.contains('credenciales')) {
+        AppSnackbar.show(
+          context,
+          message: 'Contraseña incorrecta. Intenta de nuevo.',
+          type: SnackbarType.error,
+        );
+      } else {
+        AppSnackbar.show(
+          context,
+          message: msg,
+          type: SnackbarType.error,
+        );
+      }
     }
   }
 
@@ -120,13 +147,16 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Column(
                             children: [
                               AppTextField(
-                                hint: 'Teléfono, usuario o correo electrónico',
+                                hint: 'Correo electrónico',
                                 keyboardType: TextInputType.emailAddress,
                                 controller: _emailCtrl,
                                 textInputAction: TextInputAction.next,
                                 validator: (v) {
-                                  if (v == null || v.isEmpty) {
-                                    return 'Ingresa tu correo';
+                                  if (v == null || v.trim().isEmpty) {
+                                    return 'El correo es obligatorio';
+                                  }
+                                  if (v.contains('@') && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
+                                    return 'Ingresa un correo electrónico válido';
                                   }
                                   return null;
                                 },
@@ -137,15 +167,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 isPassword: true,
                                 controller: _passCtrl,
                                 textInputAction: TextInputAction.done,
-                                validator: (v) {
-                                  if (v == null || v.isEmpty) {
-                                    return 'Ingresa tu contraseña';
-                                  }
-                                  if (v.length < 6) {
-                                    return 'Mínimo 6 caracteres';
-                                  }
-                                  return null;
-                                },
+                                validator: Validators.password,
                               ),
                               const SizedBox(height: 12),
 
@@ -213,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      '@2024 POLIRED PARA LA POLITECNICA',
+                      '@2026 POLIRED PARA LA POLITECNICA',
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,

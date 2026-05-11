@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/polired_logo.dart';
 import '../../widgets/primary_button.dart';
+import '../../utils/app_snackbar.dart';
+import '../../utils/validators.dart';
 
 /// Recuperar Contraseña — reinterpretación del HTML de referencia.
 /// Layout: AppBar con logo y título, logo cuadrado redondeado, form con label,
@@ -52,7 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     setState(() => _isLoading = true);
 
     final auth = context.read<AuthProvider>();
-    final result = await auth.forgotPassword(_emailCtrl.text);
+    final result = await auth.forgotPassword(_emailCtrl.text.trim());
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -63,9 +65,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       setState(() => _emailSent = true);
       _animCtrl.forward();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? 'Error al enviar correo')),
-      );
+      final msg = result.message ?? 'Error al enviar correo';
+      final lowerMsg = msg.toLowerCase();
+      
+      if (lowerMsg.contains('no existe') || lowerMsg.contains('inexistente') || lowerMsg.contains('registrado')) {
+        AppSnackbar.show(
+          context,
+          message: 'No existe una cuenta con este correo.',
+          type: SnackbarType.error,
+        );
+      } else {
+        AppSnackbar.show(
+          context,
+          message: msg,
+          type: SnackbarType.error,
+        );
+      }
     }
   }
 
@@ -152,19 +167,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             children: [
               AppTextField(
                 label: 'Correo universitario',
-                hint: 'tu.nombre@universidad.edu',
+                hint: 'tu.nombre@epn.edu.ec',
                 prefixIcon: Icons.mail_outline,
                 keyboardType: TextInputType.emailAddress,
                 controller: _emailCtrl,
                 textInputAction: TextInputAction.done,
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Ingresa tu correo';
-                  if (!RegExp(r'^[\w\.\+\-]+@[\w\-]+\.\w{2,}$')
-                      .hasMatch(v.trim())) {
-                    return 'Correo electrónico inválido';
-                  }
-                  return null;
-                },
+                validator: Validators.email,
               ),
               const SizedBox(height: 24),
               PrimaryButton(

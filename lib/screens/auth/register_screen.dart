@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/polired_logo.dart';
 import '../../widgets/primary_button.dart';
+import '../../utils/app_snackbar.dart';
+import '../../utils/validators.dart';
 
 /// Register Screen — reinterpretación del HTML de referencia.
 /// Campos: nombre, apellido, correo, contraseña, confirmar contraseña.
@@ -59,58 +61,46 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     final auth = context.read<AuthProvider>();
     final result = await auth.register(
-      nombre: _nombreCtrl.text,
-      apellido: _apellidoCtrl.text,
-      email: _emailCtrl.text,
+      nombre: _nombreCtrl.text.trim(),
+      apellido: _apellidoCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
       password: _passCtrl.text,
+      // Nota: Si el backend requiere teléfono, habría que pasarlo al método register().
+      // Por ahora se asume que auth_service soporta solo nombre, apellido, email y password,
+      // pero la validación ya queda implementada aquí visualmente.
     );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (result.success) {
-      _showSuccessDialog(
-          result.message ?? 'Revisa tu correo para confirmar tu cuenta');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? 'Error al registrar')),
+      AppSnackbar.show(
+        context,
+        message: result.message ?? 'Te enviamos un correo para activar tu cuenta',
+        type: SnackbarType.success,
       );
+      // Opcional: Redirigir al usuario al login
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) context.go('/login');
+      });
+    } else {
+      final msg = result.message ?? 'Error al registrar';
+      final lowerMsg = msg.toLowerCase();
+      
+      if (lowerMsg.contains('registrado') || lowerMsg.contains('ya existe')) {
+        AppSnackbar.show(
+          context,
+          message: 'El usuario o correo ya está registrado',
+          type: SnackbarType.error,
+        );
+      } else {
+        AppSnackbar.show(
+          context,
+          message: msg,
+          type: SnackbarType.error,
+        );
+      }
     }
-  }
-
-  void _showSuccessDialog(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-        ),
-        icon: const Icon(Icons.mark_email_read_outlined,
-            color: AppTheme.success, size: 40),
-        title: Text('¡Registro exitoso!',
-            style: AppTheme.headlineMedium, textAlign: TextAlign.center),
-        content: Text(message,
-            style: AppTheme.bodyMedium, textAlign: TextAlign.center),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/login');
-            },
-            child: Text(
-              'Ir al inicio de sesión',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -174,15 +164,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   hint: 'Nombre',
                                   controller: _nombreCtrl,
                                   textInputAction: TextInputAction.next,
-                                  validator: (v) {
-                                    if (v == null || v.trim().isEmpty) {
-                                      return 'El nombre es requerido';
-                                    }
-                                    if (v.trim().length < 2) {
-                                      return 'Mínimo 2 caracteres';
-                                    }
-                                    return null;
-                                  },
+                                  validator: (v) => Validators.name(v, 'El nombre'),
                                 ),
                                 const SizedBox(height: 8),
                                 // Apellido
@@ -190,16 +172,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   hint: 'Apellido',
                                   controller: _apellidoCtrl,
                                   textInputAction: TextInputAction.next,
-                                  validator: (v) {
-                                    if (v == null || v.trim().isEmpty) {
-                                      return 'El apellido es requerido';
-                                    }
-                                    if (v.trim().length < 2) {
-                                      return 'Mínimo 2 caracteres';
-                                    }
-                                    return null;
-                                  },
+                                  validator: (v) => Validators.name(v, 'El apellido'),
                                 ),
+
                                 const SizedBox(height: 8),
                                 // Email
                                 AppTextField(
@@ -207,18 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   keyboardType: TextInputType.emailAddress,
                                   controller: _emailCtrl,
                                   textInputAction: TextInputAction.next,
-                                  validator: (v) {
-                                    if (v == null || v.isEmpty) {
-                                      return 'El correo es requerido';
-                                    }
-                                    // Validación básica de formato
-                                    if (!RegExp(
-                                            r'^[\w\.\+\-]+@[\w\-]+\.\w{2,}$')
-                                        .hasMatch(v.trim())) {
-                                      return 'Correo electrónico inválido';
-                                    }
-                                    return null;
-                                  },
+                                  validator: Validators.email,
                                 ),
                                 const SizedBox(height: 8),
                                 // Contraseña
@@ -227,15 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   isPassword: true,
                                   controller: _passCtrl,
                                   textInputAction: TextInputAction.next,
-                                  validator: (v) {
-                                    if (v == null || v.isEmpty) {
-                                      return 'La contraseña es requerida';
-                                    }
-                                    if (v.length < 6) {
-                                      return 'Mínimo 6 caracteres';
-                                    }
-                                    return null;
-                                  },
+                                  validator: Validators.strongPassword,
                                 ),
                                 const SizedBox(height: 8),
                                 // Confirmar contraseña
@@ -244,15 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   isPassword: true,
                                   controller: _confirmPassCtrl,
                                   textInputAction: TextInputAction.done,
-                                  validator: (v) {
-                                    if (v == null || v.isEmpty) {
-                                      return 'Confirma tu contraseña';
-                                    }
-                                    if (v != _passCtrl.text) {
-                                      return 'Las contraseñas no coinciden';
-                                    }
-                                    return null;
-                                  },
+                                  validator: (v) => Validators.confirmPassword(v, _passCtrl.text),
                                 ),
 
                                 const SizedBox(height: 12),
@@ -361,7 +309,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                     // ── Footer copyright ────────────────────────────────────
                     Text(
-                      '@2024 POLIRED PARA LA POLITECNICA',
+                      '@2026 POLIRED PARA LA POLITECNICA',
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         color: AppTheme.outline,

@@ -5,6 +5,8 @@ import '../screens/auth/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
+import '../screens/auth/complete_profile_screen.dart';
+import '../screens/auth/welcome_screen.dart';
 import '../screens/home/home_screen.dart';
 
 /// Configuración centralizada de navegación con go_router.
@@ -21,8 +23,18 @@ final GoRouter appRouter = GoRouter(
     final isAuthRoute = ['/login', '/register', '/forgot-password', '/splash']
         .contains(state.matchedLocation);
 
-    // Si autenticado y en ruta de auth → ir a home
-    if (isAuthenticated && isAuthRoute) return '/home';
+    if (isAuthenticated) {
+      final user = authProvider.user;
+      if (user != null && !user.perfilCompleto) {
+        // Permitir estar en welcome y complete-profile
+        if (state.matchedLocation != '/complete-profile' && state.matchedLocation != '/welcome') {
+          return '/complete-profile';
+        }
+        return null;
+      }
+      
+      if (isAuthRoute) return '/home';
+    }
 
     // Si no autenticado y en ruta protegida → ir a login
     if (!isAuthenticated && !isAuthRoute) return '/login';
@@ -34,6 +46,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/login', builder: (ctx, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (ctx, state) => const RegisterScreen()),
     GoRoute(path: '/forgot-password', builder: (ctx, state) => const ForgotPasswordScreen()),
+    GoRoute(path: '/complete-profile', builder: (ctx, state) => const CompleteProfileScreen()),
+    GoRoute(path: '/welcome', builder: (ctx, state) => const WelcomeScreen()),
     GoRoute(path: '/home', builder: (ctx, state) => const HomeScreen()),
   ],
 );

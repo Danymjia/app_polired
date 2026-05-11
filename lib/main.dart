@@ -8,6 +8,8 @@ import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/socket_service.dart';
 import 'services/storage_service.dart';
+import 'services/network_service.dart';
+import 'providers/network_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,7 @@ Future<void> main() async {
   final apiService = ApiService();
   final socketService = SocketService();
   final authService = AuthService(apiService);
+  final networkService = NetworkService(apiService);
 
   runApp(
     MultiProvider(
@@ -41,6 +44,9 @@ Future<void> main() async {
             authService: authService,
             socketService: socketService,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NetworkProvider(networkService),
         ),
       ],
       child: const PoliredApp(),

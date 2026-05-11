@@ -31,8 +31,9 @@ class AuthService {
     });
 
     if (result.success && result.data != null) {
-      final token = result.data!['token'] as String?;
-      final user = result.data!['usuario'] as Map<String, dynamic>?;
+      final dataMap = result.data as Map<String, dynamic>;
+      final token = dataMap['token'] as String?;
+      final user = dataMap['usuario'] as Map<String, dynamic>?;
 
       if (token != null && user != null) {
         await StorageService.saveToken(token);
@@ -61,7 +62,8 @@ class AuthService {
     });
 
     if (result.success) {
-      return AuthResult(success: true, message: result.data?['msg'] as String?);
+      final dataMap = result.data as Map<String, dynamic>?;
+      return AuthResult(success: true, message: dataMap?['msg'] as String?);
     }
 
     return AuthResult(success: false, message: result.message ?? 'Error al registrar');
@@ -75,7 +77,8 @@ class AuthService {
     });
 
     if (result.success) {
-      return AuthResult(success: true, message: result.data?['msg'] as String?);
+      final dataMap = result.data as Map<String, dynamic>?;
+      return AuthResult(success: true, message: dataMap?['msg'] as String?);
     }
 
     return AuthResult(success: false, message: result.message ?? 'Error al enviar correo');
@@ -89,6 +92,30 @@ class AuthService {
       return result.data as Map<String, dynamic>;
     }
     return null;
+  }
+
+  /// Completar perfil (username y fotoPerfil opcional)
+  /// Backend: PATCH /api/completar/perfil
+  Future<AuthResult> completarPerfil(String username, {String? fotoPerfil}) async {
+    final body = <String, dynamic>{
+      'username': username.trim(),
+    };
+    if (fotoPerfil != null && fotoPerfil.isNotEmpty) {
+      body['fotoPerfil'] = fotoPerfil;
+    }
+    
+    final result = await _api.patch(AppConstants.completarPerfilEndpoint, body);
+    
+    if (result.success) {
+      // update local user with complete profile
+      final dataMap = result.data as Map<String, dynamic>?;
+      if (dataMap != null && dataMap['usuario'] != null) {
+        await StorageService.saveUser(dataMap['usuario'] as Map<String, dynamic>);
+      }
+      return AuthResult(success: true, message: dataMap?['msg'] as String?);
+    }
+    
+    return AuthResult(success: false, message: result.message ?? 'Error al completar perfil');
   }
 
   /// Cerrar sesión: limpiar token local.

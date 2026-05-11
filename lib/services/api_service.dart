@@ -40,7 +40,7 @@ class ApiService {
       };
 
   // ─── POST ────────────────────────────────────────────────────────────────
-  Future<ApiResult<Map<String, dynamic>>> post(
+  Future<ApiResult<dynamic>> post(
     String endpoint,
     Map<String, dynamic> body,
   ) async {
@@ -48,6 +48,27 @@ class ApiService {
       final uri = Uri.parse('${AppConstants.baseUrl}$endpoint');
       final response = await _client
           .post(uri, headers: _headers, body: jsonEncode(body))
+          .timeout(AppConstants.requestTimeout);
+
+      return _handleResponse(response);
+    } on SocketException {
+      return ApiResult.error('Sin conexión. Verifica tu red.');
+    } on TimeoutException {
+      return ApiResult.error('Tiempo de espera agotado. Intenta de nuevo.');
+    } catch (e) {
+      return ApiResult.error('Error inesperado: $e');
+    }
+  }
+
+  // ─── PATCH ───────────────────────────────────────────────────────────────
+  Future<ApiResult<dynamic>> patch(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final uri = Uri.parse('${AppConstants.baseUrl}$endpoint');
+      final response = await _client
+          .patch(uri, headers: _headers, body: jsonEncode(body))
           .timeout(AppConstants.requestTimeout);
 
       return _handleResponse(response);
@@ -78,11 +99,11 @@ class ApiService {
     }
   }
 
-  ApiResult<Map<String, dynamic>> _handleResponse(http.Response response) {
+  ApiResult<dynamic> _handleResponse(http.Response response) {
     try {
       final decoded = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return ApiResult.ok(decoded as Map<String, dynamic>, statusCode: response.statusCode);
+        return ApiResult.ok(decoded, statusCode: response.statusCode);
       } else {
         String msg = 'Error ${response.statusCode}';
         if (decoded is Map) {

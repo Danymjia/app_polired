@@ -95,6 +95,26 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
+  // ─── Completar Perfil ──────────────────────────────────────────────────────
+  Future<bool> completarPerfil(String username, {String? fotoPerfil}) async {
+    _errorMessage = null;
+    notifyListeners();
+
+    final result = await _authService.completarPerfil(username, fotoPerfil: fotoPerfil);
+    if (result.success) {
+      final userData = StorageService.getUser();
+      if (userData != null) {
+        _user = UserModel.fromJson(userData);
+      }
+      notifyListeners();
+      return true;
+    }
+    
+    _errorMessage = result.message;
+    notifyListeners();
+    return false;
+  }
+
   // ─── Recuperar contraseña ─────────────────────────────────────────────────
   Future<AuthResult> forgotPassword(String email) async {
     return await _authService.forgotPassword(email);

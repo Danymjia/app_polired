@@ -11,6 +11,9 @@ class AppConstants {
   static const String registroEndpoint = '/registro-estudiantes';
   static const String recuperarPasswordEndpoint = '/recuperar-password-e';
   static const String perfilEndpoint = '/perfil-estudiante';
+  static const String completarPerfilEndpoint = '/completar/perfil';
+  static const String redesListarEndpoint = '/redes/listar';
+  static const String unirseRedEndpoint = '/estudiantes/unirse/red';
 
   // ─── Storage keys ──────────────────────────────────────────────────────────
   static const String tokenKey = 'auth_token';

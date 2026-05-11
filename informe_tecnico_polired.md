@@ -1,6 +1,6 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.0 — Fase 1 (Auth)  
+> **Versión:** 1.1 — Fase 2 (Post-Login & Onboarding)  
 > **Fecha:** Mayo 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
@@ -28,9 +28,11 @@ Provider + Repository Pattern simplificado
 ```
 main.dart
   └── MultiProvider
-        └── AuthProvider
-              ├── AuthService  ──► ApiService  ──► Backend HTTP
-              └── SocketService ──► Backend Socket.IO
+        ├── AuthProvider
+        │     ├── AuthService  ──► ApiService  ──► Backend HTTP
+        │     └── SocketService ──► Backend Socket.IO
+        └── NetworkProvider
+              └── NetworkService ──► ApiService ──► Backend HTTP
 ```
 
 ---
@@ -49,16 +51,20 @@ lib/
 ├── services/
 │   ├── api_service.dart
 │   ├── auth_service.dart
+│   ├── network_service.dart
 │   ├── socket_service.dart
 │   └── storage_service.dart
 ├── providers/
-│   └── auth_provider.dart
+│   ├── auth_provider.dart
+│   └── network_provider.dart
 ├── screens/
 │   ├── auth/
 │   │   ├── splash_screen.dart
 │   │   ├── login_screen.dart
 │   │   ├── register_screen.dart
-│   │   └── forgot_password_screen.dart
+│   │   ├── forgot_password_screen.dart
+│   │   ├── complete_profile_screen.dart
+│   │   └── welcome_screen.dart
 │   └── home/
 │       └── home_screen.dart
 ├── utils/
@@ -83,6 +89,7 @@ lib/
 | `go_router` | ^17.2.3 | Navegación declarativa con redirects |
 | `google_fonts` | ^8.1.0 | Tipografía Inter |
 | `flutter_launcher_icons` | ^0.13.1 | Generación de íconos de la app |
+| `image_picker` | ^1.2.2 | Selección de foto de perfil desde galería |
 
 ---
 
@@ -104,6 +111,9 @@ http://10.0.2.2:3000/api   (emulador Android)
 | `POST` | `/registro-estudiantes` | Crear cuenta nueva |
 | `POST` | `/recuperar-password-e` | Enviar email de recuperación |
 | `GET` | `/perfil-estudiante` | Obtener datos del usuario (con token) |
+| `PATCH` | `/completar/perfil` | Guardar username y foto (base64) |
+| `GET` | `/redes/listar` | Listar comunidades disponibles |
+| `POST` | `/estudiantes/unirse/red` | Unirse a una comunidad específica |
 
 ### Respuesta del Login
 
@@ -191,6 +201,22 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - Estado de éxito con animación fade (transición suave)
 - Link "¿Volver al inicio de sesión?"
 
+### 7.5 Complete Profile Screen
+
+- Se activa tras primer login cuando `perfilCompleto === false`.
+- Avatar interactivo con `image_picker` + badge flotante "+".
+- Campo obligatorio para **Nombre de Usuario** (mínimo 3 caracteres, validación asíncrona en backend).
+- Botón "Continuar" azul marino (editorial-shadow).
+- Conversión de imagen a **Base64** para envío directo en el JSON del patch.
+
+### 7.6 Welcome Screen
+
+- Título de bienvenida + descripción de comunidad.
+- Listado de **5 redes aleatorias** (obtenidas del backend y mezcladas localmente).
+- Contador de selección: obliga a elegir **exactamente 3 redes**.
+- Botón "Continuar" que realiza peticiones secuenciales de unión.
+- Navegación final a `/home` tras éxito.
+
 ---
 
 ## 8. Flujo de Navegación
@@ -201,16 +227,16 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
    └── sin token     → /login
 
 /login
-   ├── login OK      → /home
+   ├── login OK (perfilCompleto=false) → /complete-profile
+   ├── login OK (perfilCompleto=true)  → /home
    ├── → /register
    └── → /forgot-password
 
-/register
-   └── éxito → AppSnackbar (éxito) → espera 2s → /login
+/complete-profile
+   └── éxito → /welcome
 
-/forgot-password
-   └── envío OK → estado éxito (in-screen)
-   └── volver   → /login
+/welcome
+   └── 3 redes seleccionadas → éxito → /home
 
 /home
    └── logout → /login
@@ -299,12 +325,13 @@ flutter analyze → No issues found ✅
 
 ---
 
-## 15. Pendiente — Fase 2
+## 15. Pendiente — Fase 2 (Continuación)
 
-- [ ] Pantalla completar perfil (username + foto) — se muestra una sola vez tras primer login cuando `perfilCompleto === false`
-- [ ] Home Screen con feed de publicaciones
+- [x] Pantalla completar perfil (username + foto)
+- [x] Pantalla bienvenida (elección de redes)
+- [ ] Home Screen con feed de publicaciones (Global / Seguidores)
 - [ ] Tabs: Home, Explorar, Publicar, Mensajes, Perfil
-- [ ] API: cargar y crear publicaciones
+- [ ] API: cargar y crear publicaciones (Multimedia Support)
 
 ---
 

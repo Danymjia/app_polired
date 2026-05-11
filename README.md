@@ -1,16 +1,19 @@
-# polired
+# Polired Mobile App
 
-A new Flutter project.
+Aplicación móvil para la red social universitaria Polired, desarrollada con Flutter.
 
-## Getting Started
+## Documentación del Proyecto
 
-This project is a starting point for a Flutter application.
+Para ver los detalles técnicos de la implementación, arquitectura y progreso de las fases, consulta el informe técnico:
 
-A few resources to get you started if this is your first Flutter project:
+👉 **[informe_tecnico_polired.md](informe_tecnico_polired.md)**
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Ejecución
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Asegúrate de tener el backend corriendo en `BackendV2`.
+2. Ejecuta `flutter pub get`.
+3. Lanza el proyecto en un emulador o dispositivo físico:
+   ```bash
+   flutter run
+   ```
+

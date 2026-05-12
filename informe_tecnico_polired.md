@@ -1,6 +1,6 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.1 — Fase 2 (Post-Login & Onboarding)  
+> **Versión:** 1.3 — Fase 3 (Publicación, Edición y Configuración)  
 > **Fecha:** Mayo 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
@@ -47,7 +47,9 @@ lib/
 │   ├── routes.dart
 │   └── theme.dart
 ├── models/
-│   └── user_model.dart
+│   ├── user_model.dart
+│   ├── network_story_model.dart
+│   └── post_model.dart
 ├── services/
 │   ├── api_service.dart
 │   ├── auth_service.dart
@@ -58,22 +60,31 @@ lib/
 │   ├── auth_provider.dart
 │   └── network_provider.dart
 ├── screens/
-│   ├── auth/
-│   │   ├── splash_screen.dart
-│   │   ├── login_screen.dart
-│   │   ├── register_screen.dart
-│   │   ├── forgot_password_screen.dart
-│   │   ├── complete_profile_screen.dart
-│   │   └── welcome_screen.dart
-│   └── home/
-│       └── home_screen.dart
+│   ├── main_layout_screen.dart
+│   ├── home/
+│   │   └── home_screen.dart
+│   ├── post/
+│   │   └── add_post_screen.dart
+│   ├── profile/
+│   │   ├── profile_screen.dart
+│   │   ├── edit_profile_screen.dart
+│   │   └── settings_screen.dart
+│   └── settings/
+│       ├── notifications_screen.dart
+│       ├── help_screen.dart
+│       ├── support_screen.dart
+│       ├── about_screen.dart
+│       ├── privacy_screen.dart
+│       └── request_network_screen.dart
 ├── utils/
 │   ├── app_snackbar.dart
 │   └── validators.dart
 └── widgets/
     ├── polired_logo.dart
     ├── primary_button.dart
-    └── app_text_field.dart
+    ├── app_text_field.dart
+    ├── network_avatar.dart
+    └── post_card.dart
 ```
 
 ---
@@ -114,6 +125,8 @@ http://10.0.2.2:3000/api   (emulador Android)
 | `PATCH` | `/completar/perfil` | Guardar username y foto (base64) |
 | `GET` | `/redes/listar` | Listar comunidades disponibles |
 | `POST` | `/estudiantes/unirse/red` | Unirse a una comunidad específica |
+| `POST` | `/estudiantes/publicaciones` | Crear post estándar (Comunidad/Noticias) |
+| `POST` | `/publicaciones/articulos` | Crear post de Venta o Cursos pagados |
 
 ### Respuesta del Login
 
@@ -217,6 +230,58 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - Botón "Continuar" que realiza peticiones secuenciales de unión.
 - Navegación final a `/home` tras éxito.
 
+### 7.7 Main Layout (Bottom Navigation)
+
+- Implementado como contenedor principal (`Scaffold`) con `IndexedStack` para preservar el estado de las pestañas.
+- **BottomNavigationBar:** 5 apartados (Home, Explorar, Publicar, Mensajes, Perfil).
+- **Estética:** Glassmorphism/Backdrop Blur (10px) en la barra inferior, sincronizada con el diseño de Threads/Instagram.
+
+### 7.8 Home Screen (Feed)
+
+- **TopAppBar:** Efecto blur, botón `add_box`, título "Polired" y acciones (`map`, `favorite_border`).
+- **Network Stories:** Lista horizontal de redes.
+    - Si es miembro: Borde degradado activo.
+    - Si no es miembro: Badge "+" para invitar a unirse.
+    - Interacción: Al seleccionar una red, el feed se filtra automáticamente.
+- **Feed:** Lista de `PostCard` con soporte para imágenes, likes, comentarios y tiempo transcurrido.
+- **UX:** Manejo de estados de carga (`CircularProgressIndicator`) y estado vacío (`EmptyFeedState`).
+
+### 7.9 Profile Screen
+
+- Diseño tipo Instagram minimalista.
+- **Header Dinámico:** Integración con `AuthProvider` para mostrar nombre real, username y foto.
+- **Avatar con Iniciales:** Lógica de fallback que genera un avatar con las iniciales del usuario si no hay foto de perfil cargada.
+- **Edit Button:** Acceso directo a `EditProfileScreen`.
+- **Settings Button:** Ícono de 3 puntos que abre el centro de configuración.
+- **Tabs:** Selector visual entre cuadrícula de fotos (`grid_on`) y vídeos (`video_library`).
+- **Post Grid:** Cuadrícula de 3 columnas para visualización rápida de contenido.
+
+### 7.10 Add Post Screen (Publicar)
+
+- **Multicategoría:** Soporte para Comunidad, Noticias, Venta y Cursos.
+- **Lógica de Redes:**
+    - Categoría "Comunidad": Permite elegir entre Red Global o redes suscritas.
+    - Otras categorías: Forzadas a Red Global (Network ID null).
+- **Gestión de Multimedia:** Selector de hasta 5 imágenes con previsualización en carrusel horizontal.
+- **Cursos:** Toggle dinámico entre "Gratis" y "Paga" con campo de precio condicional.
+- **Validaciones:** Botón de publicar habilitado solo tras aceptar políticas de privacidad y completar campos obligatorios.
+
+### 7.11 Edit Profile Screen
+
+- **Estética iOS:** Diseño minimalista con bordes inferiores (`ios-input-border`).
+- **Campos:** Edición de Nombre, Apellido, Username y Presentación (Bio).
+- **Regla de Negocio (Username):** Preparado para validar cambio de nombre de usuario cada 30 días (lógica de control en backend requerida).
+
+### 7.12 Settings & Secondary Screens
+
+- **Centro de Control:** Acceso centralizado a interacción, ajustes y soporte.
+- **Notificaciones:** Gestión de preferencias (Push y Email) mediante toggles.
+- **Ayuda & FAQ:** Listado de preguntas frecuentes con navegación a guías detalladas.
+- **Asistencia:** Formulario de reporte de problemas con selección de categoría y descripción técnica.
+- **Información & Privacidad:** Despliegue de términos legales y detalles de versión (v2.4.0).
+- **Solicitud de Red:** Formulario especializado para proponer nuevos nodos académicos (EPN watermark design).
+- **Logout:** Cierre de sesión funcional con limpieza de almacenamiento y redirección a login.
+
 ---
 
 ## 8. Flujo de Navegación
@@ -238,8 +303,13 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 /welcome
    └── 3 redes seleccionadas → éxito → /home
 
-/home
-   └── logout → /login
+/home (MainLayout)
+   ├── Index 0: Home / Feed
+   ├── Index 1: Explorar (Placeholder)
+   ├── Index 2: Publicar (Placeholder)
+   ├── Index 3: Mensajes (Placeholder)
+   └── Index 4: Perfil
+       └── logout (previsto) → /login
 ```
 
 ---
@@ -329,9 +399,14 @@ flutter analyze → No issues found ✅
 
 - [x] Pantalla completar perfil (username + foto)
 - [x] Pantalla bienvenida (elección de redes)
-- [ ] Home Screen con feed de publicaciones (Global / Seguidores)
-- [ ] Tabs: Home, Explorar, Publicar, Mensajes, Perfil
-- [ ] API: cargar y crear publicaciones (Multimedia Support)
+- [x] Home Screen con feed dinámico por red (Mock Data)
+- [x] Bottom NavBar con 5 apartados y glassmorphism
+- [x] Profile Screen dinámica con iniciales y datos reales
+- [x] Pantalla "Agregar Publicación" con lógica de categorías y multimedia
+- [x] Centro de Configuración y Subpantallas (Ayuda, Privacidad, etc.)
+- [x] Pantalla "Editar Perfil" con diseño iOS
+- [ ] Integración real de API para carga de posts
+- [ ] Implementación de funcionalidades de interacción (Likes/Comentarios)
 
 ---
 

@@ -7,6 +7,8 @@ class UserModel {
   final List<String> roles;
   final String? username;
   final String? fotoPerfil;
+  /// Biografía o descripción corta del perfil (máx. 150 caracteres en backend).
+  final String? biografia;
   final bool perfilCompleto;
 
   const UserModel({
@@ -17,6 +19,7 @@ class UserModel {
     required this.roles,
     this.username,
     this.fotoPerfil,
+    this.biografia,
     required this.perfilCompleto,
   });
 
@@ -33,6 +36,7 @@ class UserModel {
       roles: (json['roles'] as List<dynamic>?)?.cast<String>() ?? ['estudiante'],
       username: json['username'] as String?,
       fotoPerfil: json['fotoPerfil'] as String?,
+      biografia: json['biografia'] as String?,
       perfilCompleto: json['perfilCompleto'] as bool? ?? false,
     );
   }
@@ -45,6 +49,7 @@ class UserModel {
         'roles': roles,
         'username': username,
         'fotoPerfil': fotoPerfil,
+        'biografia': biografia,
         'perfilCompleto': perfilCompleto,
       };
 }

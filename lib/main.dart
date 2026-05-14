@@ -4,12 +4,15 @@ import 'package:provider/provider.dart';
 import 'config/routes.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/network_provider.dart';
+import 'providers/notification_provider.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
+import 'services/network_service.dart';
+import 'services/notification_service.dart';
+import 'services/post_service.dart';
 import 'services/socket_service.dart';
 import 'services/storage_service.dart';
-import 'services/network_service.dart';
-import 'providers/network_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,11 +33,13 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  // Construir árbol de dependencias
+  // ─── Árbol de dependencias ────────────────────────────────────────────────
   final apiService = ApiService();
   final socketService = SocketService();
   final authService = AuthService(apiService);
   final networkService = NetworkService(apiService);
+  final postService = PostService(apiService);
+  final notificationService = NotificationService(apiService);
 
   runApp(
     MultiProvider(
@@ -46,7 +51,10 @@ Future<void> main() async {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => NetworkProvider(networkService),
+          create: (_) => NetworkProvider(networkService, postService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider(notificationService),
         ),
       ],
       child: const PoliredApp(),

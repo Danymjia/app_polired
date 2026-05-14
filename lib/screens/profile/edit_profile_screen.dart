@@ -28,7 +28,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nombreController = TextEditingController(text: user?.nombre ?? '');
     _apellidoController = TextEditingController(text: user?.apellido ?? '');
     _usernameController = TextEditingController(text: user?.username ?? '');
-    _bioController = TextEditingController(text: ''); // Biografía aún no existe en el modelo
+    _bioController = TextEditingController(text: user?.biografia ?? '');
   }
 
   @override
@@ -45,29 +45,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isLoading = true);
 
-    try {
-      // AQUÍ: Se debe conectar con el backend para actualizar el perfil.
-      // Actualmente, AuthProvider tiene completarPerfil() que actualiza el username y foto,
-      // pero se necesita un endpoint completo de 'Actualizar Perfil' que acepte:
-      // nombre, apellido, username, y biografia.
-      
-      // Simulamos la carga
-      await Future.delayed(const Duration(seconds: 1));
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.actualizarPerfil(
+      nombre: _nombreController.text,
+      apellido: _apellidoController.text,
+      username: _usernameController.text,
+      biografia: _bioController.text,
+    );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil actualizado correctamente (Simulado)')),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al actualizar: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Perfil actualizado correctamente')),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.errorMessage ?? 'No se pudo actualizar el perfil')),
+      );
     }
   }
 
@@ -195,7 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         return null;
                       }
                     ),
-                    _buildTextAreaField('Presentación', _bioController),
+                    _buildTextAreaField('Descripción', _bioController),
                   ],
                 ),
               ),
@@ -308,13 +306,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextFormField(
             controller: controller,
             maxLines: 3,
+            maxLength: 150,
+            validator: (value) {
+              final v = value ?? '';
+              if (v.length > 150) return 'Máximo 150 caracteres';
+              return null;
+            },
             style: const TextStyle(
               fontSize: 16,
               color: AppTheme.onBackground,
               height: 1.4,
             ),
             decoration: const InputDecoration(
-              hintText: 'Escribe algo sobre ti...',
+              hintText: 'Escribe algo sobre ti…',
               hintStyle: TextStyle(color: Color(0xFFDCD9D9)),
               isDense: true,
               contentPadding: EdgeInsets.zero,

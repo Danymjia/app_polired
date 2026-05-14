@@ -1,162 +1,256 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
-import '../../models/post_model.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../config/theme.dart';
+import '../models/post_model.dart';
 
-class PostCard extends StatelessWidget {
+/// Tarjeta de publicación adaptada al modelo real del backend.
+/// Soporta publicaciones de texto, imagen y video (con poster).
+/// Muestra: avatar del autor, username/nombre, fecha relativa,
+/// contenido, imagen (si aplica), likes y comentarios.
+class PostCard extends StatefulWidget {
   final PostModel post;
 
   const PostCard({super.key, required this.post});
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> {
+  @override
   Widget build(BuildContext context) {
+    final post = widget.post;
     return Container(
       color: AppTheme.surfaceContainerLowest,
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // ── Header ──────────────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        post.authorImageUrl,
-                        width: 32,
-                        height: 32,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const CircleAvatar(radius: 16),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Row(
-                      children: [
-                        Text(
-                          post.authorUsername,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (post.isVerified) ...[
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.verified,
-                            color: Colors.blue,
-                            size: 14,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-                const Icon(
-                  Icons.more_horiz,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-
-          // Image
-          AspectRatio(
-            aspectRatio: 1.0,
-            child: Container(
-              color: AppTheme.surfaceContainer,
-              width: double.infinity,
-              child: Image.network(
-                post.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const Center(
-                  child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                ),
-              ),
-            ),
-          ),
-
-          // Actions
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.favorite_border, size: 26),
-                        SizedBox(width: 16),
-                        Icon(Icons.chat_bubble_outline, size: 26),
-                        SizedBox(width: 16),
-                        Icon(Icons.send, size: 26),
-                      ],
-                    ),
-                    const Icon(Icons.bookmark_border, size: 26),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Likes
-                Text(
-                  '${post.likesCount} Me gusta',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Content
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.onSurface,
-                      fontFamily: 'Inter',
-                    ),
+                _AuthorAvatar(imageUrl: post.authorImageUrl, name: post.authorUsername),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextSpan(
-                        text: '${post.authorUsername} ',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        post.authorUsername,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.onSurface,
+                        ),
                       ),
-                      TextSpan(text: post.content),
+                      if (post.networkName.isNotEmpty)
+                        Text(
+                          post.networkName,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 4),
-
-                // Comments
-                Text(
-                  'Ver los ${post.commentsCount} comentarios',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Time ago
                 Text(
                   post.timeAgo,
-                  style: const TextStyle(
-                    fontSize: 10,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
                     color: AppTheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1.0,
                   ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.more_horiz,
+                  color: AppTheme.onSurfaceVariant,
+                  size: 20,
                 ),
               ],
             ),
           ),
+
+          // ── Imagen (si aplica) ───────────────────────────────────────────────
+          if (post.hasImage)
+            _PostImage(mediaUrl: post.mediaUrl!),
+
+          // ── Acciones ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.favorite_border,
+                  color: AppTheme.onSurfaceVariant,
+                  size: 24,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${post.likesCount}',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Icon(Icons.chat_bubble_outline,
+                    color: AppTheme.onSurfaceVariant, size: 22),
+                const SizedBox(width: 4),
+                Text(
+                  '${post.commentsCount}',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.bookmark_border,
+                    color: AppTheme.onSurfaceVariant, size: 22),
+              ],
+            ),
+          ),
+
+          // ── Contenido ───────────────────────────────────────────────────────
+          if (post.contenido.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: _PostContent(post: post),
+            ),
+
+          // Separador
+          const Divider(height: 1, thickness: 0.5, color: AppTheme.surfaceContainerHigh),
         ],
       ),
+    );
+  }
+}
+
+// ─── Avatar del autor ─────────────────────────────────────────────────────────
+class _AuthorAvatar extends StatelessWidget {
+  final String? imageUrl;
+  final String name;
+
+  const _AuthorAvatar({required this.imageUrl, required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          imageUrl!,
+          width: 36,
+          height: 36,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stack) => _initials,
+        ),
+      );
+    }
+    return _initials;
+  }
+
+  Widget get _initials {
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: AppTheme.primary,
+      child: Text(
+        letter,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+      ),
+    );
+  }
+}
+
+// ─── Imagen de publicación ────────────────────────────────────────────────────
+class _PostImage extends StatelessWidget {
+  final String mediaUrl;
+
+  const _PostImage({required this.mediaUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 400),
+      child: Image.network(
+        mediaUrl,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        loadingBuilder: (_, child, progress) {
+          if (progress == null) return child;
+          return Container(
+            height: 200,
+            color: AppTheme.surfaceContainer,
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primary,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stack) => Container(
+          height: 180,
+          color: AppTheme.surfaceContainer,
+          child: const Center(
+            child: Icon(Icons.broken_image_outlined, size: 48, color: AppTheme.onSurfaceVariant),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Contenido textual ────────────────────────────────────────────────────────
+class _PostContent extends StatefulWidget {
+  final PostModel post;
+  const _PostContent({required this.post});
+
+  @override
+  State<_PostContent> createState() => _PostContentState();
+}
+
+class _PostContentState extends State<_PostContent> {
+  bool _expanded = false;
+  static const int _maxLines = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.post.contenido;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurface),
+            children: [
+              TextSpan(
+                text: '${widget.post.authorUsername} ',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              TextSpan(text: text),
+            ],
+          ),
+          maxLines: _expanded ? null : _maxLines,
+          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        ),
+        if (!_expanded && text.length > 200)
+          GestureDetector(
+            onTap: () => setState(() => _expanded = true),
+            child: Text(
+              'Ver más',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppTheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

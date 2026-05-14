@@ -1,6 +1,6 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.3 — Fase 3 (Publicación, Edición y Configuración)  
+> **Versión:** 1.6 — Perfil, biografía y sincronización con el servidor  
 > **Fecha:** Mayo 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
@@ -121,12 +121,21 @@ http://10.0.2.2:3000/api   (emulador Android)
 | `POST` | `/auth/login` | Login con email + password |
 | `POST` | `/registro-estudiantes` | Crear cuenta nueva |
 | `POST` | `/recuperar-password-e` | Enviar email de recuperación |
-| `GET` | `/perfil-estudiante` | Obtener datos del usuario (con token) |
-| `PATCH` | `/completar/perfil` | Guardar username y foto (base64) |
+| `GET` | `/perfil-estudiante` | Obtener datos completos del usuario autenticado (incluye `biografia`) |
+| `PATCH` | `/completar/perfil` | Completar perfil: `username`, `fotoPerfil` (base64, opcional) y `biografia` (opcional, máx. 150 caracteres) |
+| `PATCH` | `/perfil/username` | Cambiar nombre de usuario (perfil ya completo) |
+| `PATCH` | `/estudiante/:id` | Actualizar datos de perfil: `nombre`, `apellido`, `biografia` (máx. 150 caracteres), etc. |
 | `GET` | `/redes/listar` | Listar comunidades disponibles |
 | `POST` | `/estudiantes/unirse/red` | Unirse a una comunidad específica |
 | `POST` | `/estudiantes/publicaciones` | Crear post estándar (Comunidad/Noticias) |
 | `POST` | `/publicaciones/articulos` | Crear post de Venta o Cursos pagados |
+| `GET` | `/estudiantes/listar/redes` | Listar redes inscritas por el usuario |
+| `GET` | `/publicaciones/red/:redId` | Obtener feed filtrado por red (Home) |
+| `GET` | `/publicaciones/global` | Feed global (Reservado para Explorar) |
+| `GET` | `/notificaciones` | Listar notificaciones del usuario |
+| `PATCH` | `/notificaciones/:id/leida` | Marcar notificación como leída |
+
+> Rutas de perfil adicionales declaradas en `lib/config/constants.dart`: `perfilUsernameEndpoint` → `/perfil/username`. La ruta `PATCH /estudiante/:id` se arma en código con el `_id` del usuario autenticado.
 
 ### Respuesta del Login
 
@@ -145,6 +154,8 @@ http://10.0.2.2:3000/api   (emulador Android)
   }
 }
 ```
+
+**Nota (app móvil):** El objeto `usuario` del login es **reducido** y no incluye `biografia`. Para que la descripción y el resto de campos coincidan siempre con MongoDB, la app llama a `GET /perfil-estudiante` tras iniciar sesión y al restaurar la sesión guardada (ver §9).
 
 ### JWT
 
@@ -219,8 +230,9 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - Se activa tras primer login cuando `perfilCompleto === false`.
 - Avatar interactivo con `image_picker` + badge flotante "+".
 - Campo obligatorio para **Nombre de Usuario** (mínimo 3 caracteres, validación asíncrona en backend).
+- Campo opcional **Descripción** (en API: `biografia`), máximo **150** caracteres, con contador en el campo.
 - Botón "Continuar" azul marino (editorial-shadow).
-- Conversión de imagen a **Base64** para envío directo en el JSON del patch.
+- Conversión de imagen a **Base64** para envío directo en el JSON del patch (`PATCH /completar/perfil`).
 
 ### 7.6 Welcome Screen
 
@@ -236,51 +248,49 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - **BottomNavigationBar:** 5 apartados (Home, Explorar, Publicar, Mensajes, Perfil).
 - **Estética:** Glassmorphism/Backdrop Blur (10px) en la barra inferior, sincronizada con el diseño de Threads/Instagram.
 
-### 7.8 Home Screen (Feed)
+### 7.8 Home Screen (Feed Real)
 
-- **TopAppBar:** Efecto blur, botón `add_box`, título "Polired" y acciones (`map`, `favorite_border`).
-- **Network Stories:** Lista horizontal de redes.
-    - Si es miembro: Borde degradado activo.
-    - Si no es miembro: Badge "+" para invitar a unirse.
-    - Interacción: Al seleccionar una red, el feed se filtra automáticamente.
-- **Feed:** Lista de `PostCard` con soporte para imágenes, likes, comentarios y tiempo transcurrido.
-- **UX:** Manejo de estados de carga (`CircularProgressIndicator`) y estado vacío (`EmptyFeedState`).
+- **Integración con Backend:** El feed ya no utiliza datos mock. Consume publicaciones reales mediante `GET /publicaciones/red/:redId`.
+- **TopAppBar:** Efecto blur, botón `add_box`, título "Polired" y acceso a notificaciones (icono búho).
+- **Network Stories:** Lista horizontal de las redes del estudiante (`GET /estudiantes/listar/redes`).
+    - **Lógica de Filtrado:** Al seleccionar una red, se carga automáticamente su feed específico.
+    - **Sin Fallback Global:** Si el usuario no tiene redes o la red seleccionada está vacía, se muestra un estado informativo. No se mezcla con el feed global por arquitectura.
+- **Feed:** Lista de `PostCard` que renderiza contenido real (texto e imágenes).
+- **UX:** Manejo de estados `loading`, `empty` (sin publicaciones), `error` (fallo de red) y `pull-to-refresh`.
 
-### 7.9 Profile Screen
+### 7.9 Notifications Screen
 
-- Diseño tipo Instagram minimalista.
-- **Header Dinámico:** Integración con `AuthProvider` para mostrar nombre real, username y foto.
-- **Avatar con Iniciales:** Lógica de fallback que genera un avatar con las iniciales del usuario si no hay foto de perfil cargada.
-- **Edit Button:** Acceso directo a `EditProfileScreen`.
-- **Settings Button:** Ícono de 3 puntos que abre el centro de configuración.
-- **Tabs:** Selector visual entre cuadrícula de fotos (`grid_on`) y vídeos (`video_library`).
-- **Post Grid:** Cuadrícula de 3 columnas para visualización rápida de contenido.
+- **Diseño Informativo:** Las notificaciones se presentan como una lista cronológica agrupada (Hoy, Esta semana, Anteriormente).
+- **Tipos de Notificación:** Soporta `like`, `comentario`, `respuesta_comentario` y `mensaje`.
+- **Restricción de Interacción:** Por requerimiento de arquitectura, las notificaciones son **solo informativas**. No son clickeables ni navegan a otras pantallas.
+- **Sincronización:** Consume `GET /notificaciones` y muestra el estado real (leída/no leída) mediante indicadores visuales.
 
-### 7.10 Add Post Screen (Publicar)
+### 7.10 Profile Screen
+
+- **Datos Reales:** Integración con `AuthProvider` y `NetworkProvider`. Muestra nombre completo, username en la AppBar y foto real.
+- **Descripción:** Si el usuario tiene `biografia` en el modelo (proveniente de la base de datos), se muestra debajo del subtítulo "Estudiante de Polired".
+- **Conteo de Redes:** Consumo dinámico de `/estudiantes/listar/redes`.
+- **Limpieza de Mocks:** Se eliminó el conteo de publicaciones falso y la cuadrícula de imágenes placeholder.
+- **Estado Vacío:** Si el usuario no tiene publicaciones (funcionalidad de "Mis Publicaciones" pendiente en backend), se muestra un estado informativo limpio.
+- **Acciones:** Botón de edición de perfil y acceso a configuración.
+
+### 7.11 Add Post Screen (Publicar)
 
 - **Multicategoría:** Soporte para Comunidad, Noticias, Venta y Cursos.
-- **Lógica de Redes:**
-    - Categoría "Comunidad": Permite elegir entre Red Global o redes suscritas.
-    - Otras categorías: Forzadas a Red Global (Network ID null).
-- **Gestión de Multimedia:** Selector de hasta 5 imágenes con previsualización en carrusel horizontal.
-- **Cursos:** Toggle dinámico entre "Gratis" y "Paga" con campo de precio condicional.
-- **Validaciones:** Botón de publicar habilitado solo tras aceptar políticas de privacidad y completar campos obligatorios.
+- **Lógica de Redes:** Permite elegir entre las redes suscritas del usuario.
+- **Gestión de Multimedia:** Selector de imágenes con previsualización.
+- **Sincronización:** Conecta con `POST /estudiantes/publicaciones` y variantes.
 
-### 7.11 Edit Profile Screen
+### 7.12 Edit Profile Screen
 
-- **Estética iOS:** Diseño minimalista con bordes inferiores (`ios-input-border`).
-- **Campos:** Edición de Nombre, Apellido, Username y Presentación (Bio).
-- **Regla de Negocio (Username):** Preparado para validar cambio de nombre de usuario cada 30 días (lógica de control en backend requerida).
+- **Campos:** Nombre, apellido, nombre de usuario y **Descripción** (`biografia` en API), máximo **150** caracteres.
+- **Backend:** `PATCH /estudiante/:id` para nombre, apellido y biografía; si el username cambió, `PATCH /perfil/username`; luego `GET /perfil-estudiante` para refrescar el usuario en memoria y en `SharedPreferences`.
+- **Diseño:** Inputs minimalistas tipo iOS.
 
-### 7.12 Settings & Secondary Screens
-
-- **Centro de Control:** Acceso centralizado a interacción, ajustes y soporte.
-- **Notificaciones:** Gestión de preferencias (Push y Email) mediante toggles.
-- **Ayuda & FAQ:** Listado de preguntas frecuentes con navegación a guías detalladas.
-- **Asistencia:** Formulario de reporte de problemas con selección de categoría y descripción técnica.
-- **Información & Privacidad:** Despliegue de términos legales y detalles de versión (v2.4.0).
-- **Solicitud de Red:** Formulario especializado para proponer nuevos nodos académicos (EPN watermark design).
-- **Logout:** Cierre de sesión funcional con limpieza de almacenamiento y redirección a login.
+### 7.13 Settings & Secondary Screens
+- **Centro de Control:** Gestión de notificaciones, ayuda, soporte y privacidad.
+- **Solicitud de Red:** Formulario para proponer nuevas redes académicas.
+- **Logout:** Limpieza de `SharedPreferences` y desconexión de Sockets.
 
 ---
 
@@ -316,16 +326,20 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 
 ## 9. Persistencia de Sesión
 
-1. Login exitoso → `SharedPreferences.setString('auth_token', jwt)`
-2. Al iniciar app → `AuthProvider._init()` lee token + user guardados
-3. Si válidos → `AuthStatus.authenticated` + `ApiService.setToken(token)`
+1. Login exitoso → `SharedPreferences.setString('auth_token', jwt)` y usuario parcial del JSON de login.
+2. Al iniciar app → `AuthProvider._init()` lee token + user guardados, inyecta el token en `ApiService` y marca sesión autenticada.
+3. **Sincronización de perfil:** Tras restaurar sesión y tras cada login exitoso, la app ejecuta `GET /perfil-estudiante` (`AuthService.refreshUserFromPerfil`) y **sobrescribe** el usuario local con la respuesta completa (incluye `biografia`, alineado con MongoDB). Lo mismo ocurre tras completar perfil con éxito. Así se evita que desaparezca la biografía al cerrar y reabrir la app (el login solo devuelve un subconjunto de campos).
 4. Logout → `StorageService.clear()` → `AuthStatus.unauthenticated`
+
+### Modelo de usuario (`UserModel`)
+
+- Incluye `biografia` (`String?`) además de `_id`, nombre, apellido, email, roles, `username`, `fotoPerfil` y `perfilCompleto`.
 
 ---
 
 ## 10. WebSocket
 
-Se inicializa al hacer login exitoso:
+Se inicializa al tener sesión autenticada (tras **login exitoso** o al **restaurar** token y usuario en `_init`):
 
 ```dart
 socketService.connect(userId);
@@ -372,6 +386,9 @@ Centralizadas en `lib/utils/validators.dart`.
 - Email: requerido, formato válido.
 - **UX:** Muestra estado de éxito dentro de la pantalla o error si el correo no se encuentra en la base de datos (mapeo de excepción `registrado`).
 
+#### Completar y editar perfil (descripción)
+- Campo **Descripción** / `biografia`: máximo **150** caracteres en cliente y backend; opcional al completar perfil, editable en "Editar perfil".
+
 ---
 
 ## 13. QA — Resultados
@@ -392,21 +409,24 @@ flutter analyze → No issues found ✅
 | Tema claro | Tema oscuro | Los HTMLs de referencia son light |
 | DI manual | GetIt | Evitar overhead |
 | `10.0.2.2` | `localhost` | IP del host en emulador Android |
+| Refresco de perfil tras login e `_init` | Confiar solo en el JSON del login | El backend no envía `biografia` en el login; sin `GET /perfil-estudiante` la descripción se perdía al guardar sesión |
 
 ---
 
 ## 15. Pendiente — Fase 2 (Continuación)
 
-- [x] Pantalla completar perfil (username + foto)
+- [x] Pantalla completar perfil (username + foto + descripción / `biografia`, máx. 150 caracteres)
 - [x] Pantalla bienvenida (elección de redes)
-- [x] Home Screen con feed dinámico por red (Mock Data)
+- [x] Home Screen con feed dinámico por red (Datos Reales)
 - [x] Bottom NavBar con 5 apartados y glassmorphism
-- [x] Profile Screen dinámica con iniciales y datos reales
-- [x] Pantalla "Agregar Publicación" con lógica de categorías y multimedia
-- [x] Centro de Configuración y Subpantallas (Ayuda, Privacidad, etc.)
-- [x] Pantalla "Editar Perfil" con diseño iOS
-- [ ] Integración real de API para carga de posts
-- [ ] Implementación de funcionalidades de interacción (Likes/Comentarios)
+- [x] Profile Screen dinámica sin mocks (muestra `biografia` cuando existe en el servidor)
+- [x] Pantalla "Agregar Publicación" (Integrada)
+- [x] Centro de Configuración y Subpantallas
+- [x] Pantalla "Editar Perfil" (persistencia real: `PATCH /estudiante/:id`, username vía `/perfil/username`, refresco con `GET /perfil-estudiante`)
+- [x] Integración de Notificaciones Informativas
+- [ ] Implementación de funcionalidades de interacción (Likes/Comentarios reales)
+- [ ] Implementación de flujo de Chat y Mensajería (Socket.io)
+- [ ] Sección "Explorar" con Feed Global por categorías (Noticias, Ventas, Cursos)
 
 ---
 

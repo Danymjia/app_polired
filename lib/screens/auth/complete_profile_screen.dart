@@ -16,6 +16,7 @@ class CompleteProfileScreen extends StatefulWidget {
 
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _usernameController = TextEditingController();
+  final _bioController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   File? _imageFile;
   bool _isLoading = false;
@@ -53,6 +54,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final success = await authProvider.completarPerfil(
       _usernameController.text,
       fotoPerfil: base64Image,
+      biografia: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
     );
 
     setState(() {
@@ -68,6 +70,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         _errorMessage = authProvider.errorMessage ?? 'Error al completar perfil';
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _bioController.dispose();
+    super.dispose();
   }
 
   @override
@@ -234,6 +243,55 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   ),
                 ),
                 
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                    child: Text(
+                      'DESCRIPCIÓN (OPCIONAL)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.onSurfaceVariant,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+                TextFormField(
+                  controller: _bioController,
+                  maxLines: 3,
+                  maxLength: 150,
+                  validator: (value) {
+                    if (value != null && value.length > 150) {
+                      return 'Máximo 150 caracteres';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Cuéntanos algo sobre ti…',
+                    hintStyle: TextStyle(color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                    filled: true,
+                    fillColor: AppTheme.surfaceContainerLow,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppTheme.outlineVariant),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppTheme.secondary, width: 2),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
                 if (_errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 16),

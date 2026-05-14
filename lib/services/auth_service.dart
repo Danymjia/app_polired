@@ -94,16 +94,23 @@ class AuthService {
     return null;
   }
 
-  /// Completar perfil (username y fotoPerfil opcional)
+  /// Completar perfil (username, fotoPerfil y biografía opcionales)
   /// Backend: PATCH /api/completar/perfil
-  Future<AuthResult> completarPerfil(String username, {String? fotoPerfil}) async {
+  Future<AuthResult> completarPerfil(
+    String username, {
+    String? fotoPerfil,
+    String? biografia,
+  }) async {
     final body = <String, dynamic>{
       'username': username.trim(),
     };
     if (fotoPerfil != null && fotoPerfil.isNotEmpty) {
       body['fotoPerfil'] = fotoPerfil;
     }
-    
+    if (biografia != null && biografia.trim().isNotEmpty) {
+      body['biografia'] = biografia.trim();
+    }
+
     final result = await _api.patch(AppConstants.completarPerfilEndpoint, body);
     
     if (result.success) {
@@ -116,6 +123,52 @@ class AuthService {
     }
     
     return AuthResult(success: false, message: result.message ?? 'Error al completar perfil');
+  }
+
+  /// Actualizar nombre, apellido y biografía del estudiante autenticado.
+  /// Backend: PATCH /api/estudiante/:id
+  Future<AuthResult> actualizarDatosPerfilEstudiante({
+    required String estudianteId,
+    required String nombre,
+    required String apellido,
+    required String biografia,
+  }) async {
+    final result = await _api.patch('/estudiante/$estudianteId', {
+      'nombre': nombre.trim(),
+      'apellido': apellido.trim(),
+      'biografia': biografia.trim(),
+    });
+    if (result.success) {
+      return AuthResult(success: true);
+    }
+    return AuthResult(success: false, message: result.message ?? 'Error al actualizar el perfil');
+  }
+
+  /// Actualizar nombre de usuario (perfil ya completo).
+  /// Backend: PATCH /api/perfil/username
+  Future<AuthResult> actualizarUsername(String username) async {
+    final result = await _api.patch(AppConstants.perfilUsernameEndpoint, {
+      'username': username.trim(),
+    });
+    if (result.success) {
+      return AuthResult(success: true);
+    }
+    return AuthResult(success: false, message: result.message ?? 'Error al actualizar el usuario');
+  }
+
+  /// Sincroniza el usuario local con GET /perfil-estudiante.
+  Future<AuthResult> refreshUserFromPerfil() async {
+    final result = await _api.get(AppConstants.perfilEndpoint);
+    if (result.success && result.data != null) {
+      final raw = result.data;
+      if (raw is Map) {
+        final map = Map<String, dynamic>.from(raw);
+        await StorageService.saveUser(map);
+        return AuthResult(success: true, data: map);
+      }
+      return AuthResult(success: false, message: 'Respuesta inválida del servidor');
+    }
+    return AuthResult(success: false, message: result.message ?? 'No se pudo cargar el perfil');
   }
 
   /// Cerrar sesión: limpiar token local.

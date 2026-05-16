@@ -1,5 +1,7 @@
 import '../config/constants.dart';
 import '../models/network_story_model.dart';
+import '../utils/json_ids.dart';
+import '../utils/network_acronym.dart';
 import 'api_service.dart';
 
 /// Servicio de redes comunitarias.
@@ -14,7 +16,7 @@ class NetworkService {
 
   // ─── Redes del estudiante (lista completa) ────────────────────────────────
   /// GET /estudiantes/listar/redes
-  /// Respuesta: { redes: [ { _id, nombre, descripcion } ] }
+  /// Respuesta: { redes: [ { _id | id, nombre, descripcion } ] }
   Future<ApiResult<int>> getRedesDelEstudiante() async {
     final result = await _api.get(AppConstants.redesEstudianteEndpoint);
 
@@ -36,15 +38,22 @@ class NetworkService {
     if (result.success && result.data is Map) {
       final rawList = (result.data as Map)['redes'];
       if (rawList is List) {
-        final stories = rawList.whereType<Map<String, dynamic>>().map((r) {
-          return NetworkStoryModel(
-            id: (r['_id'] as String?) ?? '',
-            name: (r['nombre'] as String?) ?? '',
-            acronym: _buildAcronym(r['nombre'] as String? ?? ''),
-            imageUrl: (r['fotoPerfil'] as String?) ?? '',
-            isJoined: true,
+        final stories = <NetworkStoryModel>[];
+        for (final item in rawList) {
+          if (item is! Map) continue;
+          final r = Map<String, dynamic>.from(item);
+          final id = parseMongoIdFromMap(r) ?? '';
+          if (id.isEmpty) continue;
+          stories.add(
+            NetworkStoryModel(
+              id: id,
+              name: (r['nombre'] as String?) ?? '',
+              acronym: buildNetworkAcronym(r['nombre'] as String? ?? ''),
+              imageUrl: (r['fotoPerfil'] as String?) ?? '',
+              isJoined: true,
+            ),
           );
-        }).toList();
+        }
         return ApiResult.ok(stories);
       }
     }
@@ -54,7 +63,7 @@ class NetworkService {
 
   // ─── Todas las redes disponibles ──────────────────────────────────────────
   /// GET /redes/listar
-  /// Respuesta: [ { _id, nombre, descripcion, cantidadMiembros, esOficial, esVerificada } ]
+  /// Respuesta: [ { _id | id, nombre, descripcion, cantidadMiembros, esOficial, esVerificada } ]
   Future<ApiResult<List<dynamic>>> getRedes() async {
     final result = await _api.get(AppConstants.redesListarEndpoint);
 
@@ -68,8 +77,13 @@ class NetworkService {
   // ─── Unirse a una red ─────────────────────────────────────────────────────
   /// POST /estudiantes/unirse/red
   Future<ApiResult<dynamic>> unirseRed(String redId) async {
+    final id = redId.trim();
+    if (id.isEmpty) {
+      return ApiResult.error('Identificador de red no válido');
+    }
+
     final result = await _api.post(AppConstants.unirseRedEndpoint, {
-      'redId': redId,
+      'redId': id,
     });
 
     if (result.success) {
@@ -79,14 +93,4 @@ class NetworkService {
     return ApiResult.error(result.message ?? 'Error al unirse a la red');
   }
 
-  // ─── Helper ───────────────────────────────────────────────────────────────
-  String _buildAcronym(String name) {
-    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '?';
-    if (words.length == 1) return words.first.substring(0, words.first.length.clamp(0, 3)).toUpperCase();
-    // Tomar iniciales de palabras importantes (ignorar artículos)
-    final stopWords = {'de', 'del', 'la', 'el', 'los', 'las', 'y', 'e', 'o', 'u'};
-    final siglas = words.where((w) => !stopWords.contains(w.toLowerCase())).map((w) => w[0].toUpperCase()).join();
-    return siglas.substring(0, siglas.length.clamp(0, 5));
-  }
 }

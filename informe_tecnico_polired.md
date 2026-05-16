@@ -1,6 +1,6 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.6 — Perfil, biografía y sincronización con el servidor  
+> **Versión:** 1.8 — Normalización de IDs (id/_id), robustez en onboarding y sugerencias de redes  
 > **Fecha:** Mayo 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
@@ -28,11 +28,19 @@ Provider + Repository Pattern simplificado
 ```
 main.dart
   └── MultiProvider
+        ├── Provider<ApiService>
+        ├── Provider<SocketService>
+        ├── Provider<NetworkService>
         ├── AuthProvider
         │     ├── AuthService  ──► ApiService  ──► Backend HTTP
-        │     └── SocketService ──► Backend Socket.IO
-        └── NetworkProvider
-              └── NetworkService ──► ApiService ──► Backend HTTP
+        │     └── SocketService ──► Backend Socket.IO (JWT en handshake)
+        ├── NetworkProvider
+        │     └── NetworkService ──► ApiService ──► Backend HTTP
+        ├── NotificationProvider
+        └── MessagesInboxProvider (ChangeNotifierProxyProvider<AuthProvider, …>)
+              ├── ConversationsRepository ──► ApiService
+              ├── NetworkService
+              └── SocketService
 ```
 
 ---
@@ -49,7 +57,11 @@ lib/
 ├── models/
 │   ├── user_model.dart
 │   ├── network_story_model.dart
-│   └── post_model.dart
+│   ├── post_model.dart
+│   ├── conversation_model.dart
+│   └── suggested_network_model.dart
+├── repositories/
+│   └── conversations_repository.dart
 ├── services/
 │   ├── api_service.dart
 │   ├── auth_service.dart
@@ -58,11 +70,15 @@ lib/
 │   └── storage_service.dart
 ├── providers/
 │   ├── auth_provider.dart
-│   └── network_provider.dart
+│   ├── network_provider.dart
+│   ├── notification_provider.dart
+│   └── messages_inbox_provider.dart
 ├── screens/
 │   ├── main_layout_screen.dart
 │   ├── home/
 │   │   └── home_screen.dart
+│   ├── messages/
+│   │   └── messages_screen.dart
 │   ├── post/
 │   │   └── add_post_screen.dart
 │   ├── profile/
@@ -78,7 +94,9 @@ lib/
 │       └── request_network_screen.dart
 ├── utils/
 │   ├── app_snackbar.dart
-│   └── validators.dart
+│   ├── validators.dart
+│   ├── network_acronym.dart
+│   └── json_ids.dart
 └── widgets/
     ├── polired_logo.dart
     ├── primary_button.dart
@@ -125,6 +143,7 @@ http://10.0.2.2:3000/api   (emulador Android)
 | `PATCH` | `/completar/perfil` | Completar perfil: `username`, `fotoPerfil` (base64, opcional) y `biografia` (opcional, máx. 150 caracteres) |
 | `PATCH` | `/perfil/username` | Cambiar nombre de usuario (perfil ya completo) |
 | `PATCH` | `/estudiante/:id` | Actualizar datos de perfil: `nombre`, `apellido`, `biografia` (máx. 150 caracteres), etc. |
+| `GET` | `/mensajes/conversaciones` | Listar conversaciones 1:1 del usuario autenticado (`{ conversaciones }`) |
 | `GET` | `/redes/listar` | Listar comunidades disponibles |
 | `POST` | `/estudiantes/unirse/red` | Unirse a una comunidad específica |
 | `POST` | `/estudiantes/publicaciones` | Crear post estándar (Comunidad/Noticias) |
@@ -292,6 +311,14 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - **Solicitud de Red:** Formulario para proponer nuevas redes académicas.
 - **Logout:** Limpieza de `SharedPreferences` y desconexión de Sockets.
 
+### 7.14 Messages Screen (Bandeja de conversaciones)
+
+- **Layout:** Header con `@username`, buscador deshabilitado (solo UI), banner de estado del socket, carrusel horizontal de “historias” (usuario + redes del estudiante), lista de conversaciones, sección “Redes para seguir”.
+- **Datos:** `GET /mensajes/conversaciones`, `GET /estudiantes/listar/redes`, `GET /redes/listar`, `POST /estudiantes/unirse/red`; actualización en vivo vía `mensaje:nuevo` y `mensaje:enviado` (`MessagesInboxProvider` + `SocketService`).
+- **Estados:** carga con skeleton animado, vacío, error con reintentar, banner para `connecting` / `reconnecting` / `disconnected`.
+- **Sugerencias:** hasta 10 redes aleatorias no unidas, sin repetir en la sesión; al cerrar todas con “X” se genera un nuevo lote. “Seguir” llama al endpoint real de unión a red.
+- **Pendiente explícito:** pantalla de chat individual, envío de mensajes y navegación al detalle (no implementado en esta fase).
+
 ---
 
 ## 8. Flujo de Navegación
@@ -317,7 +344,7 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
    ├── Index 0: Home / Feed
    ├── Index 1: Explorar (Placeholder)
    ├── Index 2: Publicar (Placeholder)
-   ├── Index 3: Mensajes (Placeholder)
+   ├── Index 3: Mensajes (lista de conversaciones + redes + sugerencias)
    └── Index 4: Perfil
        └── logout (previsto) → /login
 ```
@@ -329,7 +356,7 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 1. Login exitoso → `SharedPreferences.setString('auth_token', jwt)` y usuario parcial del JSON de login.
 2. Al iniciar app → `AuthProvider._init()` lee token + user guardados, inyecta el token en `ApiService` y marca sesión autenticada.
 3. **Sincronización de perfil:** Tras restaurar sesión y tras cada login exitoso, la app ejecuta `GET /perfil-estudiante` (`AuthService.refreshUserFromPerfil`) y **sobrescribe** el usuario local con la respuesta completa (incluye `biografia`, alineado con MongoDB). Lo mismo ocurre tras completar perfil con éxito. Así se evita que desaparezca la biografía al cerrar y reabrir la app (el login solo devuelve un subconjunto de campos).
-4. Logout → `StorageService.clear()` → `AuthStatus.unauthenticated`
+4. Logout → `StorageService.clear()` → `AuthStatus.unauthenticated` → `SocketService.disconnect()` y `MessagesInboxProvider` limpia sesión vía `ChangeNotifierProxyProvider`.
 
 ### Modelo de usuario (`UserModel`)
 
@@ -337,16 +364,37 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 
 ---
 
-## 10. WebSocket
+## 10. WebSocket (Socket.IO)
 
-Se inicializa al tener sesión autenticada (tras **login exitoso** o al **restaurar** token y usuario en `_init`):
+### Autenticación
 
-```dart
-socketService.connect(userId);
-// Emite: 'usuario:conectar' con el ID del estudiante
-```
+El backend (`BackendV2/src/socket.js`) valida el JWT en el **handshake**:
 
-Los eventos de chat real (`mensaje:privado`, `mensaje:recibido`) se implementarán en Fase 3.
+- `socket.handshake.auth.token`, o
+- Cabecera `Authorization: Bearer <token>`.
+
+La app móvil envía el mismo token que las peticiones HTTP mediante `OptionBuilder().setAuth({'token': jwt})`. **No** se emite ningún evento de registro adicional (el antiguo `usuario:conectar` del cliente no existe en el servidor).
+
+### Reconexión y estados en UI
+
+`SocketService` expone `ValueNotifier<SocketConnectionPhase>` (`disconnected`, `connecting`, `connected`, `reconnecting`) escuchando también los eventos internos del manager (`reconnect_attempt`, `reconnect`, `reconnect_failed`).
+
+### Eventos utilizados en la bandeja (solo lectura)
+
+| Dirección | Evento | Uso en la app |
+|---|---|---|
+| Servidor → cliente | `mensaje:nuevo` | Actualizar preview y orden de la conversación en la lista |
+| Servidor → cliente | `mensaje:enviado` | Igual (mensaje propio cuando el socket no estaba en la room) |
+| Servidor → cliente | `usuario:online` / `usuario:offline` | **No** usados en UI (fase actual) |
+| Servidor → cliente | `chat:error` | **No** suscrito en la bandeja (solo errores de `join` / envío) |
+
+La carga inicial de conversaciones es **HTTP**: `GET /mensajes/conversaciones`. Los eventos anteriores mantienen la lista al día cuando alguien envía vía WebSocket (`mensaje:enviar` en servidor). Los mensajes enviados **solo** por HTTP **no** disparan estos eventos en el backend actual.
+
+### Limitaciones conocidas del backend (mensajería)
+
+- **Sin contador de no leídos ni recibos:** el listado HTTP no incluye `unreadCount`. La app muestra un indicador aproximado: mensajes entrantes por socket o último mensaje cuyo `autorId` no es el usuario actual.
+- **`GET /redes/listar`** solo devuelve `nombre`, `descripcion`, `cantidadMiembros`, `esOficial`, `esVerificada` (sin `fotoPerfil`). Las tarjetas de sugerencias usan siglas en el círculo.
+- **`GET /estudiantes/listar/redes`** hace populate con `nombre` y `descripcion` solamente: en la práctica **no** llega `fotoPerfil` de la red; las historias circulares usan imagen solo si el backend amplía el `select` en el futuro (la app ya contempla fallback por siglas).
 
 ---
 
@@ -424,9 +472,40 @@ flutter analyze → No issues found ✅
 - [x] Centro de Configuración y Subpantallas
 - [x] Pantalla "Editar Perfil" (persistencia real: `PATCH /estudiante/:id`, username vía `/perfil/username`, refresco con `GET /perfil-estudiante`)
 - [x] Integración de Notificaciones Informativas
+- [x] Bandeja de Mensajes: lista de conversaciones (HTTP + actualización socket), redes del usuario, sugerencias de redes y estados de conexión WebSocket
+- [ ] Pantalla de chat 1:1 (historial `GET /mensajes/conversaciones/:id`, `join:conversacion`, envío `mensaje:enviar` / HTTP según fase)
 - [ ] Implementación de funcionalidades de interacción (Likes/Comentarios reales)
-- [ ] Implementación de flujo de Chat y Mensajería (Socket.io)
 - [ ] Sección "Explorar" con Feed Global por categorías (Noticias, Ventas, Cursos)
+
+---
+
+## 16. Normalización de Identificadores (MongoDB Compatibility)
+
+Para garantizar la compatibilidad con el backend (que expone identificadores tanto como `_id` como `id` según el endpoint), se implementó un sistema de normalización centralizado en `lib/utils/json_ids.dart`.
+
+### Problema Identificado
+En fases anteriores, el cliente esperaba exclusivamente `_id`. Esto causaba:
+- Identificadores vacíos en `SuggestedNetworkModel` cuando el backend devolvía `id`.
+- Filtrado erróneo de sugerencias (se omitían redes con `id` en lugar de `_id` debido a validaciones de `isEmpty`).
+- Fallos en la pantalla de bienvenida y al unirse a redes (envío de `redId` vacío al backend).
+
+### Solución: `parseMongoId` y `parseMongoIdFromMap`
+Se rediseñó la lógica de parsing para ser extremadamente robusta:
+- **`parseMongoId`**: 
+    - Realiza `trim()` automático a strings.
+    - Rechaza strings vacíos.
+    - Admite tipos `int`.
+    - Soporta mapas complejos (objetos con `$oid` de MongoDB).
+    - Evita el uso de `.toString()` sobre mapas arbitrarios para prevenir basura visual como ID.
+- **`parseMongoIdFromMap`**: 
+    - Intenta obtener el ID buscando en orden de prioridad (configurable, por defecto `_id` -> `id`).
+    - Reutiliza `parseMongoId` para manejar los valores encontrados de forma recursiva o anidada.
+
+### Impacto en el Código
+- **Modelos:** `SuggestedNetworkModel` ahora utiliza `parseMongoIdFromMap`, permitiendo que el pool de sugerencias se llene correctamente sin importar el formato de la respuesta.
+- **Servicios:** `NetworkService.getRedesEstudianteStories` normaliza cada entrada y omite aquellas sin ID válido, previniendo errores en el feed. Se añadió validación previa en `unirseRed`.
+- **Providers:** `NetworkProvider.unirseRedes` ahora limpia, normaliza y deduplica los IDs antes de procesar las uniones, devolviendo errores claros si no hay IDs válidos.
+- **UI:** En `WelcomeScreen`, se restauró la validación obligatoria de 3 redes y se eliminó cualquier bypass de navegación. Los ítems sin ID válido simplemente no se renderizan para mantener la integridad de la interfaz.
 
 ---
 

@@ -132,12 +132,19 @@ class NetworkProvider extends ChangeNotifier {
   }
 
   Future<bool> unirseRedes(List<String> redesIds) async {
+    final ids = redesIds.map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
+    if (ids.isEmpty) {
+      _errorMessage = 'No hay redes válidas para unirse';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      for (String id in redesIds) {
+      for (String id in ids) {
         final result = await _networkService.unirseRed(id);
         if (!result.success) {
           if (result.message != null && result.message!.contains('Ya perteneces')) {

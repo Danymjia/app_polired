@@ -44,8 +44,10 @@ class AuthProvider extends ChangeNotifier {
         _authService.initToken(token);
         _user = UserModel.fromJson(userData);
         _status = AuthStatus.authenticated;
-        // Conectar socket con el ID del usuario
-        _socketService.connect(_user!.id);
+        // Socket.IO: el backend autentica con JWT en handshake.auth.token
+        if (token.isNotEmpty) {
+          _socketService.connect(token);
+        }
         notifyListeners();
         // El login guarda un `usuario` reducido (sin biografía). Refrescar desde el servidor
         // para que biografía y demás campos coincidan siempre con la base de datos.
@@ -81,7 +83,10 @@ class AuthProvider extends ChangeNotifier {
       if (userData != null) {
         _user = UserModel.fromJson(userData);
         _status = AuthStatus.authenticated;
-        _socketService.connect(_user!.id);
+        final token = StorageService.getToken();
+        if (token != null && token.isNotEmpty) {
+          _socketService.connect(token);
+        }
         notifyListeners();
         await _syncProfileFromServer();
         return true;

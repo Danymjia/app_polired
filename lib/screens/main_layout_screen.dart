@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import 'home/home_screen.dart';
+import 'messages/messages_screen.dart';
 import 'post/add_post_screen.dart';
 import 'profile/profile_screen.dart';
 
@@ -21,7 +22,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     const HomeScreen(),
     const Scaffold(body: Center(child: Text('Explorar - Próximamente'))),
     const AddPostScreen(),
-    const Scaffold(body: Center(child: Text('Mensajes - Próximamente'))),
+    const MessagesScreen(),
     const ProfileScreen(),
   ];
 

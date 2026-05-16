@@ -49,6 +49,10 @@ class AppConstants {
   /// Marcar notificación como leída → PATCH /notificaciones/:id/leida (requiere auth)
   static const String marcarLeidaEndpoint = '/notificaciones';
 
+  // ─── Mensajes / conversaciones ───────────────────────────────────────────────
+  /// Listar conversaciones del usuario → GET /mensajes/conversaciones (requiere auth)
+  static const String mensajesConversacionesEndpoint = '/mensajes/conversaciones';
+
   // ─── Storage keys ────────────────────────────────────────────────────────────
   static const String tokenKey = 'auth_token';
   static const String userKey = 'auth_user';

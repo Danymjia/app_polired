@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/network_provider.dart';
 import '../../config/theme.dart';
+import '../../utils/json_ids.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -51,8 +52,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _submit() async {
-    /*
-    // Comentado temporalmente para probar navegación sin redes
     if (_selectedNetworks.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -71,17 +70,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       );
       return;
     }
-    */
 
     final networkProvider = Provider.of<NetworkProvider>(context, listen: false);
-    
-    // Para probar navegación sin unirse a redes si la lista está vacía
-    if (_selectedNetworks.isEmpty) {
-      if (mounted) {
-        context.go('/home');
-      }
-      return;
-    }
 
     final success = await networkProvider.unirseRedes(_selectedNetworks.toList());
 
@@ -176,8 +166,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     else if (networkProvider.redes.isEmpty)
                       const Text('No hay redes disponibles', style: TextStyle(color: Colors.grey))
                     else
-                      ...networkProvider.redes.map((red) {
-                        final isSelected = _selectedNetworks.contains(red['_id']);
+                      ...networkProvider.redes.map((raw) {
+                        if (raw is! Map) return const SizedBox.shrink();
+                        final red = Map<String, dynamic>.from(raw);
+                        final redId = parseMongoIdFromMap(red) ?? '';
+                        if (redId.isEmpty) return const SizedBox.shrink();
+                        final isSelected = _selectedNetworks.contains(redId);
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 24),
                           child: Row(
@@ -200,7 +194,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      red['nombre'] ?? 'Red Comunitaria',
+                                      red['nombre'] as String? ?? 'Red Comunitaria',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -209,7 +203,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      red['descripcion'] ?? 'Descripción no disponible',
+                                      red['descripcion'] as String? ?? 'Descripción no disponible',
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: Color(0xFF424242),
@@ -222,7 +216,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                               const SizedBox(width: 16),
                               GestureDetector(
-                                onTap: () => _toggleNetwork(red['_id']),
+                                onTap: () => _toggleNetwork(redId),
                                 child: Container(
                                   width: 40,
                                   height: 40,

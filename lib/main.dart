@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'config/routes.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/messages_inbox_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/notification_provider.dart';
+import 'repositories/conversations_repository.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/network_service.dart';
@@ -44,6 +46,9 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider<ApiService>.value(value: apiService),
+        Provider<SocketService>.value(value: socketService),
+        Provider<NetworkService>.value(value: networkService),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
             authService: authService,
@@ -55,6 +60,30 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => NotificationProvider(notificationService),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, MessagesInboxProvider>(
+          create: (context) => MessagesInboxProvider(
+            conversationsRepository: ConversationsRepository(context.read<ApiService>()),
+            networkService: context.read<NetworkService>(),
+            socketService: context.read<SocketService>(),
+          ),
+          update: (context, auth, previous) {
+            final inbox = previous ??
+                MessagesInboxProvider(
+                  conversationsRepository: ConversationsRepository(context.read<ApiService>()),
+                  networkService: context.read<NetworkService>(),
+                  socketService: context.read<SocketService>(),
+                );
+            if (auth.isLoading) {
+              return inbox;
+            }
+            if (auth.isAuthenticated && auth.user != null) {
+              inbox.onAuthChanged(auth.user);
+            } else {
+              inbox.onAuthChanged(null);
+            }
+            return inbox;
+          },
         ),
       ],
       child: const PoliredApp(),

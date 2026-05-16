@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/community_feed_provider.dart';
 import '../../providers/network_provider.dart';
 import '../../widgets/network_avatar.dart';
 import '../../widgets/post_card.dart';
@@ -10,14 +11,53 @@ import '../notifications/notifications_screen.dart';
 import '../post/add_post_screen.dart';
 
 /// Pantalla de Feed Principal.
-/// Consume publicaciones reales desde el backend vía [NetworkProvider].
-/// Soporta: loading, empty, error y pull-to-refresh.
-class HomeScreen extends StatelessWidget {
+/// Consume publicaciones reales desde el backend vía [CommunityFeedProvider].
+/// Soporta: loading, empty, error, pull-to-refresh y scroll infinito.
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final ScrollController _scrollController;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      context.read<CommunityFeedProvider>().loadInitial();
+      _initialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final provider = context.read<CommunityFeedProvider>();
+    if (!_scrollController.hasClients || provider.isLoadingMore || !provider.hasMore) return;
+    if (_scrollController.position.extentAfter < 240) {
+      provider.loadMore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final networkProvider = context.watch<NetworkProvider>();
+    final communityProvider = context.watch<CommunityFeedProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -79,8 +119,9 @@ class HomeScreen extends StatelessWidget {
       ),
       body: RefreshIndicator(
         color: AppTheme.primary,
-        onRefresh: () => networkProvider.refreshFeed(),
+        onRefresh: () => communityProvider.refreshFeed(),
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Spacer para el AppBar translúcido
@@ -94,41 +135,53 @@ class HomeScreen extends StatelessWidget {
             ),
 
             // ── Feed Content ────────────────────────────────────────────────
-            if (networkProvider.isLoading && networkProvider.networkStories.isEmpty)
+            if (communityProvider.isLoadingInitial && communityProvider.posts.isEmpty)
               const SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(color: AppTheme.primary),
-                ),
+                child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
               )
-            else if (networkProvider.loadingPosts)
-              const SliverFillRemaining(
-                child: Center(child: _FeedLoadingIndicator()),
-              )
-            else if (networkProvider.feedStatus == FeedStatus.error)
+            else if (communityProvider.errorMessage != null && communityProvider.posts.isEmpty)
               SliverFillRemaining(
                 child: _ErrorState(
-                  message: networkProvider.feedErrorState ?? 'Error al cargar publicaciones',
-                  onRetry: () => networkProvider.refreshFeed(),
+                  message: communityProvider.errorMessage!,
+                  onRetry: () => communityProvider.loadInitial(),
                 ),
               )
-            else if (networkProvider.emptyFeed)
+            else if (communityProvider.posts.isEmpty)
               SliverFillRemaining(
-                child: _EmptyFeedState(
-                  hasNetworks: networkProvider.networkStories.isNotEmpty,
+                child: Center(
+                  child: Text(
+                    'No hay publicaciones comunitarias aún.',
+                    style: AppTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               )
             else
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final post = networkProvider.postsByNetwork[index];
-                    final isLast = index == networkProvider.postsByNetwork.length - 1;
+                    final post = communityProvider.posts[index];
+                    final isLast = index == communityProvider.posts.length - 1;
                     return Padding(
                       padding: EdgeInsets.only(bottom: isLast ? 80.0 : 0),
                       child: PostCard(post: post),
                     );
                   },
-                  childCount: networkProvider.postsByNetwork.length,
+                  childCount: communityProvider.posts.length,
+                ),
+              ),
+            if (communityProvider.isLoadingMore)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+                ),
+              ),
+            if (!communityProvider.hasMore && communityProvider.posts.isNotEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(child: Text('Ya no hay más publicaciones comunitarias')), 
                 ),
               ),
           ],
@@ -176,71 +229,12 @@ class _NetworkStoriesSection extends StatelessWidget {
                     child: NetworkAvatar(
                       network: network,
                       isSelected: isSelected,
-                      onTap: () => provider.selectNetwork(network),
+                      onTap: () {},
                     ),
                   );
                 }).toList(),
               ),
             ),
-    );
-  }
-}
-
-// ─── Loading skeleton del feed ─────────────────────────────────────────────────
-class _FeedLoadingIndicator extends StatelessWidget {
-  const _FeedLoadingIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const CircularProgressIndicator(color: AppTheme.primary),
-        const SizedBox(height: 16),
-        Text(
-          'Cargando publicaciones...',
-          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Estado vacío ─────────────────────────────────────────────────────────────
-class _EmptyFeedState extends StatelessWidget {
-  final bool hasNetworks;
-  const _EmptyFeedState({required this.hasNetworks});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              hasNetworks ? Icons.article_outlined : Icons.people_outline,
-              size: 72,
-              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              hasNetworks ? 'Sin publicaciones aún' : 'Únete a una red',
-              style: AppTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hasNetworks
-                  ? 'Sé el primero en publicar en esta red.'
-                  : 'Únete a redes comunitarias para ver su contenido.',
-              style: AppTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

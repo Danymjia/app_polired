@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'config/routes.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/global_feed_provider.dart';
 import 'providers/messages_inbox_provider.dart';
 import 'providers/network_provider.dart';
+import 'providers/community_feed_provider.dart';
 import 'providers/notification_provider.dart';
 import 'repositories/conversations_repository.dart';
 import 'services/api_service.dart';
@@ -57,6 +59,12 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => NetworkProvider(networkService, postService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => CommunityFeedProvider(postService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => GlobalFeedProvider(postService),
         ),
         ChangeNotifierProvider(
           create: (_) => NotificationProvider(notificationService),

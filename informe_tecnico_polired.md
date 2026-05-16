@@ -1,6 +1,6 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.8 — Normalización de IDs (id/_id), robustez en onboarding y sugerencias de redes  
+> **Versión:** 1.9 — Integración de publicaciones estándar y flujo de artículos de venta (BackendV2)  
 > **Fecha:** Mayo 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
@@ -295,10 +295,11 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 
 ### 7.11 Add Post Screen (Publicar)
 
-- **Multicategoría:** Soporte para Comunidad, Noticias, Venta y Cursos.
-- **Lógica de Redes:** Permite elegir entre las redes suscritas del usuario.
-- **Gestión de Multimedia:** Selector de imágenes con previsualización.
-- **Sincronización:** Conecta con `POST /estudiantes/publicaciones` y variantes.
+- **Multicategoría y Rutas Diferenciadas:** Soporta creación de publicaciones estándar (Comunidad, Noticias, Cursos) y artículos de Venta, dirigiendo cada tipo al endpoint del backend correspondiente.
+- **Formularios Dinámicos:** Muestra campos específicos según la categoría elegida; por ejemplo, solicita el campo **Precio** dinámicamente solo para publicaciones de categoría Venta.
+- **Lógica de Redes y Validación:** Carga las redes a las que el estudiante se ha unido. Valida estrictamente la selección de una red cuando se trata de la categoría Comunidad.
+- **Integración Segura con ApiService:** Utiliza la instancia global inyectada de `ApiService` con JWT de autenticación para evitar errores 401.
+- **Robustez y UX:** Controla los estados de carga con un indicador `_isLoading` y gestiona las respuestas de éxito y error mediante alertas visuales con `AppSnackbar`.
 
 ### 7.12 Edit Profile Screen
 
@@ -506,6 +507,62 @@ Se rediseñó la lógica de parsing para ser extremadamente robusta:
 - **Servicios:** `NetworkService.getRedesEstudianteStories` normaliza cada entrada y omite aquellas sin ID válido, previniendo errores en el feed. Se añadió validación previa en `unirseRed`.
 - **Providers:** `NetworkProvider.unirseRedes` ahora limpia, normaliza y deduplica los IDs antes de procesar las uniones, devolviendo errores claros si no hay IDs válidos.
 - **UI:** En `WelcomeScreen`, se restauró la validación obligatoria de 3 redes y se eliminó cualquier bypass de navegación. Los ítems sin ID válido simplemente no se renderizan para mantener la integridad de la interfaz.
+
+---
+
+## 17. Flujo de Publicaciones y Corrección de Ventas (BackendV2 Integration)
+
+Para alinear el comportamiento del frontend con los requerimientos reales del backend (`BackendV2`) y evitar fallos de autorización (401) y campos faltantes, se realizó una reestructuración profunda en el módulo de creación de publicaciones.
+
+### 17.1 Problemas Detectados en el Flujo Original
+1. **Pérdida de Autorización:** La pantalla `AddPostScreen` instanciaba un `ApiService` local (`new ApiService()`) en lugar de heredar el singleton global. Al no contar con el JWT cargado, las solicitudes fallaban con código de error **401 Unauthorized**.
+2. **Formulario Incompleto:** Al enviar publicaciones de tipo Comunidad, Noticias o Cursos a `POST /estudiantes/publicaciones`, no se enviaba el parámetro obligatorio `categoria` en el cuerpo de la petición.
+3. **Categorías no soportadas en Post Estándar:** El backend no permite crear publicaciones de categoría `Venta` mediante el endpoint de estudiantes estándar (`POST /estudiantes/publicaciones`).
+4. **Flujo de Multimedia Incompatible:** El backend de ventas espera un flujo de carga de imágenes e información que difiere del flujo basado en Base64 tradicional para posts estándar.
+
+---
+
+### 17.2 Solución y Correcciones Implementadas
+
+#### A. Reutilización del Servicio Global
+- Se modificó `AddPostScreen` para que obtenga e inyecte la instancia global y autenticada de `ApiService` a través de `Provider`:
+  ```dart
+  PostService(context.read<ApiService>())
+  ```
+  Esto garantiza que el encabezado `Authorization: Bearer <token>` se envíe de manera consistente en todas las peticiones de creación de posts y artículos.
+
+#### B. Separación de Rutas por Categoría (Estándar vs. Artículos de Venta)
+1. **Publicaciones Estándar (Comunidad, Noticias, Cursos)**
+   - **Endpoint:** `POST /estudiantes/publicaciones`
+   - **Campos enviados:** `titulo`, `contenido`, `categoria` (comunidad, noticias, cursos) y `comunidadId` (requerido únicamente si la categoría es Comunidad).
+   - Se removió la interfaz y el soporte de campos no estructurados (ventas/cursos de pago) en este endpoint.
+   
+2. **Artículos de Venta**
+   - **Endpoint:** `POST /publicaciones/articulos`
+   - **Campos enviados:**
+     - `titulo`
+     - `descripcion`
+     - `precio` (campo numérico añadido dinámicamente en la UI al seleccionar la categoría "Venta")
+     - `comunidadId` (opcional)
+     - `imagen` (incluida automáticamente por `PostService` si se selecciona un archivo)
+     - `categoria`: `'venta'`
+
+#### C. Cambios en Archivos Clave
+
+| Archivo | Rol de la Corrección |
+|---|---|
+| `lib/screens/post/add_post_screen.dart` | - Remoción de lógicas visuales de venta/cursos de pago no estructuradas del flujo estándar.<br>- Adición dinámica del campo **Precio** únicamente cuando la categoría seleccionada es **Venta**.<br>- Validación estricta de selección de comunidad para la categoría **Comunidad**.<br>- Gestión de estado de carga (`_isLoading`) para prevenir envíos duplicados.<br>- Manejo robusto de errores mediante `AppSnackbar` (incluyendo respuestas 400 y 401). |
+| `lib/services/post_service.dart` | - Actualización del método `createPost` para incluir correctamente el campo `categoria` en el body de la petición HTTP.<br>- Implementación/Mapeo de `createArticle` para redirigir las publicaciones de venta a su endpoint dedicado (`POST /publicaciones/articulos`). |
+
+---
+
+### 17.3 Validación Técnica y Resultados
+- **Análisis de Código:** Ejecución de validaciones de análisis estático:
+  ```bash
+  flutter analyze lib/screens/post/add_post_screen.dart lib/services/post_service.dart
+  ```
+  **Resultado:** `No issues found! ✅` sin advertencias de tipos, imports o sintaxis.
+- **Funcionamiento Real:** Las publicaciones de tipo Comunidad, Noticias y Cursos ahora persisten de forma inmediata en el backend real `BackendV2`. Las publicaciones de Venta se crean exitosamente en el módulo de artículos de venta utilizando su correspondiente tabla y validaciones, retornando respuestas estructuradas al cliente.
 
 ---
 

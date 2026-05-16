@@ -15,16 +15,26 @@ class PostService {
   // ─── Feed Global (paginado) ───────────────────────────────────────────────
   /// GET /publicaciones/global?page=&limit=
   /// Respuesta: { redId, page, total, items: [ <Publicacion> ] }
-  Future<ApiResult<List<PostModel>>> fetchGlobalFeed({int page = 1, int limit = 20}) async {
-    final result = await _api.get('/publicaciones/global?page=$page&limit=$limit');
+  Future<ApiResult<List<PostModel>>> fetchGlobalFeed({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final result = await _api.get(
+      '/publicaciones/global?page=$page&limit=$limit',
+    );
     return _parseItems(result);
   }
 
   // ─── Feed Comunitarias (paginado) ─────────────────────────────────────────
   /// GET /publicaciones/comunitarias?page=&limit=
   /// Respuesta: { page, total, items: [ <Publicacion> ] }
-  Future<ApiResult<List<PostModel>>> fetchCommunityFeed({int page = 1, int limit = 20}) async {
-    final result = await _api.get('/publicaciones/comunitarias?page=$page&limit=$limit');
+  Future<ApiResult<List<PostModel>>> fetchCommunityFeed({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final result = await _api.get(
+      '/publicaciones/comunitarias?page=$page&limit=$limit',
+    );
     return _parseItems(result);
   }
 
@@ -53,12 +63,14 @@ class PostService {
   Future<ApiResult<dynamic>> createPost({
     required String titulo,
     required String contenido,
+    required String categoria,
     String? comunidadId,
     String? mediaUrl,
   }) async {
     final body = <String, dynamic>{
       'titulo': titulo,
       'contenido': contenido,
+      'categoria': categoria,
     };
     if (comunidadId != null) body['comunidadId'] = comunidadId;
     if (mediaUrl != null) body['mediaUrl'] = mediaUrl;
@@ -78,6 +90,7 @@ class PostService {
       'titulo': titulo,
       'descripcion': descripcion,
       'precio': precio,
+      'categoria': 'venta',
     };
     if (comunidadId != null) body['comunidadId'] = comunidadId;
     if (imagen != null) body['imagen'] = imagen;

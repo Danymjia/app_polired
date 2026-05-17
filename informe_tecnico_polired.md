@@ -1,7 +1,7 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.11 — Integración y endurecimiento de renderizado de imágenes remotas (BackendV2)  
-> **Fecha:** 16 de mayo de 2026  
+> **Versión:** 1.12 — Flujo unificado de subida física de imágenes, carrusel premium y corrección de validación bloqueante (BackendV2)  
+> **Fecha:** 17 de mayo de 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
 
@@ -636,3 +636,50 @@ Se aplicaron mejoras para centralizar y endurecer el manejo de imágenes remotas
   - Revisar pantallas restantes si detectas imágenes directas residuales.
 
 > Nota: según tu preferencia guardada, actualizaré `polired/informe_tecnico_polired.md` cada vez que solicites "actualizar la documentación". Si quieres que documente otras modificaciones (logs de commits, pruebas ejecutadas, o capturas), dímelo y lo añado.
+
+---
+
+## 18. Auditoría, Optimización y Unificación del Flujo de Imágenes (Fase 2 — 17 de mayo de 2026)
+
+Se realizó una revisión arquitectónica profunda del ciclo de vida multimedia en Polired, abordando la subida física de archivos a través de Cloudinary, el soporte de carrusel multi-imagen de hasta 3 fotos, y resolviendo una validación bloqueante crítica del backend.
+
+### 18.1 Diagnóstico de Inconsistencias y Limitaciones en el Backend
+
+1. **El Bug de Coma-Splitting en Base64:**
+   - La normalización del backend divide cualquier string que contenga una coma (`split(',')`). Al enviar avatares codificados en Base64 tradicional (`data:image/jpeg;base64,...`), el backend rompía el string por la mitad y guardaba un prefijo corrupto en MongoDB.
+2. **Validación Bloqueante en Noticias y Comunidades:**
+   - El endpoint de publicaciones estándar (`POST /estudiantes/publicaciones`) y de artículos (`POST /publicaciones/articulos`) bloquean de forma estricta la subida de imágenes si la publicación se clasifica como tipo `'texto'`.
+   - Si no se suministra el campo `tipoContenido` en la petición, el backend lo evalúa por defecto como `'texto'`. Al detectar imágenes en el request (`req.files.imagen`), arrojaba el error: `"No se permite media en publicaciones de tipo texto"`.
+   - **Solución del Frontend:** Se programó el servicio para inyectar automáticamente `'tipoContenido': 'imagen'` cuando existan archivos adjuntos o URLs multimedia.
+
+### 18.2 Mejoras y Correcciones Implementadas
+
+#### A. Motor de Transmisión Multipart en el Core (`ApiService`)
+Se desarrolló el método genérico `multipartRequest` en `ApiService` para enviar flujos de bytes físicos y campos de texto de forma paralela. Inyecta el token de seguridad `Authorization Bearer` y mapea los errores complejos de validación del backend automáticamente.
+
+#### B. Registro y Edición de Foto de Perfil Directa
+* **`CompleteProfileScreen`:** Migró exitosamente de Base64 a subida física directa por multipart, resolviendo el problema de las comas en base de datos.
+* **`EditProfileScreen`:** Sustituyó el placeholder por una interfaz de selección interactiva (tocar avatar o botón dedicado), permitiendo la subida física del nuevo avatar y la sincronización con el state en tiempo real.
+
+#### C. Publicador Multi-Imagen Adaptativo (`AddPostScreen`)
+* Agregó un selector horizontal estético en `AddPostScreen` que soporta de 1 a 3 imágenes físicas. Muestra una vista previa miniatura interactiva y un botón para desestimar imágenes.
+* Mapeó la subida física en publicaciones de Noticias y Comunidades a través de `createPost`, y de Venta o Cursos a través de `createArticle`.
+
+#### D. Carrusel de Visualización Premium (`PostImageCarousel`)
+* Diseñó el widget `PostImageCarousel` con soporte dinámico para imágenes simples y múltiples.
+* En publicaciones multi-imagen, el widget renderiza un `PageView` táctil con deslizamiento horizontal suave e indicadores de dot ("puntos de paginación") sincronizados.
+* Integró el carrusel en las tarjetas principales del feed: `PostCard` y `ExplorePostCard`.
+
+#### E. Refresco Automático de Feeds (UX Premium)
+* Al crear una publicación exitosa en `AddPostScreen`, la app detecta automáticamente la categoría e invoca el refresco del feed (`refreshFeed()`) en el provider respectivo (`CommunityFeedProvider` o `GlobalFeedProvider`).
+* Esto permite al usuario ver su publicación inmediatamente en la pantalla anterior sin requerir un deslizamiento manual.
+
+#### F. Blindaje en Memoria para Base64 Históricos
+* Robusteció `SafeNetworkImage` para detectar proactivamente prefijos Base64 (`data:image/...;base64,`). Al encontrarlos, los decodifica en bytes en memoria y los dibuja con `Image.memory`, previniendo crashes en la UI con registros de imágenes antiguos de la base de datos.
+
+### 18.3 Resultados de Calidad de Código (QA)
+* **Validación Estática:**
+  ```bash
+  flutter analyze
+  ```
+  **Resultado:** `No issues found!` sin advertencias, optimizando la confiabilidad de la aplicación en producción.

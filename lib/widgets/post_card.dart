@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
 import 'safe_network_image.dart';
+import 'post_image_carousel.dart';
 
 /// Tarjeta de publicación adaptada al modelo real del backend.
 /// Soporta publicaciones de texto, imagen y video (con poster).
@@ -80,7 +81,7 @@ class _PostCardState extends State<PostCard> {
           ),
 
           // ── Imagen (si aplica) ───────────────────────────────────────────────
-          if (post.hasImage) _PostImage(mediaUrl: post.mediaUrl!),
+          if (post.hasImage) PostImageCarousel(mediaUrls: post.mediaUrls),
 
           // ── Acciones ────────────────────────────────────────────────────────
           Padding(
@@ -166,36 +167,7 @@ class _AuthorAvatar extends StatelessWidget {
   }
 }
 
-// ─── Imagen de publicación ────────────────────────────────────────────────────
-class _PostImage extends StatelessWidget {
-  final String mediaUrl;
 
-  const _PostImage({required this.mediaUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 400),
-      child: SafeNetworkImage(
-        url: mediaUrl,
-        width: double.infinity,
-        height: 400,
-        fit: BoxFit.cover,
-        errorWidget: Container(
-          height: 180,
-          color: AppTheme.surfaceContainer,
-          child: const Center(
-            child: Icon(
-              Icons.broken_image_outlined,
-              size: 48,
-              color: AppTheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── Contenido textual ────────────────────────────────────────────────────────
 class _PostContent extends StatefulWidget {

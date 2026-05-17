@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -43,18 +42,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    String? base64Image;
-    if (_imageFile != null) {
-      final bytes = await _imageFile!.readAsBytes();
-      final String extension = _imageFile!.path.split('.').last.toLowerCase();
-      final String mimeType = extension == 'png' ? 'image/png' : 'image/jpeg';
-      base64Image = 'data:$mimeType;base64,${base64Encode(bytes)}';
-    }
-
     final success = await authProvider.completarPerfil(
       _usernameController.text,
-      fotoPerfil: base64Image,
       biografia: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
+      imageFile: _imageFile,
     );
 
     setState(() {

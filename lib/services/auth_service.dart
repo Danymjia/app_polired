@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
@@ -100,7 +102,34 @@ class AuthService {
     String username, {
     String? fotoPerfil,
     String? biografia,
+    File? imageFile,
   }) async {
+    if (imageFile != null) {
+      final fields = <String, String>{
+        'username': username.trim(),
+        if (biografia != null && biografia.trim().isNotEmpty)
+          'biografia': biografia.trim(),
+      };
+      final files = <http.MultipartFile>[
+        await http.MultipartFile.fromPath('imagen', imageFile.path),
+      ];
+      final result = await _api.multipartRequest(
+        AppConstants.completarPerfilEndpoint,
+        method: 'PATCH',
+        fields: fields,
+        files: files,
+      );
+
+      if (result.success) {
+        final dataMap = result.data as Map<String, dynamic>?;
+        if (dataMap != null && dataMap['usuario'] != null) {
+          await StorageService.saveUser(dataMap['usuario'] as Map<String, dynamic>);
+        }
+        return AuthResult(success: true, message: dataMap?['msg'] as String?);
+      }
+      return AuthResult(success: false, message: result.message ?? 'Error al completar perfil');
+    }
+
     final body = <String, dynamic>{
       'username': username.trim(),
     };
@@ -132,7 +161,30 @@ class AuthService {
     required String nombre,
     required String apellido,
     required String biografia,
+    File? imageFile,
   }) async {
+    if (imageFile != null) {
+      final fields = <String, String>{
+        'nombre': nombre.trim(),
+        'apellido': apellido.trim(),
+        'biografia': biografia.trim(),
+      };
+      final files = <http.MultipartFile>[
+        await http.MultipartFile.fromPath('imagen', imageFile.path),
+      ];
+      final result = await _api.multipartRequest(
+        '/estudiante/$estudianteId',
+        method: 'PATCH',
+        fields: fields,
+        files: files,
+      );
+
+      if (result.success) {
+        return AuthResult(success: true);
+      }
+      return AuthResult(success: false, message: result.message ?? 'Error al actualizar el perfil');
+    }
+
     final result = await _api.patch('/estudiante/$estudianteId', {
       'nombre': nombre.trim(),
       'apellido': apellido.trim(),

@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../config/theme.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../providers/network_provider.dart';
+import '../../providers/global_feed_provider.dart';
+import '../../providers/community_feed_provider.dart';
 import '../../services/post_service.dart';
 import '../../services/api_service.dart';
 import '../../models/network_story_model.dart';
@@ -25,6 +29,28 @@ class _AddPostScreenState extends State<AddPostScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+
+  final List<File> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImages() async {
+    if (_selectedImages.length >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Límite de 3 imágenes alcanzado')),
+      );
+      return;
+    }
+    final pickedFiles = await _picker.pickMultiImage();
+    if (pickedFiles.isNotEmpty) {
+      setState(() {
+        for (final file in pickedFiles) {
+          if (_selectedImages.length < 3) {
+            _selectedImages.add(File(file.path));
+          }
+        }
+      });
+    }
+  }
 
   bool _isPrivacyAccepted = true;
   bool _isLoading = false;
@@ -92,16 +118,26 @@ class _AddPostScreenState extends State<AddPostScreen> {
               precio: double.tryParse(_priceController.text.trim()) ?? 0.0,
               categoria: categoryValue,
               comunidadId: comunidadId,
+              imageFiles: _selectedImages,
             )
           : await _postService.createPost(
               titulo: title,
               contenido: content,
               categoria: categoryValue,
               comunidadId: comunidadId,
+              imageFiles: _selectedImages,
             );
 
       if (result.success) {
         if (mounted) {
+          try {
+            if (categoryValue == 'comunidad') {
+              context.read<CommunityFeedProvider>().refreshFeed();
+            } else {
+              context.read<GlobalFeedProvider>().refreshFeed();
+            }
+          } catch (_) {}
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Publicación creada con éxito')),
           );
@@ -284,6 +320,12 @@ class _AddPostScreenState extends State<AddPostScreen> {
                       const SizedBox(height: 24),
                     ],
 
+                    // Selector de imágenes
+                    _buildSectionLabel('IMÁGENES (OPCIONAL, MÁX. 3)'),
+                    const SizedBox(height: 12),
+                    _buildImagePickerSection(),
+                    const SizedBox(height: 24),
+
                     // Privacy Checkbox
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -339,6 +381,81 @@ class _AddPostScreenState extends State<AddPostScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildImagePickerSection() {
+    return SizedBox(
+      height: 100,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _selectedImages.length + (_selectedImages.length < 3 ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _selectedImages.length) {
+            return GestureDetector(
+              onTap: _pickImages,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.outlineVariant,
+                    style: BorderStyle.solid,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.add_a_photo_outlined,
+                  color: AppTheme.outline,
+                  size: 32,
+                ),
+              ),
+            );
+          }
+
+          final imageFile = _selectedImages[index];
+          return Stack(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: FileImage(imageFile),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 4,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedImages.removeAt(index);
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

@@ -81,6 +81,42 @@ class ApiService {
     }
   }
 
+  // ─── MULTIPART ────────────────────────────────────────────────────────────
+  Future<ApiResult<dynamic>> multipartRequest(
+    String endpoint, {
+    required String method,
+    Map<String, String>? fields,
+    List<http.MultipartFile>? files,
+  }) async {
+    try {
+      final uri = Uri.parse('${AppConstants.baseUrl}$endpoint');
+      final request = http.MultipartRequest(method, uri);
+
+      if (_token != null) {
+        request.headers['Authorization'] = 'Bearer $_token';
+      }
+
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      if (files != null) {
+        request.files.addAll(files);
+      }
+
+      final streamedResponse = await request.send().timeout(AppConstants.requestTimeout);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on SocketException {
+      return ApiResult.error('Sin conexión. Verifica tu red.');
+    } on TimeoutException {
+      return ApiResult.error('Tiempo de espera agotado. Intenta de nuevo.');
+    } catch (e) {
+      return ApiResult.error('Error inesperado: $e');
+    }
+  }
+
   // ─── GET ─────────────────────────────────────────────────────────────────
   Future<ApiResult<dynamic>> get(String endpoint) async {
     try {

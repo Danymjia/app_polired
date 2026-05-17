@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/safe_network_image.dart';
@@ -19,7 +21,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _usernameController;
   late TextEditingController _bioController;
 
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -52,6 +65,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       apellido: _apellidoController.text,
       username: _usernameController.text,
       biografia: _bioController.text,
+      imageFile: _imageFile,
     );
 
     if (!mounted) return;
@@ -141,31 +155,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Column(
                   children: [
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.surfaceContainerHighest,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(48),
-                        child:
-                            user?.fotoPerfil != null &&
-                                user!.fotoPerfil!.trim().isNotEmpty
-                            ? SafeNetworkImage(
-                                url: user.fotoPerfil,
-                                fit: BoxFit.cover,
-                                errorWidget: _buildInitialsAvatar(initials),
-                              )
-                            : _buildInitialsAvatar(initials),
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.surfaceContainerHighest,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(48),
+                          child: _imageFile != null
+                              ? Image.file(
+                                  _imageFile!,
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.cover,
+                                )
+                              : (user?.fotoPerfil != null &&
+                                      user!.fotoPerfil!.trim().isNotEmpty
+                                  ? SafeNetworkImage(
+                                      url: user.fotoPerfil,
+                                      fit: BoxFit.cover,
+                                      errorWidget: _buildInitialsAvatar(initials),
+                                    )
+                                  : _buildInitialsAvatar(initials)),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
-                      onPressed: () {
-                        // Lógica para cambiar foto
-                      },
+                      onPressed: _pickImage,
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.black,
                         textStyle: const TextStyle(

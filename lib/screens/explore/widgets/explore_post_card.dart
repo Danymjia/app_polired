@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../models/post_model.dart';
 import '../../../widgets/safe_network_image.dart';
+import '../../../widgets/post_image_carousel.dart';
 
 class ExplorePostCard extends StatelessWidget {
   final PostModel post;
@@ -101,25 +102,14 @@ class ExplorePostCard extends StatelessWidget {
               ),
             ),
             if (post.hasImage)
-              ClipRRect(
+              PostImageCarousel(
+                mediaUrls: post.mediaUrls,
+                height: 280,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.zero,
                   topRight: Radius.zero,
                   bottomLeft: Radius.circular(AppTheme.radiusXl),
                   bottomRight: Radius.circular(AppTheme.radiusXl),
-                ),
-                child: AspectRatio(
-                  aspectRatio: 4 / 3,
-                  child: SafeNetworkImage(
-                    url: post.mediaUrl,
-                    fit: BoxFit.cover,
-                    errorWidget: Container(
-                      color: AppTheme.surfaceContainerLow,
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported, size: 48),
-                      ),
-                    ),
-                  ),
                 ),
               )
             else

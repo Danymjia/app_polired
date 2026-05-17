@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import 'api_service.dart';
 import '../models/post_model.dart';
@@ -99,11 +101,28 @@ class PostService {
     required String categoria,
     String? comunidadId,
     List<String>? mediaUrls,
+    List<File>? imageFiles,
   }) async {
+    if (imageFiles != null && imageFiles.isNotEmpty) {
+      final fields = <String, String>{
+        'titulo': titulo,
+        'contenido': contenido,
+        'categoria': categoria,
+        'tipoContenido': 'imagen',
+      };
+      if (comunidadId != null) fields['comunidadId'] = comunidadId;
+      final files = <http.MultipartFile>[];
+      for (final file in imageFiles) {
+        files.add(await http.MultipartFile.fromPath('imagen', file.path));
+      }
+      return _api.multipartRequest(AppConstants.crearPublicacionEndpoint, method: 'POST', fields: fields, files: files);
+    }
+
     final body = <String, dynamic>{
       'titulo': titulo,
       'contenido': contenido,
       'categoria': categoria,
+      'tipoContenido': (mediaUrls != null && mediaUrls.isNotEmpty) ? 'imagen' : 'texto',
     };
     if (comunidadId != null) body['comunidadId'] = comunidadId;
     if (mediaUrls != null && mediaUrls.isNotEmpty) {
@@ -122,7 +141,24 @@ class PostService {
     String? comunidadId,
     String tipoContenido = 'texto',
     List<String>? mediaUrls,
+    List<File>? imageFiles,
   }) async {
+    if (imageFiles != null && imageFiles.isNotEmpty) {
+      final fields = <String, String>{
+        'titulo': titulo,
+        'descripcion': descripcion,
+        'precio': precio.toString(),
+        'categoria': categoria,
+        'tipoContenido': 'imagen',
+      };
+      if (comunidadId != null) fields['comunidadId'] = comunidadId;
+      final files = <http.MultipartFile>[];
+      for (final file in imageFiles) {
+        files.add(await http.MultipartFile.fromPath('imagen', file.path));
+      }
+      return _api.multipartRequest('/publicaciones/articulos', method: 'POST', fields: fields, files: files);
+    }
+
     final body = <String, dynamic>{
       'titulo': titulo,
       'descripcion': descripcion,

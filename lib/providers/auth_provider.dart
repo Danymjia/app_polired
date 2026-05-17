@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -119,6 +120,7 @@ class AuthProvider extends ChangeNotifier {
     String username, {
     String? fotoPerfil,
     String? biografia,
+    File? imageFile,
   }) async {
     _errorMessage = null;
     notifyListeners();
@@ -127,6 +129,7 @@ class AuthProvider extends ChangeNotifier {
       username,
       fotoPerfil: fotoPerfil,
       biografia: biografia,
+      imageFile: imageFile,
     );
     if (result.success) {
       final userData = StorageService.getUser();
@@ -149,6 +152,7 @@ class AuthProvider extends ChangeNotifier {
     required String apellido,
     required String username,
     required String biografia,
+    File? imageFile,
   }) async {
     final user = _user;
     if (user == null) return false;
@@ -161,6 +165,7 @@ class AuthProvider extends ChangeNotifier {
       nombre: nombre,
       apellido: apellido,
       biografia: biografia,
+      imageFile: imageFile,
     );
     if (!datosResult.success) {
       _errorMessage = datosResult.message;

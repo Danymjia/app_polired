@@ -1,12 +1,10 @@
-/// Modelo de publicación mapeado desde la respuesta real del backend.
+import 'dart:convert';
+
+/// Modelo de publicación que cubre tanto publicaciones regulares como artículos.
 ///
-/// El backend devuelve (en /publicaciones/global):
-/// {
-///   _id, titulo, contenido, tipoContenido, categoria, mediaUrl,
-///   autorId: { _id, nombre, apellido, username },
-///   comunidadId: { _id, nombre },
-///   likesCount, commentsCount, timestamp, createdAt
-/// }
+/// El backend devuelve publicaciones con campos distintos según el tipo:
+/// - Publicaciones: {_id, titulo, contenido, tipoContenido, categoria, mediaUrls, autorId, comunidadId, likesCount, commentsCount, timestamp }
+/// - Artículos: {_id, titulo, descripcion, precio, tipoContenido, categoria, mediaUrls, autorId, redComunitaria, creadoEn }
 class PostModel {
   final String id;
   final String networkId;
@@ -21,8 +19,13 @@ class PostModel {
   // Contenido
   final String titulo;
   final String contenido;
-  final String tipoContenido; // 'texto' | 'imagen' | 'video'
-  final String? mediaUrl;
+  final String? descripcion;
+  final String tipoContenido; // 'texto' | 'imagen'
+  final String categoria; // 'comunidad' | 'noticias' | 'venta' | 'cursos'
+  final List<String> mediaUrls;
+
+  // Artículo / marketplace
+  final dynamic precio;
 
   // Métricas
   final int likesCount;
@@ -41,18 +44,20 @@ class PostModel {
     this.authorImageUrl,
     required this.titulo,
     required this.contenido,
+    this.descripcion,
     required this.tipoContenido,
-    this.mediaUrl,
+    required this.categoria,
+    required this.mediaUrls,
+    this.precio,
     required this.likesCount,
     required this.commentsCount,
     required this.timestamp,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
-    // Autor puede venir poblado o como ID simple
     final autor = json['autorId'];
     String authorId = '';
-    String authorUsername = 'usuario';
+    String authorUsername = 'Usuario';
     String authorFullName = '';
     String? authorImageUrl;
 
@@ -64,14 +69,15 @@ class PostModel {
       authorFullName = '$nombre $apellido'.trim();
       authorUsername = (username != null && username.isNotEmpty)
           ? username
-          : authorFullName;
+          : authorFullName.isNotEmpty
+          ? authorFullName
+          : 'Usuario';
       authorImageUrl = autor['fotoPerfil'] as String?;
     } else if (autor is String) {
       authorId = autor;
     }
 
-    // Red
-    final comunidad = json['comunidadId'];
+    final comunidad = json['comunidadId'] ?? json['redComunitaria'];
     String networkId = '';
     String networkName = '';
     if (comunidad is Map<String, dynamic>) {
@@ -81,14 +87,25 @@ class PostModel {
       networkId = comunidad;
     }
 
-    // Timestamp
-    DateTime ts = DateTime.now();
-    final rawTs = json['timestamp'] ?? json['createdAt'];
-    if (rawTs != null) {
+    final rawTimestamp =
+        json['timestamp'] ?? json['createdAt'] ?? json['creadoEn'];
+    DateTime timestamp = DateTime.now();
+    if (rawTimestamp != null) {
       try {
-        ts = DateTime.parse(rawTs.toString()).toLocal();
+        timestamp = DateTime.parse(rawTimestamp.toString()).toLocal();
       } catch (_) {}
     }
+
+    final tipoContenido =
+        (json['tipoContenido'] as String?)?.toLowerCase() ?? 'texto';
+    final categoria = (json['categoria'] as String?)?.toLowerCase() ?? '';
+    final mediaUrls = _extractMediaUrls(json['mediaUrls']);
+    final contenido =
+        (json['contenido'] as String?) ??
+        (json['descripcion'] as String?) ??
+        '';
+    final descripcion = json['descripcion'] as String?;
+    final precio = json['precio'];
 
     return PostModel(
       id: (json['_id'] as String?) ?? '',
@@ -99,16 +116,71 @@ class PostModel {
       authorFullName: authorFullName,
       authorImageUrl: authorImageUrl,
       titulo: (json['titulo'] as String?) ?? '',
-      contenido: (json['contenido'] as String?) ?? '',
-      tipoContenido: (json['tipoContenido'] as String?) ?? 'texto',
-      mediaUrl: json['mediaUrl'] as String?,
+      contenido: contenido,
+      descripcion: descripcion,
+      tipoContenido: tipoContenido,
+      categoria: categoria,
+      mediaUrls: mediaUrls,
+      precio: precio,
       likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
       commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
-      timestamp: ts,
+      timestamp: timestamp,
     );
   }
 
-  /// Devuelve el tiempo relativo de la publicación (ej. "Hace 2 h")
+  static List<String> _extractMediaUrls(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .where((item) => item is String && item.isNotEmpty)
+          .cast<String>()
+          .toList();
+    }
+    if (raw is Map) {
+      return raw.values
+          .where((item) => item is String && item.isNotEmpty)
+          .cast<String>()
+          .toList();
+    }
+    if (raw is String && raw.isNotEmpty) {
+      final trimmed = raw.trim();
+      final jsonParsed = _tryParseJsonList(trimmed);
+      if (jsonParsed != null) return jsonParsed;
+      if (trimmed.contains(',')) {
+        return trimmed
+            .split(',')
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList();
+      }
+      return [trimmed];
+    }
+    return [];
+  }
+
+  static List<String>? _tryParseJsonList(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded
+            .where((item) => item is String && item.isNotEmpty)
+            .cast<String>()
+            .toList();
+      }
+    } catch (_) {
+      // ignore invalid json
+    }
+    return null;
+  }
+
+  String get displayContent =>
+      contenido.isNotEmpty ? contenido : descripcion ?? '';
+
+  bool get hasImage => tipoContenido == 'imagen' && mediaUrls.isNotEmpty;
+
+  String? get imageUrl => mediaUrls.isNotEmpty ? mediaUrls.first : null;
+
+  String? get mediaUrl => imageUrl;
+
   String get timeAgo {
     final now = DateTime.now();
     final diff = now.difference(timestamp);
@@ -119,5 +191,11 @@ class PostModel {
     return 'Hace ${(diff.inDays / 7).floor()} sem';
   }
 
-  bool get hasImage => tipoContenido == 'imagen' && mediaUrl != null && mediaUrl!.isNotEmpty;
+  bool get isArticle => categoria == 'venta' || categoria == 'cursos';
+
+  String get priceLabel {
+    if (precio == null) return '';
+    if (precio is num) return '\$${precio.toString()}';
+    return precio.toString();
+  }
 }

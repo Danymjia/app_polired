@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../models/post_model.dart';
+import '../../../widgets/safe_network_image.dart';
 
 class ExplorePostCard extends StatelessWidget {
   final PostModel post;
@@ -17,10 +18,13 @@ class ExplorePostCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-          border: Border.all(color: AppTheme.surfaceContainerHigh.withOpacity(0.7), width: 1),
+          border: Border.all(
+            color: AppTheme.surfaceContainerHigh.withAlpha(179),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withAlpha(10),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -44,22 +48,31 @@ class ExplorePostCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                post.authorUsername.isNotEmpty ? post.authorUsername : 'Usuario',
-                                style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.w800),
+                                post.authorUsername.isNotEmpty
+                                    ? post.authorUsername
+                                    : 'Usuario',
+                                style: AppTheme.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (post.authorId.isNotEmpty) ...[
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primary.withOpacity(0.12),
+                                  color: AppTheme.primary.withAlpha(31),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   'Verificado',
-                                  style: AppTheme.labelSmall.copyWith(color: AppTheme.primary),
+                                  style: AppTheme.labelSmall.copyWith(
+                                    color: AppTheme.primary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -68,7 +81,10 @@ class ExplorePostCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           post.timeAgo,
-                          style: AppTheme.bodyMedium.copyWith(color: AppTheme.onSurface.withOpacity(0.6), fontSize: 12),
+                          style: AppTheme.bodyMedium.copyWith(
+                            color: AppTheme.onSurface.withAlpha(153),
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -76,7 +92,10 @@ class ExplorePostCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   IconButton(
                     onPressed: () {},
-                    icon: Icon(Icons.more_horiz, color: AppTheme.onSurface.withOpacity(0.7)),
+                    icon: Icon(
+                      Icons.more_horiz,
+                      color: AppTheme.onSurface.withAlpha(179),
+                    ),
                   ),
                 ],
               ),
@@ -91,20 +110,15 @@ class ExplorePostCard extends StatelessWidget {
                 ),
                 child: AspectRatio(
                   aspectRatio: 4 / 3,
-                  child: Image.network(
-                    post.mediaUrl!,
+                  child: SafeNetworkImage(
+                    url: post.mediaUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
+                    errorWidget: Container(
                       color: AppTheme.surfaceContainerLow,
-                      child: const Center(child: Icon(Icons.image_not_supported, size: 48)),
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, size: 48),
+                      ),
                     ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: AppTheme.surfaceContainerLow,
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                      );
-                    },
                   ),
                 ),
               )
@@ -143,25 +157,38 @@ class ExplorePostCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     '${post.likesCount} Me gusta',
-                    style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.w700),
+                    style: AppTheme.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   RichText(
                     text: TextSpan(
-                      style: AppTheme.bodyMedium.copyWith(color: AppTheme.onSurface),
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: AppTheme.onSurface,
+                      ),
                       children: [
                         TextSpan(
-                          text: '${post.authorUsername.isNotEmpty ? post.authorUsername : 'Usuario'} ',
-                          style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w700),
+                          text:
+                              '${post.authorUsername.isNotEmpty ? post.authorUsername : 'Usuario'} ',
+                          style: AppTheme.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        TextSpan(text: post.contenido.isNotEmpty ? post.contenido : post.titulo),
+                        TextSpan(
+                          text: post.contenido.isNotEmpty
+                              ? post.contenido
+                              : post.titulo,
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'Ver comentarios (${post.commentsCount})',
-                    style: AppTheme.bodyMedium.copyWith(color: AppTheme.onSurface.withOpacity(0.65)),
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: AppTheme.onSurface.withAlpha(166),
+                    ),
                   ),
                 ],
               ),
@@ -189,9 +216,23 @@ class _AuthorAvatar extends StatelessWidget {
         border: Border.all(color: AppTheme.surfaceContainerHigh, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
-      child: imageUrl != null && imageUrl!.isNotEmpty
-          ? Image.network(imageUrl!, fit: BoxFit.cover)
-          : Icon(Icons.person, color: AppTheme.onSurface.withOpacity(0.6), size: 28),
+      child: imageUrl != null && imageUrl!.trim().isNotEmpty
+          ? SafeNetworkImage(
+              url: imageUrl,
+              fit: BoxFit.cover,
+              width: 48,
+              height: 48,
+              errorWidget: Icon(
+                Icons.person,
+                color: AppTheme.onSurface.withAlpha(153),
+                size: 28,
+              ),
+            )
+          : Icon(
+              Icons.person,
+              color: AppTheme.onSurface.withAlpha(153),
+              size: 28,
+            ),
     );
   }
 }
@@ -210,7 +251,7 @@ class _PostAction extends StatelessWidget {
         onTap: () {},
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 24, color: AppTheme.onSurface.withOpacity(0.82)),
+          child: Icon(icon, size: 24, color: AppTheme.onSurface.withAlpha(209)),
         ),
       ),
     );

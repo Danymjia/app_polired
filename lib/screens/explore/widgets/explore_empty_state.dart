@@ -18,12 +18,18 @@ class ExploreEmptyState extends StatelessWidget {
                 color: AppTheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(AppTheme.radiusXl),
               ),
-              child: Icon(Icons.search_off, size: 54, color: AppTheme.onSurface.withOpacity(0.6)),
+              child: Icon(
+                Icons.search_off,
+                size: 54,
+                color: AppTheme.onSurface.withAlpha(153),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
               'No encontramos contenido nuevo aún',
-              style: AppTheme.headlineMedium.copyWith(fontWeight: FontWeight.w800),
+              style: AppTheme.headlineMedium.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

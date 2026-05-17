@@ -12,9 +12,12 @@ class ExploreHeader extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.surface.withOpacity(0.82),
+            color: AppTheme.surface.withAlpha(209),
             border: Border(
-              bottom: BorderSide(color: AppTheme.surfaceContainerHigh.withOpacity(0.65), width: 1),
+              bottom: BorderSide(
+                color: AppTheme.surfaceContainerHigh.withAlpha(166),
+                width: 1,
+              ),
             ),
           ),
           padding: EdgeInsets.only(

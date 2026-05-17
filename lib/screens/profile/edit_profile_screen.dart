@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/safe_network_image.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -12,7 +13,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _nombreController;
   late TextEditingController _apellidoController;
   late TextEditingController _usernameController;
@@ -24,7 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     final user = context.read<AuthProvider>().user;
-    
+
     _nombreController = TextEditingController(text: user?.nombre ?? '');
     _apellidoController = TextEditingController(text: user?.apellido ?? '');
     _usernameController = TextEditingController(text: user?.username ?? '');
@@ -64,7 +65,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.errorMessage ?? 'No se pudo actualizar el perfil')),
+        SnackBar(
+          content: Text(auth.errorMessage ?? 'No se pudo actualizar el perfil'),
+        ),
       );
     }
   }
@@ -72,7 +75,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    
+
     String initials = '';
     if (user != null) {
       if (user.nombre.isNotEmpty) initials += user.nombre[0].toUpperCase();
@@ -110,11 +113,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _submit,
-            child: _isLoading 
+            child: _isLoading
                 ? const SizedBox(
-                    width: 20, 
-                    height: 20, 
-                    child: CircularProgressIndicator(strokeWidth: 2)
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text(
                     'Listo',
@@ -147,11 +150,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(48),
-                        child: user?.fotoPerfil != null && user!.fotoPerfil!.isNotEmpty
-                            ? Image.network(
-                                user.fotoPerfil!,
+                        child:
+                            user?.fotoPerfil != null &&
+                                user!.fotoPerfil!.trim().isNotEmpty
+                            ? SafeNetworkImage(
+                                url: user.fotoPerfil,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildInitialsAvatar(initials),
+                                errorWidget: _buildInitialsAvatar(initials),
                               )
                             : _buildInitialsAvatar(initials),
                       ),
@@ -182,16 +187,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _buildInputField('Nombre', _nombreController),
                     _buildInputField('Apellido', _apellidoController),
                     _buildInputField(
-                      'Nombre de usuario', 
+                      'Nombre de usuario',
                       _usernameController,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Requerido';
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Requerido';
+                        }
                         if (value.length < 3) return 'Mínimo 3 caracteres';
                         if (!RegExp(r'^[A-Za-z0-9._-]+$').hasMatch(value)) {
                           return 'Caracteres no válidos';
                         }
                         return null;
-                      }
+                      },
                     ),
                     _buildTextAreaField('Descripción', _bioController),
                   ],
@@ -235,7 +242,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    String? Function(String?)? validator,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(
@@ -260,11 +271,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           const SizedBox(height: 4),
           TextFormField(
             controller: controller,
-            validator: validator ?? (value) => value!.trim().isEmpty ? 'Requerido' : null,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppTheme.onBackground,
-            ),
+            validator:
+                validator ??
+                (value) => value!.trim().isEmpty ? 'Requerido' : null,
+            style: const TextStyle(fontSize: 16, color: AppTheme.onBackground),
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.zero,
@@ -285,10 +295,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE4E2E1),
-            width: 0.5,
-          ),
+          bottom: BorderSide(color: Color(0xFFE4E2E1), width: 0.5),
         ),
       ),
       child: Column(

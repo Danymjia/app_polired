@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../widgets/safe_network_image.dart';
 import '../../models/conversation_model.dart';
 import '../../models/network_story_model.dart';
 import '../../models/suggested_network_model.dart';
@@ -32,14 +33,13 @@ class MessagesScreen extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(child: SizedBox(height: top + 8)),
-            SliverToBoxAdapter(child: _MessagesHeader(username: user?.username)),
+            SliverToBoxAdapter(
+              child: _MessagesHeader(username: user?.username),
+            ),
             SliverToBoxAdapter(child: _SearchFieldPlaceholder()),
             SliverToBoxAdapter(child: _SocketBanner(phase: inbox.socketPhase)),
             SliverToBoxAdapter(
-              child: _NetworkStoriesRow(
-                user: user,
-                networks: inbox.myNetworks,
-              ),
+              child: _NetworkStoriesRow(user: user, networks: inbox.myNetworks),
             ),
             SliverToBoxAdapter(
               child: Padding(
@@ -82,7 +82,10 @@ class MessagesScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _conversationSlivers(MessagesInboxProvider inbox, UserModel? user) {
+  List<Widget> _conversationSlivers(
+    MessagesInboxProvider inbox,
+    UserModel? user,
+  ) {
     switch (inbox.listStatus) {
       case InboxListStatus.loading:
         return [
@@ -111,26 +114,24 @@ class MessagesScreen extends StatelessWidget {
           ),
         ];
       case InboxListStatus.empty:
-        return [
-          const SliverToBoxAdapter(child: _EmptyConversationsState()),
-        ];
+        return [const SliverToBoxAdapter(child: _EmptyConversationsState())];
       case InboxListStatus.success:
         return [
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final c = inbox.conversations[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: _ConversationTile(
-                    conversation: c,
-                    currentUserId: user?.id ?? '',
-                    unreadStyle: inbox.showUnreadStyle(c.id, c.ultimoMensaje),
-                  ),
-                );
-              },
-              childCount: inbox.conversations.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final c = inbox.conversations[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: _ConversationTile(
+                  conversation: c,
+                  currentUserId: user?.id ?? '',
+                  unreadStyle: inbox.showUnreadStyle(c.id, c.ultimoMensaje),
+                ),
+              );
+            }, childCount: inbox.conversations.length),
           ),
         ];
     }
@@ -144,7 +145,9 @@ class _MessagesHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = username != null && username!.trim().isNotEmpty ? '@$username' : 'Mensajes';
+    final label = username != null && username!.trim().isNotEmpty
+        ? '@$username'
+        : 'Mensajes';
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Text(
@@ -170,8 +173,15 @@ class _SearchFieldPlaceholder extends StatelessWidget {
         enabled: false,
         decoration: InputDecoration(
           hintText: 'Buscar',
-          hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF71717A)),
-          prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFFA1A1AA)),
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: const Color(0xFF71717A),
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 20,
+            color: Color(0xFFA1A1AA),
+          ),
           filled: true,
           fillColor: const Color(0xFFF4F4F5),
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -207,7 +217,8 @@ class _SocketBanner extends StatelessWidget {
         fg = const Color(0xFF1D4ED8);
         break;
       case SocketConnectionPhase.disconnected:
-        message = 'Sin conexión en tiempo real. Los mensajes pueden llegar con retraso.';
+        message =
+            'Sin conexión en tiempo real. Los mensajes pueden llegar con retraso.';
         bg = const Color(0xFFF4F4F5);
         fg = const Color(0xFF52525B);
         break;
@@ -226,7 +237,11 @@ class _SocketBanner extends StatelessWidget {
           ),
           child: Text(
             message,
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: fg),
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: fg,
+            ),
           ),
         ),
       ),
@@ -250,10 +265,12 @@ class _NetworkStoriesRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         children: [
           if (currentUser != null) _UserStoryChip(user: currentUser),
-          ...networks.map((n) => Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: _NetworkStoryChip(network: n),
-              )),
+          ...networks.map(
+            (n) => Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: _NetworkStoryChip(network: n),
+            ),
+          ),
         ],
       ),
     );
@@ -284,7 +301,13 @@ class _UserStoryChip extends StatelessWidget {
           padding: const EdgeInsets.all(2),
           child: ClipOval(
             child: url != null && url.isNotEmpty
-                ? Image.network(url, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _initialsAvatar(user.nombre))
+                ? SafeNetworkImage(
+                    url: url,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorWidget: _initialsAvatar(user.nombre),
+                  )
                 : _initialsAvatar(user.nombre),
           ),
         ),
@@ -324,10 +347,12 @@ class _NetworkStoryChip extends StatelessWidget {
           padding: const EdgeInsets.all(2),
           child: ClipOval(
             child: network.imageUrl.isNotEmpty
-                ? Image.network(
-                    network.imageUrl,
+                ? SafeNetworkImage(
+                    url: network.imageUrl,
+                    width: 64,
+                    height: 64,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _acronymFill(network.acronym),
+                    errorWidget: _acronymFill(network.acronym),
                   )
                 : _acronymFill(network.acronym),
           ),
@@ -340,7 +365,11 @@ class _NetworkStoryChip extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
           ),
         ),
       ],
@@ -353,7 +382,10 @@ Widget _initialsAvatar(String name) {
   return Container(
     color: const Color(0xFFF4F4F5),
     alignment: Alignment.center,
-    child: Text(letter, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 22)),
+    child: Text(
+      letter,
+      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 22),
+    ),
   );
 }
 
@@ -385,7 +417,9 @@ class _ConversationTile extends StatelessWidget {
     final name = peer?.displayName ?? 'Usuario';
     final url = peer?.fotoPerfil;
     final last = conversation.ultimoMensaje?.contenido;
-    final preview = (last != null && last.trim().isNotEmpty) ? last : 'Sin mensajes aún';
+    final preview = (last != null && last.trim().isNotEmpty)
+        ? last
+        : 'Sin mensajes aún';
     final time = formatConversationTime(conversation.ultimaActividad);
 
     return Material(
@@ -393,22 +427,20 @@ class _ConversationTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          context.read<MessagesInboxProvider>().markConversationPreviewSeen(conversation.id);
+          context.read<MessagesInboxProvider>().markConversationPreviewSeen(
+            conversation.id,
+          );
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 28,
+              CircularNetworkAvatar(
+                imageUrl: url,
+                initials: name.isNotEmpty ? name[0].toUpperCase() : '?',
+                size: 56,
                 backgroundColor: const Color(0xFFF4F4F5),
-                backgroundImage: url != null && url.isNotEmpty ? NetworkImage(url) : null,
-                child: url == null || url.isEmpty
-                    ? Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-                      )
-                    : null,
+                initialsStyle: GoogleFonts.inter(fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -433,7 +465,10 @@ class _ConversationTile extends StatelessWidget {
                         ),
                         Text(
                           time,
-                          style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFA1A1AA)),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFFA1A1AA),
+                          ),
                         ),
                       ],
                     ),
@@ -457,8 +492,12 @@ class _ConversationTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              fontWeight: unreadStyle ? FontWeight.w600 : FontWeight.w400,
-                              color: unreadStyle ? AppTheme.primaryText : const Color(0xFF71717A),
+                              fontWeight: unreadStyle
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: unreadStyle
+                                  ? AppTheme.primaryText
+                                  : const Color(0xFF71717A),
                             ),
                           ),
                         ),
@@ -481,17 +520,21 @@ class _ConversationRowSkeleton extends StatefulWidget {
   final int delayIndex;
 
   @override
-  State<_ConversationRowSkeleton> createState() => _ConversationRowSkeletonState();
+  State<_ConversationRowSkeleton> createState() =>
+      _ConversationRowSkeletonState();
 }
 
-class _ConversationRowSkeletonState extends State<_ConversationRowSkeleton> with SingleTickerProviderStateMixin {
+class _ConversationRowSkeletonState extends State<_ConversationRowSkeleton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
-      ..repeat(min: 0.35, max: 1.0, reverse: true);
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(min: 0.35, max: 1.0, reverse: true);
   }
 
   @override
@@ -506,7 +549,11 @@ class _ConversationRowSkeletonState extends State<_ConversationRowSkeleton> with
       animation: _c,
       builder: (context, child) {
         final v = CurvedAnimation(parent: _c, curve: Curves.easeInOut).value;
-        final base = Color.lerp(const Color(0xFFEEEEEE), const Color(0xFFF5F5F5), v)!;
+        final base = Color.lerp(
+          const Color(0xFFEEEEEE),
+          const Color(0xFFF5F5F5),
+          v,
+        )!;
         return Row(
           children: [
             Container(
@@ -519,9 +566,23 @@ class _ConversationRowSkeletonState extends State<_ConversationRowSkeleton> with
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(height: 12, width: 140, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(4))),
+                  Container(
+                    height: 12,
+                    width: 140,
+                    decoration: BoxDecoration(
+                      color: base,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Container(height: 12, width: double.infinity, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(4))),
+                  Container(
+                    height: 12,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: base,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -541,7 +602,11 @@ class _EmptyConversationsState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
       child: Column(
         children: [
-          Icon(Icons.chat_bubble_outline, size: 56, color: Colors.grey.shade400),
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 56,
+            color: Colors.grey.shade400,
+          ),
           const SizedBox(height: 16),
           Text(
             'Aún no tienes conversaciones',
@@ -556,7 +621,11 @@ class _EmptyConversationsState extends StatelessWidget {
           Text(
             'Cuando hables con alguien, aparecerá aquí.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF71717A), height: 1.4),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFF71717A),
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -578,7 +647,11 @@ class _InboxErrorState extends StatelessWidget {
         children: [
           Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade500),
           const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 14)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 14),
+          ),
           const SizedBox(height: 16),
           TextButton(onPressed: onRetry, child: const Text('Reintentar')),
         ],
@@ -605,7 +678,10 @@ class _SuggestionsSection extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         child: Text(
           'No hay más redes sugeridas por ahora.',
-          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF71717A)),
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: const Color(0xFF71717A),
+          ),
         ),
       );
     }
@@ -667,14 +743,20 @@ class _SuggestionRowState extends State<_SuggestionRow> {
                 widget.model.nombre,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               if (short.isNotEmpty)
                 Text(
                   short,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF71717A)),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF71717A),
+                  ),
                 ),
             ],
           ),
@@ -700,15 +782,26 @@ class _SuggestionRowState extends State<_SuggestionRow> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
           ),
           child: _busy
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
-              : Text('Seguir', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
+              : Text(
+                  'Seguir',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
         IconButton(
           visualDensity: VisualDensity.compact,

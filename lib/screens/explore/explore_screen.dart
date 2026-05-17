@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -34,7 +33,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      context.read<GlobalFeedProvider>().loadInitial();
+      context.read<GlobalFeedProvider>().loadInitial(
+        category: _tabs[_selectedTab].toLowerCase(),
+      );
       _initialized = true;
     }
   }
@@ -48,14 +49,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   void _onScroll() {
     final provider = context.read<GlobalFeedProvider>();
-    if (!_scrollController.hasClients || provider.isLoadingMore || !provider.hasMore) return;
+    if (!_scrollController.hasClients ||
+        provider.isLoadingMore ||
+        !provider.hasMore) {
+      return;
+    }
     if (_scrollController.position.extentAfter < 220) {
       provider.loadMore();
     }
   }
 
   void _onTabSelected(int index) {
+    if (_selectedTab == index) return;
     setState(() => _selectedTab = index);
+    context.read<GlobalFeedProvider>().setCategory(_tabs[index].toLowerCase());
   }
 
   @override
@@ -83,10 +90,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
                 child: Text(
                   _tabs[_selectedTab],
-                  style: AppTheme.headlineMedium.copyWith(fontWeight: FontWeight.w900),
+                  style: AppTheme.headlineMedium.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),
@@ -96,20 +108,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
               SliverFillRemaining(
                 child: ExploreErrorState(
                   message: provider.errorMessage!,
-                  onRetry: () => provider.loadInitial(),
+                  onRetry: () => provider.loadInitial(
+                    category: _tabs[_selectedTab].toLowerCase(),
+                  ),
                 ),
               )
             else if (provider.posts.isEmpty)
               const SliverFillRemaining(child: ExploreEmptyState())
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final PostModel post = provider.posts[index];
-                    return ExplorePostCard(post: post);
-                  },
-                  childCount: provider.posts.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final PostModel post = provider.posts[index];
+                  return ExplorePostCard(post: post);
+                }, childCount: provider.posts.length),
               ),
             if (provider.isLoadingMore)
               SliverToBoxAdapter(
@@ -138,7 +149,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   child: Center(
                     child: Text(
                       'Has alcanzado el final del feed',
-                      style: AppTheme.bodyMedium.copyWith(color: AppTheme.onSurface.withOpacity(0.7)),
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: AppTheme.onSurface.withAlpha(179),
+                      ),
                     ),
                   ),
                 ),
@@ -153,13 +166,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
 class _ExploreHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
-  double get minExtent => kToolbarHeight + WidgetsBinding.instance.window.padding.top / WidgetsBinding.instance.window.devicePixelRatio;
+  double get minExtent {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    return kToolbarHeight + view.padding.top / view.devicePixelRatio;
+  }
 
   @override
-  double get maxExtent => kToolbarHeight + WidgetsBinding.instance.window.padding.top / WidgetsBinding.instance.window.devicePixelRatio;
+  double get maxExtent {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    return kToolbarHeight + view.padding.top / view.devicePixelRatio;
+  }
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return const ExploreHeader();
   }
 

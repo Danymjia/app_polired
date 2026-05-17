@@ -7,6 +7,7 @@ import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/network_provider.dart';
+import '../../widgets/safe_network_image.dart';
 
 /// Pantalla de Perfil de Usuario.
 /// Muestra estadísticas, biografía y una cuadrícula de publicaciones.
@@ -47,9 +48,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.add_box_outlined, color: AppTheme.primaryText, size: 28),
+          icon: const Icon(
+            Icons.add_box_outlined,
+            color: AppTheme.primaryText,
+            size: 28,
+          ),
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPostScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddPostScreen()),
+            );
           },
         ),
         title: Text(
@@ -62,9 +70,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppTheme.primaryText, size: 28),
+            icon: const Icon(
+              Icons.more_horiz,
+              color: AppTheme.primaryText,
+              size: 28,
+            ),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
           ),
         ],
@@ -94,16 +109,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 77,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.5)),
+                          border: Border.all(
+                            color: AppTheme.outlineVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
                         ),
                         padding: const EdgeInsets.all(2),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(38.5),
-                          child: user?.fotoPerfil != null && user!.fotoPerfil!.isNotEmpty
-                              ? Image.network(
-                                  user.fotoPerfil!,
+                          child:
+                              user?.fotoPerfil != null &&
+                                  user!.fotoPerfil!.isNotEmpty
+                              ? SafeNetworkImage(
+                                  url: user.fotoPerfil,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => _buildInitialsAvatar(initials),
+                                  errorWidget: _buildInitialsAvatar(initials),
                                 )
                               : _buildInitialsAvatar(initials),
                         ),
@@ -153,8 +174,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
-                          context, 
-                          MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -171,12 +194,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            
+
             // Tabs
             Container(
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
+                  top: BorderSide(
+                    color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
               child: Row(
@@ -189,13 +214,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           bottom: BorderSide(color: Colors.black, width: 1.5),
                         ),
                       ),
-                      child: const Icon(Icons.grid_on, size: 26, color: Colors.black),
+                      child: const Icon(
+                        Icons.grid_on,
+                        size: 26,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: const Icon(Icons.video_library_outlined, size: 26, color: AppTheme.onSurfaceVariant),
+                      child: const Icon(
+                        Icons.video_library_outlined,
+                        size: 26,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -243,10 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppTheme.primaryText,
-          ),
+          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.primaryText),
         ),
       ],
     );

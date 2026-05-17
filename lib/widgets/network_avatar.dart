@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import 'safe_network_image.dart';
 import '../../models/network_story_model.dart';
 
 class NetworkAvatar extends StatelessWidget {
@@ -30,9 +31,7 @@ class NetworkAvatar extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [Colors.blue, Colors.red],
-                        )
+                      ? const LinearGradient(colors: [Colors.blue, Colors.red])
                       : null,
                 ),
                 padding: EdgeInsets.all(isSelected ? 2.5 : 0),
@@ -41,7 +40,9 @@ class NetworkAvatar extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: !isSelected
                         ? Border.all(
-                            color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                            color: AppTheme.outlineVariant.withValues(
+                              alpha: 0.3,
+                            ),
                           )
                         : null,
                     color: AppTheme.surface,
@@ -49,12 +50,12 @@ class NetworkAvatar extends StatelessWidget {
                   padding: EdgeInsets.all(isSelected ? 2 : 0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(36),
-                    child: Image.network(
-                      network.imageUrl,
+                    child: SafeNetworkImage(
+                      url: network.imageUrl,
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      errorWidget: Container(
                         color: AppTheme.surfaceContainerHighest,
                         child: const Icon(Icons.domain),
                       ),
@@ -91,7 +92,8 @@ class NetworkAvatar extends StatelessWidget {
                           right: -4,
                           child: CircleAvatar(
                             radius: 6,
-                            backgroundColor: Colors.black, // Primary equivalent for plus bg
+                            backgroundColor:
+                                Colors.black, // Primary equivalent for plus bg
                             child: Icon(
                               Icons.add,
                               size: 8,

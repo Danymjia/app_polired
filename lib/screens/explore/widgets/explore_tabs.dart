@@ -44,9 +44,13 @@ class _ExploreTabsDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 70;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Container(
-      color: AppTheme.surface.withOpacity(0.92),
+      color: AppTheme.surface.withAlpha(235),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -62,7 +66,9 @@ class _ExploreTabsDelegate extends SliverPersistentHeaderDelegate {
                     curve: Curves.easeOut,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: isActive ? AppTheme.surfaceContainerLowest : Colors.transparent,
+                      color: isActive
+                          ? AppTheme.surfaceContainerLowest
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                     ),
                     child: Column(
@@ -71,8 +77,12 @@ class _ExploreTabsDelegate extends SliverPersistentHeaderDelegate {
                         Text(
                           tabs[index],
                           style: AppTheme.bodyLarge.copyWith(
-                            fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-                            color: isActive ? AppTheme.onSurface : AppTheme.onSurface.withOpacity(0.6),
+                            fontWeight: isActive
+                                ? FontWeight.w800
+                                : FontWeight.w500,
+                            color: isActive
+                                ? AppTheme.onSurface
+                                : AppTheme.onSurface.withAlpha(153),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -100,6 +110,7 @@ class _ExploreTabsDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _ExploreTabsDelegate oldDelegate) {
-    return oldDelegate.selectedIndex != selectedIndex || oldDelegate.tabs != tabs;
+    return oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.tabs != tabs;
   }
 }

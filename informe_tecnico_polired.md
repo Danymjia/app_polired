@@ -1,7 +1,7 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.9 — Integración de publicaciones estándar y flujo de artículos de venta (BackendV2)  
-> **Fecha:** Mayo 2026  
+> **Versión:** 1.11 — Integración y endurecimiento de renderizado de imágenes remotas (BackendV2)  
+> **Fecha:** 16 de mayo de 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
 
@@ -109,16 +109,16 @@ lib/
 
 ## 4. Dependencias Instaladas
 
-| Paquete | Versión | Uso |
-|---|---|---|
-| `provider` | ^6.1.5 | Gestión de estado |
-| `http` | ^1.6.0 | Peticiones HTTP al backend |
-| `socket_io_client` | ^3.1.4 | WebSocket con el backend |
-| `shared_preferences` | ^2.5.5 | Persistencia de token y usuario |
-| `go_router` | ^17.2.3 | Navegación declarativa con redirects |
-| `google_fonts` | ^8.1.0 | Tipografía Inter |
-| `flutter_launcher_icons` | ^0.13.1 | Generación de íconos de la app |
-| `image_picker` | ^1.2.2 | Selección de foto de perfil desde galería |
+| Paquete                  | Versión | Uso                                       |
+| ------------------------ | ------- | ----------------------------------------- |
+| `provider`               | ^6.1.5  | Gestión de estado                         |
+| `http`                   | ^1.6.0  | Peticiones HTTP al backend                |
+| `socket_io_client`       | ^3.1.4  | WebSocket con el backend                  |
+| `shared_preferences`     | ^2.5.5  | Persistencia de token y usuario           |
+| `go_router`              | ^17.2.3 | Navegación declarativa con redirects      |
+| `google_fonts`           | ^8.1.0  | Tipografía Inter                          |
+| `flutter_launcher_icons` | ^0.13.1 | Generación de íconos de la app            |
+| `image_picker`           | ^1.2.2  | Selección de foto de perfil desde galería |
 
 ---
 
@@ -134,25 +134,26 @@ http://10.0.2.2:3000/api   (emulador Android)
 
 ### Endpoints
 
-| Método | Ruta | Uso |
-|---|---|---|
-| `POST` | `/auth/login` | Login con email + password |
-| `POST` | `/registro-estudiantes` | Crear cuenta nueva |
-| `POST` | `/recuperar-password-e` | Enviar email de recuperación |
-| `GET` | `/perfil-estudiante` | Obtener datos completos del usuario autenticado (incluye `biografia`) |
-| `PATCH` | `/completar/perfil` | Completar perfil: `username`, `fotoPerfil` (base64, opcional) y `biografia` (opcional, máx. 150 caracteres) |
-| `PATCH` | `/perfil/username` | Cambiar nombre de usuario (perfil ya completo) |
-| `PATCH` | `/estudiante/:id` | Actualizar datos de perfil: `nombre`, `apellido`, `biografia` (máx. 150 caracteres), etc. |
-| `GET` | `/mensajes/conversaciones` | Listar conversaciones 1:1 del usuario autenticado (`{ conversaciones }`) |
-| `GET` | `/redes/listar` | Listar comunidades disponibles |
-| `POST` | `/estudiantes/unirse/red` | Unirse a una comunidad específica |
-| `POST` | `/estudiantes/publicaciones` | Crear post estándar (Comunidad/Noticias) |
-| `POST` | `/publicaciones/articulos` | Crear post de Venta o Cursos pagados |
-| `GET` | `/estudiantes/listar/redes` | Listar redes inscritas por el usuario |
-| `GET` | `/publicaciones/red/:redId` | Obtener feed filtrado por red (Home) |
-| `GET` | `/publicaciones/global` | Feed global (Reservado para Explorar) |
-| `GET` | `/notificaciones` | Listar notificaciones del usuario |
-| `PATCH` | `/notificaciones/:id/leida` | Marcar notificación como leída |
+| Método  | Ruta                              | Uso                                                                                                         |
+| ------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `POST`  | `/auth/login`                     | Login con email + password                                                                                  |
+| `POST`  | `/registro-estudiantes`           | Crear cuenta nueva                                                                                          |
+| `POST`  | `/recuperar-password-e`           | Enviar email de recuperación                                                                                |
+| `GET`   | `/perfil-estudiante`              | Obtener datos completos del usuario autenticado (incluye `biografia`)                                       |
+| `PATCH` | `/completar/perfil`               | Completar perfil: `username`, `fotoPerfil` (base64, opcional) y `biografia` (opcional, máx. 150 caracteres) |
+| `PATCH` | `/perfil/username`                | Cambiar nombre de usuario (perfil ya completo)                                                              |
+| `PATCH` | `/estudiante/:id`                 | Actualizar datos de perfil: `nombre`, `apellido`, `biografia` (máx. 150 caracteres), etc.                   |
+| `GET`   | `/mensajes/conversaciones`        | Listar conversaciones 1:1 del usuario autenticado (`{ conversaciones }`)                                    |
+| `GET`   | `/redes/listar`                   | Listar comunidades disponibles                                                                              |
+| `POST`  | `/estudiantes/unirse/red`         | Unirse a una comunidad específica                                                                           |
+| `POST`  | `/estudiantes/publicaciones`      | Crear post estándar (Comunidad/Noticias)                                                                    |
+| `POST`  | `/publicaciones/articulos`        | Crear post de Venta o Cursos pagados                                                                        |
+| `GET`   | `/estudiantes/listar/redes`       | Listar redes inscritas por el usuario                                                                       |
+| `GET`   | `/publicaciones/red/:redId`       | Obtener feed filtrado por red (Home)                                                                        |
+| `GET`   | `/publicaciones/global`           | Feed global (Reservado para Explorar)                                                                       |
+| `GET`   | `/publicaciones/articulos/global` | Feed global de artículos (Marketplace/Cursos), filtrado por `categoria`                                     |
+| `GET`   | `/notificaciones`                 | Listar notificaciones del usuario                                                                           |
+| `PATCH` | `/notificaciones/:id/leida`       | Marcar notificación como leída                                                                              |
 
 > Rutas de perfil adicionales declaradas en `lib/config/constants.dart`: `perfilUsernameEndpoint` → `/perfil/username`. La ruta `PATCH /estudiante/:id` se arma en código con el `_id` del usuario autenticado.
 
@@ -188,17 +189,17 @@ http://10.0.2.2:3000/api   (emulador Android)
 
 Los tokens fueron extraídos directamente de los HTMLs de referencia proporcionados.
 
-| Token | Valor | Uso |
-|---|---|---|
-| `background` | `#fbf9f8` | Fondo de pantallas |
+| Token                 | Valor     | Uso                      |
+| --------------------- | --------- | ------------------------ |
+| `background`          | `#fbf9f8` | Fondo de pantallas       |
 | `surfaceContainerLow` | `#f5f3f3` | Fondo de campos de texto |
-| `primary` (botones) | `#1D3557` | Botones principales |
-| `primaryText` | `#000000` | Títulos "Polired" |
-| `onSurface` | `#1b1c1c` | Texto principal |
-| `onSurfaceVariant` | `#474747` | Texto secundario |
-| `outline` | `#777777` | Bordes y captions |
-| `outlineVariant` | `#c6c6c6` | Bordes suaves |
-| `error` | `#ba1a1a` | Mensajes de error |
+| `primary` (botones)   | `#1D3557` | Botones principales      |
+| `primaryText`         | `#000000` | Títulos "Polired"        |
+| `onSurface`           | `#1b1c1c` | Texto principal          |
+| `onSurfaceVariant`    | `#474747` | Texto secundario         |
+| `outline`             | `#777777` | Bordes y captions        |
+| `outlineVariant`      | `#c6c6c6` | Bordes suaves            |
+| `error`               | `#ba1a1a` | Mensajes de error        |
 
 **Fuente:** Inter (Google Fonts)  
 **Border radius campos:** 8px (`0.5rem`)
@@ -272,8 +273,8 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - **Integración con Backend:** El feed ya no utiliza datos mock. Consume publicaciones reales mediante `GET /publicaciones/red/:redId`.
 - **TopAppBar:** Efecto blur, botón `add_box`, título "Polired" y acceso a notificaciones (icono búho).
 - **Network Stories:** Lista horizontal de las redes del estudiante (`GET /estudiantes/listar/redes`).
-    - **Lógica de Filtrado:** Al seleccionar una red, se carga automáticamente su feed específico.
-    - **Sin Fallback Global:** Si el usuario no tiene redes o la red seleccionada está vacía, se muestra un estado informativo. No se mezcla con el feed global por arquitectura.
+  - **Lógica de Filtrado:** Al seleccionar una red, se carga automáticamente su feed específico.
+  - **Sin Fallback Global:** Si el usuario no tiene redes o la red seleccionada está vacía, se muestra un estado informativo. No se mezcla con el feed global por arquitectura.
 - **Feed:** Lista de `PostCard` que renderiza contenido real (texto e imágenes).
 - **UX:** Manejo de estados `loading`, `empty` (sin publicaciones), `error` (fallo de red) y `pull-to-refresh`.
 
@@ -308,6 +309,7 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 - **Diseño:** Inputs minimalistas tipo iOS.
 
 ### 7.13 Settings & Secondary Screens
+
 - **Centro de Control:** Gestión de notificaciones, ayuda, soporte y privacidad.
 - **Solicitud de Red:** Formulario para proponer nuevas redes académicas.
 - **Logout:** Limpieza de `SharedPreferences` y desconexión de Sockets.
@@ -343,8 +345,8 @@ Los tokens fueron extraídos directamente de los HTMLs de referencia proporciona
 
 /home (MainLayout)
    ├── Index 0: Home / Feed
-   ├── Index 1: Explorar (Placeholder)
-   ├── Index 2: Publicar (Placeholder)
+   ├── Index 1: Explorar (Feed por categorías)
+   ├── Index 2: Publicar (Formulario real)
    ├── Index 3: Mensajes (lista de conversaciones + redes + sugerencias)
    └── Index 4: Perfil
        └── logout (previsto) → /login
@@ -382,12 +384,12 @@ La app móvil envía el mismo token que las peticiones HTTP mediante `OptionBuil
 
 ### Eventos utilizados en la bandeja (solo lectura)
 
-| Dirección | Evento | Uso en la app |
-|---|---|---|
-| Servidor → cliente | `mensaje:nuevo` | Actualizar preview y orden de la conversación en la lista |
-| Servidor → cliente | `mensaje:enviado` | Igual (mensaje propio cuando el socket no estaba en la room) |
-| Servidor → cliente | `usuario:online` / `usuario:offline` | **No** usados en UI (fase actual) |
-| Servidor → cliente | `chat:error` | **No** suscrito en la bandeja (solo errores de `join` / envío) |
+| Dirección          | Evento                               | Uso en la app                                                  |
+| ------------------ | ------------------------------------ | -------------------------------------------------------------- |
+| Servidor → cliente | `mensaje:nuevo`                      | Actualizar preview y orden de la conversación en la lista      |
+| Servidor → cliente | `mensaje:enviado`                    | Igual (mensaje propio cuando el socket no estaba en la room)   |
+| Servidor → cliente | `usuario:online` / `usuario:offline` | **No** usados en UI (fase actual)                              |
+| Servidor → cliente | `chat:error`                         | **No** suscrito en la bandeja (solo errores de `join` / envío) |
 
 La carga inicial de conversaciones es **HTTP**: `GET /mensajes/conversaciones`. Los eventos anteriores mantienen la lista al día cuando alguien envía vía WebSocket (`mensaje:enviar` en servidor). Los mensajes enviados **solo** por HTTP **no** disparan estos eventos en el backend actual.
 
@@ -401,8 +403,8 @@ La carga inicial de conversaciones es **HTTP**: `GET /mensajes/conversaciones`. 
 
 ## 11. Assets
 
-| Archivo | Ruta |
-|---|---|
+| Archivo        | Ruta                          |
+| -------------- | ----------------------------- |
 | Logo de la app | `assets/images/logo_v5.2.png` |
 
 > **Acción realizada:** Configurado como ícono de lanzador para Android e iOS mediante `flutter_launcher_icons`. Nombre de la app actualizado a **"Polired"**.
@@ -412,30 +414,37 @@ La carga inicial de conversaciones es **HTTP**: `GET /mensajes/conversaciones`. 
 ## 12. Validaciones y UX
 
 ### Sistema de Notificaciones (`AppSnackbar`)
+
 Implementado en `lib/utils/app_snackbar.dart`, inspirado en Threads/Discord.
+
 - **Éxito (Verde):** Acciones completadas correctamente.
 - **Error (Rojo):** Errores de validación o fallos de red. `ApiService` está configurado para parsear tanto mensajes simples (`msg`) como arreglos de errores complejos de `express-validator`, extrayendo la descripción específica del fallo.
 - **Info (Azul):** Avisos de sistema (ej. "Cuenta no activada").
 
 ### Validaciones (`Validators`)
+
 Centralizadas en `lib/utils/validators.dart`.
 
 #### Login
+
 - Usuario/Email: no vacío.
 - Password: no vacío, mínimo 8 caracteres (sincronizado con backend).
 - **Manejo de errores:** Detección robusta de cuenta no activada, usuario inexistente y contraseña incorrecta mediante el mapeo exacto de mensajes del backend (`confirma`, `registrado`, `incorrecta`).
 
 #### Registro
+
 - Nombre/Apellido: requerido, solo letras (regex), sincronizado con las restricciones del backend.
 - Email: regex estricto de correo electrónico.
 - Password: fuerte (mínimo 8 caracteres, 1 mayúscula, 1 número).
 - Confirmar password: debe coincidir exactamente.
 
 #### Recuperar contraseña
+
 - Email: requerido, formato válido.
 - **UX:** Muestra estado de éxito dentro de la pantalla o error si el correo no se encuentra en la base de datos (mapeo de excepción `registrado`).
 
 #### Completar y editar perfil (descripción)
+
 - Campo **Descripción** / `biografia`: máximo **150** caracteres en cliente y backend; opcional al completar perfil, editable en "Editar perfil".
 
 ---
@@ -450,14 +459,14 @@ flutter analyze → No issues found ✅
 
 ## 14. Decisiones Técnicas
 
-| Decisión | Alternativa | Razón |
-|---|---|---|
-| Provider | Riverpod / Bloc | Menor complejidad |
-| GoRouter | Navigator 2.0 | Redirects de auth declarativos |
-| `package:http` | Dio | Suficiente para la escala |
-| Tema claro | Tema oscuro | Los HTMLs de referencia son light |
-| DI manual | GetIt | Evitar overhead |
-| `10.0.2.2` | `localhost` | IP del host en emulador Android |
+| Decisión                                | Alternativa                       | Razón                                                                                                                |
+| --------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Provider                                | Riverpod / Bloc                   | Menor complejidad                                                                                                    |
+| GoRouter                                | Navigator 2.0                     | Redirects de auth declarativos                                                                                       |
+| `package:http`                          | Dio                               | Suficiente para la escala                                                                                            |
+| Tema claro                              | Tema oscuro                       | Los HTMLs de referencia son light                                                                                    |
+| DI manual                               | GetIt                             | Evitar overhead                                                                                                      |
+| `10.0.2.2`                              | `localhost`                       | IP del host en emulador Android                                                                                      |
 | Refresco de perfil tras login e `_init` | Confiar solo en el JSON del login | El backend no envía `biografia` en el login; sin `GET /perfil-estudiante` la descripción se perdía al guardar sesión |
 
 ---
@@ -476,7 +485,7 @@ flutter analyze → No issues found ✅
 - [x] Bandeja de Mensajes: lista de conversaciones (HTTP + actualización socket), redes del usuario, sugerencias de redes y estados de conexión WebSocket
 - [ ] Pantalla de chat 1:1 (historial `GET /mensajes/conversaciones/:id`, `join:conversacion`, envío `mensaje:enviar` / HTTP según fase)
 - [ ] Implementación de funcionalidades de interacción (Likes/Comentarios reales)
-- [ ] Sección "Explorar" con Feed Global por categorías (Noticias, Ventas, Cursos)
+- [x] Sección "Explorar" con Feed Global por categorías (Noticias, Ventas, Cursos)
 
 ---
 
@@ -485,24 +494,29 @@ flutter analyze → No issues found ✅
 Para garantizar la compatibilidad con el backend (que expone identificadores tanto como `_id` como `id` según el endpoint), se implementó un sistema de normalización centralizado en `lib/utils/json_ids.dart`.
 
 ### Problema Identificado
+
 En fases anteriores, el cliente esperaba exclusivamente `_id`. Esto causaba:
+
 - Identificadores vacíos en `SuggestedNetworkModel` cuando el backend devolvía `id`.
 - Filtrado erróneo de sugerencias (se omitían redes con `id` en lugar de `_id` debido a validaciones de `isEmpty`).
 - Fallos en la pantalla de bienvenida y al unirse a redes (envío de `redId` vacío al backend).
 
 ### Solución: `parseMongoId` y `parseMongoIdFromMap`
+
 Se rediseñó la lógica de parsing para ser extremadamente robusta:
-- **`parseMongoId`**: 
-    - Realiza `trim()` automático a strings.
-    - Rechaza strings vacíos.
-    - Admite tipos `int`.
-    - Soporta mapas complejos (objetos con `$oid` de MongoDB).
-    - Evita el uso de `.toString()` sobre mapas arbitrarios para prevenir basura visual como ID.
-- **`parseMongoIdFromMap`**: 
-    - Intenta obtener el ID buscando en orden de prioridad (configurable, por defecto `_id` -> `id`).
-    - Reutiliza `parseMongoId` para manejar los valores encontrados de forma recursiva o anidada.
+
+- **`parseMongoId`**:
+  - Realiza `trim()` automático a strings.
+  - Rechaza strings vacíos.
+  - Admite tipos `int`.
+  - Soporta mapas complejos (objetos con `$oid` de MongoDB).
+  - Evita el uso de `.toString()` sobre mapas arbitrarios para prevenir basura visual como ID.
+- **`parseMongoIdFromMap`**:
+  - Intenta obtener el ID buscando en orden de prioridad (configurable, por defecto `_id` -> `id`).
+  - Reutiliza `parseMongoId` para manejar los valores encontrados de forma recursiva o anidada.
 
 ### Impacto en el Código
+
 - **Modelos:** `SuggestedNetworkModel` ahora utiliza `parseMongoIdFromMap`, permitiendo que el pool de sugerencias se llene correctamente sin importar el formato de la respuesta.
 - **Servicios:** `NetworkService.getRedesEstudianteStories` normaliza cada entrada y omite aquellas sin ID válido, previniendo errores en el feed. Se añadió validación previa en `unirseRed`.
 - **Providers:** `NetworkProvider.unirseRedes` ahora limpia, normaliza y deduplica los IDs antes de procesar las uniones, devolviendo errores claros si no hay IDs válidos.
@@ -515,6 +529,7 @@ Se rediseñó la lógica de parsing para ser extremadamente robusta:
 Para alinear el comportamiento del frontend con los requerimientos reales del backend (`BackendV2`) y evitar fallos de autorización (401) y campos faltantes, se realizó una reestructuración profunda en el módulo de creación de publicaciones.
 
 ### 17.1 Problemas Detectados en el Flujo Original
+
 1. **Pérdida de Autorización:** La pantalla `AddPostScreen` instanciaba un `ApiService` local (`new ApiService()`) en lugar de heredar el singleton global. Al no contar con el JWT cargado, las solicitudes fallaban con código de error **401 Unauthorized**.
 2. **Formulario Incompleto:** Al enviar publicaciones de tipo Comunidad, Noticias o Cursos a `POST /estudiantes/publicaciones`, no se enviaba el parámetro obligatorio `categoria` en el cuerpo de la petición.
 3. **Categorías no soportadas en Post Estándar:** El backend no permite crear publicaciones de categoría `Venta` mediante el endpoint de estudiantes estándar (`POST /estudiantes/publicaciones`).
@@ -525,6 +540,7 @@ Para alinear el comportamiento del frontend con los requerimientos reales del ba
 ### 17.2 Solución y Correcciones Implementadas
 
 #### A. Reutilización del Servicio Global
+
 - Se modificó `AddPostScreen` para que obtenga e inyecte la instancia global y autenticada de `ApiService` a través de `Provider`:
   ```dart
   PostService(context.read<ApiService>())
@@ -532,11 +548,11 @@ Para alinear el comportamiento del frontend con los requerimientos reales del ba
   Esto garantiza que el encabezado `Authorization: Bearer <token>` se envíe de manera consistente en todas las peticiones de creación de posts y artículos.
 
 #### B. Separación de Rutas por Categoría (Estándar vs. Artículos de Venta)
+
 1. **Publicaciones Estándar (Comunidad, Noticias, Cursos)**
    - **Endpoint:** `POST /estudiantes/publicaciones`
    - **Campos enviados:** `titulo`, `contenido`, `categoria` (comunidad, noticias, cursos) y `comunidadId` (requerido únicamente si la categoría es Comunidad).
    - Se removió la interfaz y el soporte de campos no estructurados (ventas/cursos de pago) en este endpoint.
-   
 2. **Artículos de Venta**
    - **Endpoint:** `POST /publicaciones/articulos`
    - **Campos enviados:**
@@ -549,14 +565,15 @@ Para alinear el comportamiento del frontend con los requerimientos reales del ba
 
 #### C. Cambios en Archivos Clave
 
-| Archivo | Rol de la Corrección |
-|---|---|
+| Archivo                                 | Rol de la Corrección                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lib/screens/post/add_post_screen.dart` | - Remoción de lógicas visuales de venta/cursos de pago no estructuradas del flujo estándar.<br>- Adición dinámica del campo **Precio** únicamente cuando la categoría seleccionada es **Venta**.<br>- Validación estricta de selección de comunidad para la categoría **Comunidad**.<br>- Gestión de estado de carga (`_isLoading`) para prevenir envíos duplicados.<br>- Manejo robusto de errores mediante `AppSnackbar` (incluyendo respuestas 400 y 401). |
-| `lib/services/post_service.dart` | - Actualización del método `createPost` para incluir correctamente el campo `categoria` en el body de la petición HTTP.<br>- Implementación/Mapeo de `createArticle` para redirigir las publicaciones de venta a su endpoint dedicado (`POST /publicaciones/articulos`). |
+| `lib/services/post_service.dart`        | - Actualización del método `createPost` para incluir correctamente el campo `categoria` en el body de la petición HTTP.<br>- Implementación/Mapeo de `createArticle` para redirigir las publicaciones de venta a su endpoint dedicado (`POST /publicaciones/articulos`).                                                                                                                                                                                      |
 
 ---
 
 ### 17.3 Validación Técnica y Resultados
+
 - **Análisis de Código:** Ejecución de validaciones de análisis estático:
   ```bash
   flutter analyze lib/screens/post/add_post_screen.dart lib/services/post_service.dart
@@ -566,4 +583,56 @@ Para alinear el comportamiento del frontend con los requerimientos reales del ba
 
 ---
 
-*Documento actualizado progresivamente con cada fase del desarrollo.*
+_Documento actualizado progresivamente con cada fase del desarrollo._
+
+---
+
+## Cambios recientes (16 mayo 2026)
+
+Se aplicaron mejoras para centralizar y endurecer el manejo de imágenes remotas en la aplicación móvil, con el objetivo de evitar fallos visibles, homogeneizar la UX de carga/errores y facilitar la interoperabilidad con `BackendV2`.
+
+- **Resumen técnico de cambios**:
+  - Nuevo helper `SafeNetworkImage` en `lib/widgets/safe_network_image.dart`.
+    - Soporta `url`, `width`, `height`, `fit`, `alignment`, `placeholder`, `errorWidget` y `borderRadius`.
+    - Muestra spinner durante la carga (`loadingBuilder`) y fallback consistente en errores o URL vacía.
+  - `CircularNetworkAvatar`: avatar circular reutilizable que usa internamente `SafeNetworkImage` y muestra iniciales cuando no hay imagen.
+  - Reemplazos aplicados en el frontend (renderizado de imágenes ahora seguro):
+    - `lib/widgets/network_avatar.dart` — ahora usa `SafeNetworkImage`.
+    - `lib/screens/messages/messages_screen.dart` — avatares y thumbnails migrados a `SafeNetworkImage`/`CircularNetworkAvatar`.
+    - `lib/screens/post/add_post_screen.dart` — selector/preview de redes usa `SafeNetworkImage`.
+    - `lib/screens/profile/profile_screen.dart` — avatar de perfil renderizado con `SafeNetworkImage`.
+
+- **Motivación y beneficios**:
+  - Evitar excepciones visibles o comportamiento inconsistente cuando `Image.network` fallaba.
+  - Centralizar la lógica de placeholders, carga y errores para facilitar mantenimiento y futuras mejoras (p. ej. caching).
+  - Mantener compatibilidad visual: los placeholders previos (iniciales, íconos de grupo) se pasaron como `errorWidget` para preservar la UX.
+
+- **Compatibilidad con BackendV2**:
+  - No se modificó la forma de envío de `fotoPerfil` desde la app: `PATCH /completar/perfil` sigue aceptando Base64 en `fotoPerfil` y/o multipart `files.imagen` (el backend prioriza el archivo cuando existe).
+  - Se actualizó la documentación (`README.md` y `BackendV2/README.md`) para describir la normalización de `mediaUrls` y la flexibilidad en `fotoPerfil`.
+
+- **Validación realizada y pasos sugeridos**:
+  1. Ejecutar análisis estático y resolver advertencias:
+
+     ```bash
+     cd polired
+     flutter pub get
+     flutter analyze
+     ```
+
+  2. Probar manualmente en emulador/dispositivo las pantallas afectadas:
+     - `Perfil`: avatar de usuario y edición de foto.
+     - `Mensajes`: lista de conversaciones y avatares.
+     - `Add Post` / `Stories`: vistas de redes y selector de imágenes.
+
+  3. Chequear casos límite:
+     - URL nula o vacía → muestra iniciales/placeholder.
+     - Imagen 404 o corrupta → muestra `errorWidget` configurado.
+     - Carga prolongada → aparece spinner y no rompe la UI.
+
+- **Próximos pasos recomendados**:
+  - Ejecutar `flutter analyze` y resolver avisos (tengo la tarea pendiente en la lista TODO).
+  - Opcional: migrar `SafeNetworkImage` a `cached_network_image` para caching y placeholders más avanzados.
+  - Revisar pantallas restantes si detectas imágenes directas residuales.
+
+> Nota: según tu preferencia guardada, actualizaré `polired/informe_tecnico_polired.md` cada vez que solicites "actualizar la documentación". Si quieres que documente otras modificaciones (logs de commits, pruebas ejecutadas, o capturas), dímelo y lo añado.

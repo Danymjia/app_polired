@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../services/api_service.dart';
 import '../services/post_service.dart';
 
 class GlobalFeedProvider extends ChangeNotifier {
@@ -14,6 +15,7 @@ class GlobalFeedProvider extends ChangeNotifier {
   bool _hasMore = true;
   int _currentPage = 1;
   String? _errorMessage;
+  String _selectedCategory = 'noticias';
 
   List<PostModel> get posts => List.unmodifiable(_posts);
   bool get isLoadingInitial => _isLoadingInitial;
@@ -21,28 +23,32 @@ class GlobalFeedProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   int get currentPage => _currentPage;
   String? get errorMessage => _errorMessage;
+  String get selectedCategory => _selectedCategory;
 
-  Future<void> loadInitial() async {
+  Future<void> loadInitial({String category = 'noticias'}) async {
     if (_isLoadingInitial || _isLoadingMore) return;
 
+    _selectedCategory = category;
     _isLoadingInitial = true;
     _errorMessage = null;
     _currentPage = 1;
     _hasMore = true;
     notifyListeners();
 
-    final result = await _postService.fetchGlobalFeed(page: _currentPage, limit: _defaultLimit);
+    final result = await _loadFeedForCategory(
+      category,
+      page: _currentPage,
+      limit: _defaultLimit,
+    );
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
       _posts
         ..clear()
         ..addAll(_removeDuplicatePosts(newPosts));
-      if (newPosts.length < _defaultLimit) {
-        _hasMore = false;
-      }
+      _hasMore = newPosts.length >= _defaultLimit;
     } else {
-      _errorMessage = result.message ?? 'Error al cargar el feed global';
+      _errorMessage = result.message ?? 'Error al cargar el feed';
       _posts.clear();
       _hasMore = false;
     }
@@ -51,8 +57,13 @@ class GlobalFeedProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setCategory(String category) async {
+    if (_selectedCategory == category) return;
+    await loadInitial(category: category);
+  }
+
   Future<void> refreshFeed() async {
-    await loadInitial();
+    await loadInitial(category: _selectedCategory);
   }
 
   Future<void> loadMore() async {
@@ -63,7 +74,11 @@ class GlobalFeedProvider extends ChangeNotifier {
     notifyListeners();
 
     final nextPage = _currentPage + 1;
-    final result = await _postService.fetchGlobalFeed(page: nextPage, limit: _defaultLimit);
+    final result = await _loadFeedForCategory(
+      _selectedCategory,
+      page: nextPage,
+      limit: _defaultLimit,
+    );
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
@@ -78,11 +93,38 @@ class GlobalFeedProvider extends ChangeNotifier {
         _currentPage = nextPage;
       }
     } else {
-      _errorMessage = result.message ?? 'No se pudieron cargar más publicaciones';
+      _errorMessage =
+          result.message ?? 'No se pudieron cargar más publicaciones';
     }
 
     _isLoadingMore = false;
     notifyListeners();
+  }
+
+  Future<ApiResult<List<PostModel>>> _loadFeedForCategory(
+    String category, {
+    required int page,
+    required int limit,
+  }) async {
+    final key = category.toLowerCase();
+    if (key == 'noticias') {
+      return _postService.fetchGlobalFeed(page: page, limit: limit);
+    }
+    if (key == 'marketplace') {
+      return _postService.fetchArticlesFeed(
+        page: page,
+        limit: limit,
+        categoria: 'venta',
+      );
+    }
+    if (key == 'cursos') {
+      return _postService.fetchArticlesFeed(
+        page: page,
+        limit: limit,
+        categoria: 'cursos',
+      );
+    }
+    return _postService.fetchGlobalFeed(page: page, limit: limit);
   }
 
   List<PostModel> _removeDuplicatePosts(List<PostModel> posts) {

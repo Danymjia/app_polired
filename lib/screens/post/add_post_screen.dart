@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../widgets/safe_network_image.dart';
 import '../../providers/network_provider.dart';
 import '../../services/post_service.dart';
 import '../../services/api_service.dart';
@@ -84,13 +85,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
         return;
       }
 
-      final result = categoryValue == 'venta'
+      final result = (categoryValue == 'venta' || categoryValue == 'cursos')
           ? await _postService.createArticle(
               titulo: title,
               descripcion: content,
               precio: double.tryParse(_priceController.text.trim()) ?? 0.0,
+              categoria: categoryValue,
               comunidadId: comunidadId,
-              imagen: null,
             )
           : await _postService.createPost(
               titulo: title,
@@ -244,7 +245,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    if (_category == 'Venta') ...[
+                    if (_category == 'Venta' || _category == 'Cursos') ...[
                       _buildSectionLabel('PRECIO (\$)'),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -253,11 +254,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
                           decimal: true,
                         ),
                         validator: (value) {
-                          if (_category != 'Venta') return null;
-                          if (value == null || value.trim().isEmpty)
+                          if (_category != 'Venta' && _category != 'Cursos') {
+                            return null;
+                          }
+                          if (value == null || value.trim().isEmpty) {
                             return 'Requerido';
-                          if (double.tryParse(value.trim()) == null)
+                          }
+                          if (double.tryParse(value.trim()) == null) {
                             return 'Precio inválido';
+                          }
                           return null;
                         },
                         style: const TextStyle(
@@ -423,11 +428,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
                         border: Border.all(color: Colors.white, width: 2),
                       ),
                       child: ClipOval(
-                        child: Image.network(
-                          net.imageUrl,
+                        child: SafeNetworkImage(
+                          url: net.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.group),
+                          errorWidget: const Icon(Icons.group),
                         ),
                       ),
                     ),

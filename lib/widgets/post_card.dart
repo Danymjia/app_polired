@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
+import 'safe_network_image.dart';
 
 /// Tarjeta de publicación adaptada al modelo real del backend.
 /// Soporta publicaciones de texto, imagen y video (con poster).
@@ -31,7 +32,10 @@ class _PostCardState extends State<PostCard> {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
               children: [
-                _AuthorAvatar(imageUrl: post.authorImageUrl, name: post.authorUsername),
+                _AuthorAvatar(
+                  imageUrl: post.authorImageUrl,
+                  name: post.authorUsername,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -76,8 +80,7 @@ class _PostCardState extends State<PostCard> {
           ),
 
           // ── Imagen (si aplica) ───────────────────────────────────────────────
-          if (post.hasImage)
-            _PostImage(mediaUrl: post.mediaUrl!),
+          if (post.hasImage) _PostImage(mediaUrl: post.mediaUrl!),
 
           // ── Acciones ────────────────────────────────────────────────────────
           Padding(
@@ -98,8 +101,11 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Icon(Icons.chat_bubble_outline,
-                    color: AppTheme.onSurfaceVariant, size: 22),
+                const Icon(
+                  Icons.chat_bubble_outline,
+                  color: AppTheme.onSurfaceVariant,
+                  size: 22,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '${post.commentsCount}',
@@ -109,8 +115,11 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.bookmark_border,
-                    color: AppTheme.onSurfaceVariant, size: 22),
+                const Icon(
+                  Icons.bookmark_border,
+                  color: AppTheme.onSurfaceVariant,
+                  size: 22,
+                ),
               ],
             ),
           ),
@@ -123,7 +132,11 @@ class _PostCardState extends State<PostCard> {
             ),
 
           // Separador
-          const Divider(height: 1, thickness: 0.5, color: AppTheme.surfaceContainerHigh),
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            color: AppTheme.surfaceContainerHigh,
+          ),
         ],
       ),
     );
@@ -139,28 +152,15 @@ class _AuthorAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return ClipOval(
-        child: Image.network(
-          imageUrl!,
-          width: 36,
-          height: 36,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stack) => _initials,
-        ),
-      );
-    }
-    return _initials;
-  }
-
-  Widget get _initials {
-    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    return CircleAvatar(
-      radius: 18,
-      backgroundColor: AppTheme.primary,
-      child: Text(
-        letter,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+    return CircularNetworkAvatar(
+      imageUrl: imageUrl,
+      initials: name.isNotEmpty ? name[0].toUpperCase() : '?',
+      size: 36,
+      backgroundColor: AppTheme.surfaceContainerLow,
+      initialsStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
       ),
     );
   }
@@ -176,28 +176,20 @@ class _PostImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 400),
-      child: Image.network(
-        mediaUrl,
+      child: SafeNetworkImage(
+        url: mediaUrl,
         width: double.infinity,
+        height: 400,
         fit: BoxFit.cover,
-        loadingBuilder: (_, child, progress) {
-          if (progress == null) return child;
-          return Container(
-            height: 200,
-            color: AppTheme.surfaceContainer,
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: AppTheme.primary,
-                strokeWidth: 2,
-              ),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stack) => Container(
+        errorWidget: Container(
           height: 180,
           color: AppTheme.surfaceContainer,
           child: const Center(
-            child: Icon(Icons.broken_image_outlined, size: 48, color: AppTheme.onSurfaceVariant),
+            child: Icon(
+              Icons.broken_image_outlined,
+              size: 48,
+              color: AppTheme.onSurfaceVariant,
+            ),
           ),
         ),
       ),
@@ -230,7 +222,10 @@ class _PostContentState extends State<_PostContent> {
             children: [
               TextSpan(
                 text: '${widget.post.authorUsername} ',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
               TextSpan(text: text),
             ],

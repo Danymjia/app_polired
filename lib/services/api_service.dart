@@ -135,6 +135,24 @@ class ApiService {
     }
   }
 
+  // ─── DELETE ──────────────────────────────────────────────────────────────
+  Future<ApiResult<dynamic>> delete(String endpoint) async {
+    try {
+      final uri = Uri.parse('${AppConstants.baseUrl}$endpoint');
+      final response = await _client
+          .delete(uri, headers: _headers)
+          .timeout(AppConstants.requestTimeout);
+
+      return _handleResponse(response);
+    } on SocketException {
+      return ApiResult.error('Sin conexión. Verifica tu red.');
+    } on TimeoutException {
+      return ApiResult.error('Tiempo de espera agotado. Intenta de nuevo.');
+    } catch (e) {
+      return ApiResult.error('Error inesperado: $e');
+    }
+  }
+
   ApiResult<dynamic> _handleResponse(http.Response response) {
     try {
       final decoded = jsonDecode(response.body);

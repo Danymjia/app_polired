@@ -9,6 +9,7 @@ import 'providers/messages_inbox_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/community_feed_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/post_store_provider.dart';
 import 'repositories/conversations_repository.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
@@ -49,6 +50,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         Provider<ApiService>.value(value: apiService),
+        Provider<PostService>.value(value: postService),
         Provider<SocketService>.value(value: socketService),
         Provider<NetworkService>.value(value: networkService),
         ChangeNotifierProvider(
@@ -61,10 +63,15 @@ Future<void> main() async {
           create: (_) => NetworkProvider(networkService, postService),
         ),
         ChangeNotifierProvider(
-          create: (_) => CommunityFeedProvider(postService),
+          create: (_) => PostStoreProvider(postService),
         ),
-        ChangeNotifierProvider(
-          create: (_) => GlobalFeedProvider(postService),
+        ChangeNotifierProxyProvider<PostStoreProvider, CommunityFeedProvider>(
+          create: (context) => CommunityFeedProvider(postService, context.read<PostStoreProvider>()),
+          update: (_, store, previous) => previous ?? CommunityFeedProvider(postService, store),
+        ),
+        ChangeNotifierProxyProvider<PostStoreProvider, GlobalFeedProvider>(
+          create: (context) => GlobalFeedProvider(postService, context.read<PostStoreProvider>()),
+          update: (_, store, previous) => previous ?? GlobalFeedProvider(postService, store),
         ),
         ChangeNotifierProvider(
           create: (_) => NotificationProvider(notificationService),

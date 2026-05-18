@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/global_feed_provider.dart';
+import '../../providers/post_store_provider.dart';
 import '../../models/post_model.dart';
 import 'widgets/explore_empty_state.dart';
 import 'widgets/explore_error_state.dart';
@@ -102,9 +103,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 ),
               ),
             ),
-            if (provider.isLoadingInitial && provider.posts.isEmpty)
+            if (provider.isLoadingInitial && provider.postIds.isEmpty)
               const ExploreLoading()
-            else if (provider.errorMessage != null && provider.posts.isEmpty)
+            else if (provider.errorMessage != null && provider.postIds.isEmpty)
               SliverFillRemaining(
                 child: ExploreErrorState(
                   message: provider.errorMessage!,
@@ -113,14 +114,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
               )
-            else if (provider.posts.isEmpty)
+            else if (provider.postIds.isEmpty)
               const SliverFillRemaining(child: ExploreEmptyState())
             else
               SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final PostModel post = provider.posts[index];
-                  return ExplorePostCard(post: post);
-                }, childCount: provider.posts.length),
+                  final String postId = provider.postIds[index];
+                  return Builder(
+                    builder: (context) {
+                      final post = context.select<PostStoreProvider, PostModel?>(
+                        (store) => store.getPost(postId)
+                      );
+                      if (post == null) return const SizedBox.shrink();
+                      return ExplorePostCard(post: post);
+                    },
+                  );
+                }, childCount: provider.postIds.length),
               ),
             if (provider.isLoadingMore)
               SliverToBoxAdapter(
@@ -142,7 +151,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
               ),
-            if (!provider.hasMore && provider.posts.isNotEmpty)
+            if (!provider.hasMore && provider.postIds.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 24.0),

@@ -1,7 +1,7 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.12 — Flujo unificado de subida física de imágenes, carrusel premium y corrección de validación bloqueante (BackendV2)  
-> **Fecha:** 17 de mayo de 2026  
+> **Versión:** 1.13 — Sistema Social Unificado: PostStoreProvider, interacciones sociales para Publicacion y Articulo, rediseño del Explore Feed y corrección de replies  
+> **Fecha:** 18 de mayo de 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
 
@@ -29,6 +29,7 @@ Provider + Repository Pattern simplificado
 main.dart
   └── MultiProvider
         ├── Provider<ApiService>
+        ├── Provider<PostService>
         ├── Provider<SocketService>
         ├── Provider<NetworkService>
         ├── AuthProvider
@@ -36,6 +37,12 @@ main.dart
         │     └── SocketService ──► Backend Socket.IO (JWT en handshake)
         ├── NetworkProvider
         │     └── NetworkService ──► ApiService ──► Backend HTTP
+        ├── PostStoreProvider          ← store global normalizado de PostModel
+        │     └── PostService ──► ApiService ──► Backend HTTP
+        ├── CommunityFeedProvider  (ProxyProvider<PostStoreProvider, …>)
+        │     └── lista de IDs del feed comunitario
+        ├── GlobalFeedProvider     (ProxyProvider<PostStoreProvider, …>)
+        │     └── lista de IDs por categoría (Noticias / Marketplace / Cursos)
         ├── NotificationProvider
         └── MessagesInboxProvider (ChangeNotifierProxyProvider<AuthProvider, …>)
               ├── ConversationsRepository ──► ApiService
@@ -66,21 +73,32 @@ lib/
 │   ├── api_service.dart
 │   ├── auth_service.dart
 │   ├── network_service.dart
+│   ├── post_service.dart
 │   ├── socket_service.dart
 │   └── storage_service.dart
 ├── providers/
 │   ├── auth_provider.dart
+│   ├── community_feed_provider.dart
+│   ├── global_feed_provider.dart
+│   ├── messages_inbox_provider.dart
 │   ├── network_provider.dart
 │   ├── notification_provider.dart
-│   └── messages_inbox_provider.dart
+│   └── post_store_provider.dart     ← NUEVO: store global normalizado
 ├── screens/
 │   ├── main_layout_screen.dart
+│   ├── explore/
+│   │   ├── explore_screen.dart
+│   │   └── widgets/
+│   │       ├── explore_header.dart
+│   │       ├── explore_post_card.dart  ← rediseñado (diseño unificado)
+│   │       └── explore_tabs.dart
 │   ├── home/
 │   │   └── home_screen.dart
 │   ├── messages/
 │   │   └── messages_screen.dart
 │   ├── post/
-│   │   └── add_post_screen.dart
+│   │   ├── add_post_screen.dart
+│   │   └── post_detail_screen.dart    ← NUEVO: pantalla de detalle
 │   ├── profile/
 │   │   ├── profile_screen.dart
 │   │   ├── edit_profile_screen.dart
@@ -98,11 +116,14 @@ lib/
 │   ├── network_acronym.dart
 │   └── json_ids.dart
 └── widgets/
+    ├── comment_tree_sheet.dart
     ├── polired_logo.dart
+    ├── post_card.dart
+    ├── post_image_carousel.dart
     ├── primary_button.dart
     ├── app_text_field.dart
     ├── network_avatar.dart
-    └── post_card.dart
+    └── safe_network_image.dart
 ```
 
 ---
@@ -134,26 +155,33 @@ http://10.0.2.2:3000/api   (emulador Android)
 
 ### Endpoints
 
-| Método  | Ruta                              | Uso                                                                                                         |
-| ------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `POST`  | `/auth/login`                     | Login con email + password                                                                                  |
-| `POST`  | `/registro-estudiantes`           | Crear cuenta nueva                                                                                          |
-| `POST`  | `/recuperar-password-e`           | Enviar email de recuperación                                                                                |
-| `GET`   | `/perfil-estudiante`              | Obtener datos completos del usuario autenticado (incluye `biografia`)                                       |
-| `PATCH` | `/completar/perfil`               | Completar perfil: `username`, `fotoPerfil` (base64, opcional) y `biografia` (opcional, máx. 150 caracteres) |
-| `PATCH` | `/perfil/username`                | Cambiar nombre de usuario (perfil ya completo)                                                              |
-| `PATCH` | `/estudiante/:id`                 | Actualizar datos de perfil: `nombre`, `apellido`, `biografia` (máx. 150 caracteres), etc.                   |
-| `GET`   | `/mensajes/conversaciones`        | Listar conversaciones 1:1 del usuario autenticado (`{ conversaciones }`)                                    |
-| `GET`   | `/redes/listar`                   | Listar comunidades disponibles                                                                              |
-| `POST`  | `/estudiantes/unirse/red`         | Unirse a una comunidad específica                                                                           |
-| `POST`  | `/estudiantes/publicaciones`      | Crear post estándar (Comunidad/Noticias)                                                                    |
-| `POST`  | `/publicaciones/articulos`        | Crear post de Venta o Cursos pagados                                                                        |
-| `GET`   | `/estudiantes/listar/redes`       | Listar redes inscritas por el usuario                                                                       |
-| `GET`   | `/publicaciones/red/:redId`       | Obtener feed filtrado por red (Home)                                                                        |
-| `GET`   | `/publicaciones/global`           | Feed global (Reservado para Explorar)                                                                       |
-| `GET`   | `/publicaciones/articulos/global` | Feed global de artículos (Marketplace/Cursos), filtrado por `categoria`                                     |
-| `GET`   | `/notificaciones`                 | Listar notificaciones del usuario                                                                           |
-| `PATCH` | `/notificaciones/:id/leida`       | Marcar notificación como leída                                                                              |
+| Método   | Ruta                                       | Uso                                                                                                         |
+| -------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/auth/login`                              | Login con email + password                                                                                  |
+| `POST`   | `/registro-estudiantes`                    | Crear cuenta nueva                                                                                          |
+| `POST`   | `/recuperar-password-e`                    | Enviar email de recuperación                                                                                |
+| `GET`    | `/perfil-estudiante`                       | Obtener datos completos del usuario autenticado (incluye `biografia`)                                       |
+| `PATCH`  | `/completar/perfil`                        | Completar perfil: `username`, `fotoPerfil` y `biografia` (opcional, máx. 150 caracteres)                   |
+| `PATCH`  | `/perfil/username`                         | Cambiar nombre de usuario (perfil ya completo)                                                              |
+| `PATCH`  | `/estudiante/:id`                          | Actualizar datos de perfil: `nombre`, `apellido`, `biografia`, etc.                                         |
+| `GET`    | `/mensajes/conversaciones`                 | Listar conversaciones 1:1 del usuario autenticado                                                           |
+| `GET`    | `/redes/listar`                            | Listar comunidades disponibles                                                                              |
+| `POST`   | `/estudiantes/unirse/red`                  | Unirse a una comunidad específica                                                                           |
+| `POST`   | `/estudiantes/publicaciones`               | Crear post estándar (Comunidad/Noticias)                                                                    |
+| `POST`   | `/publicaciones/articulos`                 | Crear artículo de Venta o Cursos                                                                            |
+| `GET`    | `/estudiantes/listar/redes`                | Listar redes inscritas por el usuario                                                                       |
+| `GET`    | `/publicaciones/red/:redId`                | Feed filtrado por red (Home)                                                                                |
+| `GET`    | `/publicaciones/global`                    | Feed global de Noticias (Explorar)                                                                          |
+| `GET`    | `/publicaciones/articulos/global`          | Feed global de artículos (Marketplace/Cursos), filtrado por `categoria`                                     |
+| `GET`    | `/notificaciones`                          | Listar notificaciones del usuario                                                                           |
+| `PATCH`  | `/notificaciones/:id/leida`                | Marcar notificación como leída                                                                              |
+| `POST`   | `/publicaciones/:id/like`                  | Dar like a publicación o artículo                                                                           |
+| `DELETE` | `/publicaciones/:id/like`                  | Quitar like de publicación o artículo                                                                       |
+| `POST`   | `/publicaciones/:id/guardar`               | Guardar publicación o artículo en la lista del estudiante                                                   |
+| `DELETE` | `/publicaciones/:id/guardar`               | Quitar publicación o artículo de guardados                                                                  |
+| `POST`   | `/publicaciones/:id/comentarios`           | Crear comentario en publicación o artículo                                                                  |
+| `GET`    | `/publicaciones/:id/comentarios/arbol`     | Obtener árbol de comentarios (raíces + hijos anidados)                                                      |
+| `POST`   | `/comentarios/:comentarioId/responder`     | Responder a un comentario específico (anidado)                                                              |
 
 > Rutas de perfil adicionales declaradas en `lib/config/constants.dart`: `perfilUsernameEndpoint` → `/perfil/username`. La ruta `PATCH /estudiante/:id` se arma en código con el `_id` del usuario autenticado.
 
@@ -480,12 +508,18 @@ flutter analyze → No issues found ✅
 - [x] Profile Screen dinámica sin mocks (muestra `biografia` cuando existe en el servidor)
 - [x] Pantalla "Agregar Publicación" (Integrada)
 - [x] Centro de Configuración y Subpantallas
-- [x] Pantalla "Editar Perfil" (persistencia real: `PATCH /estudiante/:id`, username vía `/perfil/username`, refresco con `GET /perfil-estudiante`)
+- [x] Pantalla "Editar Perfil" (persistencia real)
 - [x] Integración de Notificaciones Informativas
-- [x] Bandeja de Mensajes: lista de conversaciones (HTTP + actualización socket), redes del usuario, sugerencias de redes y estados de conexión WebSocket
-- [ ] Pantalla de chat 1:1 (historial `GET /mensajes/conversaciones/:id`, `join:conversacion`, envío `mensaje:enviar` / HTTP según fase)
-- [ ] Implementación de funcionalidades de interacción (Likes/Comentarios reales)
-- [x] Sección "Explorar" con Feed Global por categorías (Noticias, Ventas, Cursos)
+- [x] Bandeja de Mensajes (lista de conversaciones + socket + redes + sugerencias)
+- [x] Sección "Explorar" con Feed Global por categorías (Noticias, Marketplace, Cursos)
+- [x] **Sistema Social Unificado** (likes, comentarios, guardados, replies para Publicacion y Articulo)
+- [x] **PostStoreProvider** — store global normalizado con optimistic updates y rollback
+- [x] **ExplorePostCard** rediseñado (layout social unificado para las 3 categorías)
+- [x] **PostDetailScreen** — pantalla de detalle funcional con todas las acciones sociales
+- [x] **Bookmark para Marketplace/Cursos** — corregido (`guardarPublicacion` ahora acepta IDs de Articulo)
+- [x] **Replies funcionales** — corregida URL de endpoint y redraw del árbol de comentarios
+- [ ] Pantalla de chat 1:1 (historial, `join:conversacion`, envío `mensaje:enviar`)
+- [ ] "Mis Publicaciones" en perfil (requiere endpoint backend pendiente)
 
 ---
 
@@ -677,9 +711,223 @@ Se desarrolló el método genérico `multipartRequest` en `ApiService` para envi
 #### F. Blindaje en Memoria para Base64 Históricos
 * Robusteció `SafeNetworkImage` para detectar proactivamente prefijos Base64 (`data:image/...;base64,`). Al encontrarlos, los decodifica en bytes en memoria y los dibuja con `Image.memory`, previniendo crashes en la UI con registros de imágenes antiguos de la base de datos.
 
+
 ### 18.3 Resultados de Calidad de Código (QA)
 * **Validación Estática:**
   ```bash
   flutter analyze
   ```
   **Resultado:** `No issues found!` sin advertencias, optimizando la confiabilidad de la aplicación en producción.
+
+---
+
+## 19. Sistema Social Unificado — Polired (18 de mayo de 2026)
+
+Se implementó y corrigió el sistema social completo de Polired, unificando las interacciones (likes, comentarios, guardados y respuestas) para funcionar de forma idéntica en las tres secciones del feed: **Noticias** (`Publicacion`), **Marketplace** y **Cursos** (`Articulo`).
+
+### 19.1 Arquitectura del Store Global (`PostStoreProvider`)
+
+**Problema previo:** `PostStoreProvider` era importado por múltiples archivos pero su archivo físico (`lib/providers/post_store_provider.dart`) no existía, causando fallos de compilación en toda la rama de interacciones sociales.
+
+**Solución:** Se creó el archivo con el store normalizado completo.
+
+#### Diseño del Store
+
+El `PostStoreProvider` es el único punto de verdad para los `PostModel`. Los feeds (`CommunityFeedProvider`, `GlobalFeedProvider`) almacenan exclusivamente `List<String>` de IDs; las entidades reales viven en el store.
+
+```
+PostStoreProvider._postsById   Map<String, PostModel>
+       │
+       ├── getPost(id)           → O(1) lookup
+       ├── addPosts(List)        → ingesta sin duplicados, respeta estado social optimista
+       ├── addPost(single)       → agrega o reemplaza
+       ├── toggleLike(id)        → optimistic update + rollback automático en fallo de red
+       ├── toggleSave(id)        → optimistic update + rollback automático
+       ├── incrementCommentsCount(id)  → actualización atómica del contador
+       └── updateCommentsCount(id, n)  → sincronización desde backend
+```
+
+#### Flujo de optimistic update
+
+```
+toggleLike(id)
+  1. Mutación inmediata en _postsById → notifyListeners()
+  2. await PostService.toggleLike(id, wasLiked)
+  3. Si success → OK (la UI ya refleja el estado correcto)
+  4. Si !success → rollback a estado anterior → notifyListeners()
+```
+
+Los widgets usan `context.select<PostStoreProvider, PostModel?>()` para recibir únicamente los rebuilds relevantes al ID específico (O(1) por widget).
+
+#### Registro en `main.dart`
+
+```dart
+// PostService registrado como Provider para acceso global (CommentTreeSheet lo consume)
+Provider<PostService>.value(value: postService),
+
+// PostStoreProvider
+ChangeNotifierProvider(create: (_) => PostStoreProvider(postService)),
+
+// Feeds como ProxyProvider dependientes del store
+ChangeNotifierProxyProvider<PostStoreProvider, CommunityFeedProvider>(
+  create: (ctx) => CommunityFeedProvider(postService, ctx.read<PostStoreProvider>()),
+  update: (_, store, prev) => prev!..update(store),
+),
+ChangeNotifierProxyProvider<PostStoreProvider, GlobalFeedProvider>(
+  create: (ctx) => GlobalFeedProvider(postService, ctx.read<PostStoreProvider>()),
+  update: (_, store, prev) => prev!..update(store),
+),
+```
+
+---
+
+### 19.2 Backend — Helper `_resolvePostDoc` (socialController.js)
+
+Para que los endpoints sociales funcionen sin duplicar lógica para `Publicacion` y `Articulo`, se añadió un helper de resolución dinámica al inicio del controlador:
+
+```js
+const _resolvePostDoc = async (id) => {
+  let doc = await Publicacion.findById(id)
+  if (doc) return { doc, autorId: doc.autorId, comunidadId: doc.comunidadId, isArticulo: false }
+  doc = await Articulo.findById(id)
+  if (doc) return { doc, autorId: doc.autorId, comunidadId: doc.redComunitaria, isArticulo: true }
+  return null
+}
+```
+
+Los controladores `darLikePublicacion`, `quitarLikePublicacion`, `crearComentarioPublicacion`, `responderComentario` y `guardarPublicacion` usan este helper en lugar de `Publicacion.findById(id)` directamente. La lógica de negocio no cambió; solo se generalizó el lookup del documento.
+
+También se añadieron los campos sociales al schema `Articulo`:
+
+```js
+likes: [{ type: ObjectId, ref: 'Estudiante' }],
+likesCount: { type: Number, default: 0 },
+commentsCount: { type: Number, default: 0 }
+```
+
+Los endpoints y rutas permanecen inalterados.
+
+---
+
+### 19.3 Rediseño de `ExplorePostCard`
+
+La tarjeta del Explore Feed fue completamente rediseñada con un layout social moderno y unificado para las tres categorías.
+
+| Elemento | Implementación |
+|---|---|
+| **Header** | Avatar circular + nombre + ícono verificado + nombre de red + tiempo + menú `···` |
+| **Media** | `PostImageCarousel` (multi-imagen con swipe + indicadores de paginación) |
+| **Overlay de título** | Gradiente oscuro en la parte inferior de la imagen con el título en blanco |
+| **Badge de precio** | Píldora blanca en esquina superior derecha (solo Marketplace/Cursos con precio) |
+| **Acciones** | `❤️ 24` `💬 8` `🔗` alineados en fila izquierda; `🔖` en el extremo derecho |
+| **Caption** | Username en negrita + texto truncado a 120 caracteres + link "Ver N comentarios" |
+
+Sin estado local. Toda la información proviene de `PostStoreProvider` via `context.read`.
+
+---
+
+### 19.4 `PostDetailScreen` (nuevo)
+
+Pantalla de detalle completa implementada en `lib/screens/post/post_detail_screen.dart`:
+
+- Lee el `PostModel` desde `PostStoreProvider` con `context.select` (sin re-fetch HTTP).
+- Muestra: header del autor, título, carrusel de multimedia, badge de precio para artículos, contenido completo, acciones sociales reales con contadores.
+- Abre `CommentTreeSheet` como modal para ver y publicar comentarios.
+- Todas las acciones (like, save, comment) activan el mismo flujo de optimistic update del store.
+
+---
+
+### 19.5 Corrección del sistema de guardados (Bookmark) en Marketplace y Cursos
+
+**Problema:** `guardarPublicacion` en el backend buscaba el documento exclusivamente con `Publicacion.findById(id)`. Los IDs de artículos (`Articulo`) no existían en esa colección → HTTP 404 → el frontend (`PostStoreProvider.toggleSave`) recibía `success: false` → rollback automático → el ícono bookmark nunca se activaba.
+
+**Causa raíz:** Una sola línea en el backend.
+
+**Corrección (mínima):**
+
+```js
+// Antes:
+const [estudiante, publicacion] = await Promise.all([
+  Estudiante.findById(estudianteId),
+  Publicacion.findById(id)          // ← solo buscaba en Publicacion
+])
+if (!estudiante || !publicacion) return 404
+
+// Después:
+const resolved = await _resolvePostDoc(id)   // ← usa el helper ya existente
+const estudiante = await Estudiante.findById(estudianteId)
+if (!estudiante || !resolved) return 404
+const docId = resolved.doc._id
+```
+
+El ID guardado en `estudiante.publicacionesGuardadas` es simplemente un `ObjectId`, independiente de la colección de origen. `quitarGuardadoPublicacion` ya era correcto (solo filtra el array por ID, sin lookup).
+
+**Resultado:** Bookmark funciona de forma idéntica en Noticias, Marketplace y Cursos.
+
+---
+
+### 19.6 Corrección del sistema de replies (comentarios anidados)
+
+Se corrigieron dos bugs independientes que impedían que las respuestas a comentarios funcionasen.
+
+#### Bug 1 — URL incorrecta (causa principal)
+
+| | URL |
+|---|---|
+| **Backend registra** | `POST /api/comentarios/:comentarioId/responder` |
+| **Frontend enviaba** | `POST /api/publicaciones/comentarios/:id/responder` |
+
+El prefijo `/publicaciones/` sobrante causaba un 404 en todas las respuestas. El frontend interpretaba el fallo como error de envío y hacía rollback silencioso.
+
+**Corrección en `PostService.replyComment`:**
+```dart
+// Antes:
+_api.post('/publicaciones/comentarios/$commentId/responder', ...)
+
+// Después:
+_api.post('/comentarios/$commentId/responder', ...)
+```
+
+#### Bug 2 — Sin redraw del árbol (causa secundaria)
+
+`_loadComments` en `CommentTreeSheet` asignaba `_comments = loaded` **fuera** del `setState`, por lo que Flutter nunca reconstruía el `ListView` con los nuevos datos.
+
+**Corrección:**
+```dart
+// Antes:
+_comments = result.data['comentarios'];  // fuera de setState
+setState(() { _isLoading = false; });    // solo cerraba el spinner
+
+// Después:
+setState(() {
+  _comments = loaded;   // ← dentro de setState: dispara rebuild
+  _isLoading = false;
+});
+```
+
+**Resultado:** Las respuestas se persisten en backend, aparecen anidadas bajo el comentario padre, y el árbol se actualiza automáticamente. El contador `commentsCount` se incrementa. Funciona en Noticias, Marketplace y Cursos.
+
+---
+
+### 19.7 Resumen de archivos modificados (Sesión 18 mayo 2026)
+
+| Archivo | Tipo | Descripción |
+|---|---|---|
+| `lib/providers/post_store_provider.dart` | **CREADO** | Store global normalizado — el archivo físico que faltaba |
+| `lib/screens/post/post_detail_screen.dart` | **CREADO** | Pantalla de detalle funcional con todas las acciones sociales |
+| `lib/screens/explore/widgets/explore_post_card.dart` | **REDISEÑADO** | Layout social unificado para las 3 categorías del Explore |
+| `lib/widgets/comment_tree_sheet.dart` | **CORREGIDO** | Import de PostStoreProvider + fix BuildContext across async gap + fix redraw |
+| `lib/services/post_service.dart` | **CORREGIDO** | URL de `replyComment` alineada con el router del backend |
+| `lib/widgets/post_card.dart` | **SIMPLIFICADO** | Convertido de StatefulWidget a StatelessWidget (sin estado local) |
+| `lib/main.dart` | **ACTUALIZADO** | `Provider<PostService>` registrado globalmente |
+| `BackendV2/src/models/Articulos.js` | **ACTUALIZADO** | Campos `likes`, `likesCount`, `commentsCount` añadidos |
+| `BackendV2/src/controllers/socialController.js` | **ACTUALIZADO** | Helper `_resolvePostDoc` + controladores de like, comentario, guardar unificados |
+
+### 19.8 QA Final
+
+```bash
+flutter analyze
+# Resultado: No issues found! ✅
+```
+
+_Documento actualizado progresivamente con cada fase del desarrollo._

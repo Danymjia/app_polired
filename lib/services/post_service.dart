@@ -74,23 +74,15 @@ class PostService {
 
   // ─── Feed por Red ─────────────────────────────────────────────────────────
   /// GET /publicaciones/red/:redId
-  Future<ApiResult<List<PostModel>>> fetchFeedByNetwork(String redId) async {
+  Future<ApiResult<List<PostModel>>> fetchFeedByNetwork(
+    String redId, {
+    int page = 1,
+    int limit = 10,
+  }) async {
     final result = await _api.get(
-      '${AppConstants.publicacionesPorRedEndpoint}/$redId',
+      '${AppConstants.publicacionesPorRedEndpoint}/$redId?page=$page&limit=$limit',
     );
-
-    if (result.success && result.data is Map) {
-      final data = result.data as Map<String, dynamic>;
-      final rawList = data['publicaciones'];
-      if (rawList is List) {
-        final posts = rawList
-            .whereType<Map<String, dynamic>>()
-            .map((j) => PostModel.fromJson(j))
-            .toList();
-        return ApiResult.ok(posts);
-      }
-    }
-    return ApiResult.error(result.message ?? 'Error al cargar publicaciones');
+    return _parseItems(result);
   }
 
   // ─── Crear Publicación Simple ─────────────────────────────────────────────
@@ -194,6 +186,37 @@ class PostService {
       body['mediaUrls'] = mediaUrls;
     }
     return _api.post(AppConstants.crearPublicacionExtendidaEndpoint, body);
+  }
+
+  // ─── Interacciones Sociales ───────────────────────────────────────────────
+  
+  /// POST /publicaciones/:id/like o DELETE /publicaciones/:id/like
+  Future<bool> toggleLike(String postId, bool isCurrentlyLiked) async {
+    final endpoint = '/publicaciones/$postId/like';
+    final result = isCurrentlyLiked ? await _api.delete(endpoint) : await _api.post(endpoint, {});
+    return result.success;
+  }
+
+  /// POST /publicaciones/:id/guardar o DELETE /publicaciones/:id/guardar
+  Future<bool> toggleSave(String postId, bool isCurrentlySaved) async {
+    final endpoint = '/publicaciones/$postId/guardar';
+    final result = isCurrentlySaved ? await _api.delete(endpoint) : await _api.post(endpoint, {});
+    return result.success;
+  }
+
+  /// GET /publicaciones/:id/comentarios/arbol
+  Future<ApiResult<dynamic>> getCommentsTree(String postId) async {
+    return await _api.get('/publicaciones/$postId/comentarios/arbol');
+  }
+
+  /// POST /publicaciones/:id/comentarios
+  Future<ApiResult<dynamic>> createComment(String postId, String contenido) async {
+    return await _api.post('/publicaciones/$postId/comentarios', {'contenido': contenido});
+  }
+
+  /// POST /comentarios/:commentId/responder
+  Future<ApiResult<dynamic>> replyComment(String commentId, String contenido) async {
+    return await _api.post('/comentarios/$commentId/responder', {'contenido': contenido});
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────

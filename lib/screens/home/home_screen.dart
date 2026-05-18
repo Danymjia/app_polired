@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../models/post_model.dart';
 import '../../providers/community_feed_provider.dart';
 import '../../providers/network_provider.dart';
+import '../../providers/post_store_provider.dart';
 import '../../widgets/network_avatar.dart';
 import '../../widgets/post_card.dart';
 import '../notifications/notifications_screen.dart';
@@ -135,18 +137,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             // ── Feed Content ────────────────────────────────────────────────
-            if (communityProvider.isLoadingInitial && communityProvider.posts.isEmpty)
+            if (communityProvider.isLoadingInitial && communityProvider.postIds.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
               )
-            else if (communityProvider.errorMessage != null && communityProvider.posts.isEmpty)
+            else if (communityProvider.errorMessage != null && communityProvider.postIds.isEmpty)
               SliverFillRemaining(
                 child: _ErrorState(
                   message: communityProvider.errorMessage!,
                   onRetry: () => communityProvider.loadInitial(),
                 ),
               )
-            else if (communityProvider.posts.isEmpty)
+            else if (communityProvider.postIds.isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Text(
@@ -160,14 +162,22 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final post = communityProvider.posts[index];
-                    final isLast = index == communityProvider.posts.length - 1;
+                    final postId = communityProvider.postIds[index];
+                    final isLast = index == communityProvider.postIds.length - 1;
                     return Padding(
                       padding: EdgeInsets.only(bottom: isLast ? 80.0 : 0),
-                      child: PostCard(post: post),
+                      child: Builder(
+                        builder: (context) {
+                          final post = context.select<PostStoreProvider, PostModel?>(
+                            (store) => store.getPost(postId)
+                          );
+                          if (post == null) return const SizedBox.shrink();
+                          return PostCard(post: post);
+                        },
+                      ),
                     );
                   },
-                  childCount: communityProvider.posts.length,
+                  childCount: communityProvider.postIds.length,
                 ),
               ),
             if (communityProvider.isLoadingMore)
@@ -177,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
                 ),
               ),
-            if (!communityProvider.hasMore && communityProvider.posts.isNotEmpty)
+            if (!communityProvider.hasMore && communityProvider.postIds.isNotEmpty)
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 20.0),

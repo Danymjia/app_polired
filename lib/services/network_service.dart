@@ -93,4 +93,21 @@ class NetworkService {
     return ApiResult.error(result.message ?? 'Error al unirse a la red');
   }
 
+  // ─── Perfil de una red (con paginación de publicaciones) ────────────────
+  /// GET /redes/:redId?page=1&limit=10
+  Future<ApiResult<Map<String, dynamic>>> getNetworkProfile(String redId, {int page = 1, int limit = 10}) async {
+    final id = redId.trim();
+    if (id.isEmpty) {
+      return ApiResult.error('Identificador de red no válido');
+    }
+
+    final result = await _api.get('/redes/$id?page=$page&limit=$limit');
+
+    if (result.success && result.data is Map) {
+      return ApiResult.ok(result.data as Map<String, dynamic>);
+    }
+
+    return ApiResult.error(result.message ?? 'Error al obtener el perfil de la red');
+  }
+
 }

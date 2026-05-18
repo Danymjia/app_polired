@@ -34,6 +34,10 @@ class PostModel {
   // Tiempo
   final DateTime timestamp;
 
+  // Social
+  final bool likedByMe;
+  final bool savedByMe;
+
   const PostModel({
     required this.id,
     required this.networkId,
@@ -52,7 +56,53 @@ class PostModel {
     required this.likesCount,
     required this.commentsCount,
     required this.timestamp,
+    this.likedByMe = false,
+    this.savedByMe = false,
   });
+
+  PostModel copyWith({
+    String? id,
+    String? networkId,
+    String? networkName,
+    String? authorId,
+    String? authorUsername,
+    String? authorFullName,
+    String? authorImageUrl,
+    String? titulo,
+    String? contenido,
+    String? descripcion,
+    String? tipoContenido,
+    String? categoria,
+    List<String>? mediaUrls,
+    dynamic precio,
+    int? likesCount,
+    int? commentsCount,
+    DateTime? timestamp,
+    bool? likedByMe,
+    bool? savedByMe,
+  }) {
+    return PostModel(
+      id: id ?? this.id,
+      networkId: networkId ?? this.networkId,
+      networkName: networkName ?? this.networkName,
+      authorId: authorId ?? this.authorId,
+      authorUsername: authorUsername ?? this.authorUsername,
+      authorFullName: authorFullName ?? this.authorFullName,
+      authorImageUrl: authorImageUrl ?? this.authorImageUrl,
+      titulo: titulo ?? this.titulo,
+      contenido: contenido ?? this.contenido,
+      descripcion: descripcion ?? this.descripcion,
+      tipoContenido: tipoContenido ?? this.tipoContenido,
+      categoria: categoria ?? this.categoria,
+      mediaUrls: mediaUrls ?? this.mediaUrls,
+      precio: precio ?? this.precio,
+      likesCount: likesCount ?? this.likesCount,
+      commentsCount: commentsCount ?? this.commentsCount,
+      timestamp: timestamp ?? this.timestamp,
+      likedByMe: likedByMe ?? this.likedByMe,
+      savedByMe: savedByMe ?? this.savedByMe,
+    );
+  }
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
     final autor = json['autorId'];
@@ -125,6 +175,8 @@ class PostModel {
       likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
       commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
       timestamp: timestamp,
+      likedByMe: json['likedByMe'] ?? json['isLiked'] ?? false,
+      savedByMe: json['savedByMe'] ?? json['isSaved'] ?? false,
     );
   }
 

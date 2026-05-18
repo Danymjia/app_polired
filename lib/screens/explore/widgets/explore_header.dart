@@ -34,10 +34,10 @@ class ExploreHeader extends StatelessWidget {
                 const Spacer(),
                 Text(
                   'Explorar',
-                  style: AppTheme.displayMedium.copyWith(fontSize: 20),
+                  style: AppTheme.displayMedium.copyWith(fontSize: 18, letterSpacing: -0.5),
                 ),
                 const Spacer(),
-                _ExploreIconButton(icon: Icons.more_horiz, onTap: () {}),
+                _ExploreIconButton(icon: Icons.search_rounded, onTap: () {}),
               ],
             ),
           ),
@@ -58,15 +58,14 @@ class _ExploreIconButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 42,
-        width: 42,
+        height: 40,
+        width: 40,
         decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-          border: Border.all(color: AppTheme.surfaceContainerHigh, width: 1),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppTheme.radiusFull),
         ),
         alignment: Alignment.center,
-        child: Icon(icon, color: AppTheme.onSurface, size: 22),
+        child: Icon(icon, color: AppTheme.onSurface, size: 24),
       ),
     );
   }

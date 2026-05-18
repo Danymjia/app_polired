@@ -2,26 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
+import '../providers/post_store_provider.dart';
+import 'package:provider/provider.dart';
 import 'safe_network_image.dart';
 import 'post_image_carousel.dart';
+import 'comment_tree_sheet.dart';
 
 /// Tarjeta de publicación adaptada al modelo real del backend.
 /// Soporta publicaciones de texto, imagen y video (con poster).
 /// Muestra: avatar del autor, username/nombre, fecha relativa,
 /// contenido, imagen (si aplica), likes y comentarios.
-class PostCard extends StatefulWidget {
+/// Sin estado local — toda la información proviene de PostStoreProvider.
+class PostCard extends StatelessWidget {
   final PostModel post;
 
   const PostCard({super.key, required this.post});
 
   @override
-  State<PostCard> createState() => _PostCardState();
-}
-
-class _PostCardState extends State<PostCard> {
-  @override
   Widget build(BuildContext context) {
-    final post = widget.post;
     return Container(
       color: AppTheme.surfaceContainerLowest,
       margin: const EdgeInsets.only(bottom: 12),
@@ -88,10 +86,19 @@ class _PostCardState extends State<PostCard> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                Icon(
-                  Icons.favorite_border,
-                  color: AppTheme.onSurfaceVariant,
-                  size: 24,
+                GestureDetector(
+                  onTap: () {
+                    context.read<PostStoreProvider>().toggleLike(post.id);
+                  },
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      post.likedByMe ? Icons.favorite : Icons.favorite_border,
+                      key: ValueKey(post.likedByMe),
+                      color: post.likedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                      size: 24,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -102,24 +109,47 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Icon(
-                  Icons.chat_bubble_outline,
-                  color: AppTheme.onSurfaceVariant,
-                  size: 22,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${post.commentsCount}',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppTheme.onSurfaceVariant,
+                GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => CommentTreeSheet(postId: post.id),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.chat_bubble_outline,
+                        color: AppTheme.onSurfaceVariant,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${post.commentsCount}',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
-                const Icon(
-                  Icons.bookmark_border,
-                  color: AppTheme.onSurfaceVariant,
-                  size: 22,
+                GestureDetector(
+                  onTap: () {
+                    context.read<PostStoreProvider>().toggleSave(post.id);
+                  },
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      post.savedByMe ? Icons.bookmark : Icons.bookmark_border,
+                      key: ValueKey(post.savedByMe),
+                      color: post.savedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                      size: 22,
+                    ),
+                  ),
                 ),
               ],
             ),

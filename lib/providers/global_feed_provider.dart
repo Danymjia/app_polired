@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../services/api_service.dart';
 import '../services/post_service.dart';
+import 'post_store_provider.dart';
 
 class GlobalFeedProvider extends ChangeNotifier {
   final PostService _postService;
+  final PostStoreProvider _postStore;
   static const int _defaultLimit = 20;
 
-  GlobalFeedProvider(this._postService);
+  GlobalFeedProvider(this._postService, this._postStore);
 
-  final List<PostModel> _posts = [];
+  final List<String> _postIds = [];
   bool _isLoadingInitial = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
@@ -17,7 +19,7 @@ class GlobalFeedProvider extends ChangeNotifier {
   String? _errorMessage;
   String _selectedCategory = 'noticias';
 
-  List<PostModel> get posts => List.unmodifiable(_posts);
+  List<String> get postIds => List.unmodifiable(_postIds);
   bool get isLoadingInitial => _isLoadingInitial;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMore => _hasMore;
@@ -43,13 +45,15 @@ class GlobalFeedProvider extends ChangeNotifier {
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
-      _posts
+      _postStore.addPosts(newPosts);
+      
+      _postIds
         ..clear()
-        ..addAll(_removeDuplicatePosts(newPosts));
+        ..addAll(_removeDuplicatePosts(newPosts.map((p) => p.id).toList()));
       _hasMore = newPosts.length >= _defaultLimit;
     } else {
       _errorMessage = result.message ?? 'Error al cargar el feed';
-      _posts.clear();
+      _postIds.clear();
       _hasMore = false;
     }
 
@@ -82,9 +86,11 @@ class GlobalFeedProvider extends ChangeNotifier {
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
-      final filteredPosts = _removeDuplicatePosts(newPosts);
-      if (filteredPosts.isNotEmpty) {
-        _posts.addAll(filteredPosts);
+      _postStore.addPosts(newPosts);
+
+      final filteredIds = _removeDuplicatePosts(newPosts.map((p) => p.id).toList());
+      if (filteredIds.isNotEmpty) {
+        _postIds.addAll(filteredIds);
       }
       if (newPosts.length < _defaultLimit) {
         _hasMore = false;
@@ -127,8 +133,8 @@ class GlobalFeedProvider extends ChangeNotifier {
     return _postService.fetchGlobalFeed(page: page, limit: limit);
   }
 
-  List<PostModel> _removeDuplicatePosts(List<PostModel> posts) {
-    final existingIds = _posts.map((post) => post.id).toSet();
-    return posts.where((post) => !existingIds.contains(post.id)).toList();
+  List<String> _removeDuplicatePosts(List<String> ids) {
+    final existingIds = _postIds.toSet();
+    return ids.where((id) => !existingIds.contains(id)).toList();
   }
 }

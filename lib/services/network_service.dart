@@ -61,6 +61,35 @@ class NetworkService {
     return ApiResult.error(result.message ?? 'Error al obtener redes');
   }
 
+  /// Devuelve la lista de redes disponibles (todas) como [NetworkStoryModel]
+  /// con isJoined: false, para el caso donde el usuario no tiene redes.
+  Future<ApiResult<List<NetworkStoryModel>>> getAvailableNetworksStories() async {
+    final result = await _api.get(AppConstants.redesListarEndpoint);
+
+    if (result.success && result.data is List) {
+      final rawList = result.data as List;
+      final stories = <NetworkStoryModel>[];
+      for (final item in rawList) {
+        if (item is! Map) continue;
+        final r = Map<String, dynamic>.from(item);
+        final id = parseMongoIdFromMap(r) ?? '';
+        if (id.isEmpty) continue;
+        stories.add(
+          NetworkStoryModel(
+            id: id,
+            name: (r['nombre'] as String?) ?? '',
+            acronym: buildNetworkAcronym(r['nombre'] as String? ?? ''),
+            imageUrl: (r['fotoPerfil'] as String?) ?? '',
+            isJoined: false,
+          ),
+        );
+      }
+      return ApiResult.ok(stories);
+    }
+
+    return ApiResult.error(result.message ?? 'Error al obtener redes disponibles');
+  }
+
   // ─── Todas las redes disponibles ──────────────────────────────────────────
   /// GET /redes/listar
   /// Respuesta: [ { _id | id, nombre, descripcion, cantidadMiembros, esOficial, esVerificada } ]
@@ -108,6 +137,20 @@ class NetworkService {
     }
 
     return ApiResult.error(result.message ?? 'Error al obtener el perfil de la red');
+  }
+
+  // ─── Solicitar creación de nueva red ─────────────────────────────────────
+  /// POST /redes/solicitar-creacion
+  /// Body: { nombre, descripcion }
+  Future<ApiResult<dynamic>> solicitarCreacionRed({
+    required String nombre,
+    required String descripcion,
+  }) async {
+    final body = {
+      'nombre': nombre.trim(),
+      'descripcion': descripcion.trim(),
+    };
+    return await _api.post('/redes/solicitar-creacion', body);
   }
 
 }

@@ -19,6 +19,9 @@ class PostStoreProvider extends ChangeNotifier {
 
   // ─── Estado normalizado ────────────────────────────────────────────────────
   final Map<String, PostModel> _postsById = {};
+  /// IDs de posts con operaciones optimistas en vuelo (evita sobrescribir
+  /// estado local con datos obsoletos del backend durante una recarga concurrente).
+  final Set<String> _pendingOptimistic = {};
 
   // ─── Getters ───────────────────────────────────────────────────────────────
   PostModel? getPost(String id) => _postsById[id];
@@ -27,8 +30,14 @@ class PostStoreProvider extends ChangeNotifier {
 
   // ─── Ingesta de posts ──────────────────────────────────────────────────────
   /// Agrega o actualiza múltiples posts en el store.
-  /// Posts existentes NO se sobreescriben si ya tienen estado social actualizado
-  /// (para no perder likes/saves optimistas).
+  ///
+  /// Estrategia de merge:
+  /// - Si el post no existe → se agrega tal cual.
+  /// - Si el post ya existe y NO tiene operaciones optimistas pendientes →
+  ///   el backend es la fuente de verdad (incluido likedByMe / savedByMe).
+  /// - Si el post tiene una operación optimista en vuelo → el estado local
+  ///   prevalece para likedByMe/savedByMe/likesCount, pero se actualizan
+  ///   commentsCount y otros metadatos del backend.
   void addPosts(List<PostModel> posts) {
     bool changed = false;
     for (final post in posts) {
@@ -38,16 +47,19 @@ class PostStoreProvider extends ChangeNotifier {
         _postsById[post.id] = post;
         changed = true;
       } else {
-        // Actualizar métricas del backend, pero respetar estado social local
-        // solo si el backend no trae datos más frescos
-        final updated = post.copyWith(
-          likedByMe: post.likedByMe || existing.likedByMe,
-          savedByMe: post.savedByMe || existing.savedByMe,
-          likesCount: post.likesCount,
-          commentsCount: post.commentsCount,
-        );
-        if (existing != updated) {
-          _postsById[post.id] = updated;
+        final PostModel merged;
+        if (_pendingOptimistic.contains(post.id)) {
+          // Operación en vuelo: conservar estado social local, actualizar
+          // sólo commentsCount del backend (más fresco).
+          merged = existing.copyWith(
+            commentsCount: post.commentsCount,
+          );
+        } else {
+          // Sin operaciones pendientes: el backend es la fuente de verdad.
+          merged = post;
+        }
+        if (existing != merged) {
+          _postsById[post.id] = merged;
           changed = true;
         }
       }
@@ -67,6 +79,9 @@ class PostStoreProvider extends ChangeNotifier {
     final post = _postsById[postId];
     if (post == null) return;
 
+    // Marcar como pendiente ANTES del optimistic update
+    _pendingOptimistic.add(postId);
+
     // Optimistic update
     final wasLiked = post.likedByMe;
     _postsById[postId] = post.copyWith(
@@ -77,6 +92,9 @@ class PostStoreProvider extends ChangeNotifier {
 
     // Llamada al backend
     final success = await _postService.toggleLike(postId, wasLiked);
+
+    // Quitar marca de pendiente
+    _pendingOptimistic.remove(postId);
 
     if (!success) {
       // Rollback
@@ -96,6 +114,9 @@ class PostStoreProvider extends ChangeNotifier {
     final post = _postsById[postId];
     if (post == null) return;
 
+    // Marcar como pendiente ANTES del optimistic update
+    _pendingOptimistic.add(postId);
+
     // Optimistic update
     final wasSaved = post.savedByMe;
     _postsById[postId] = post.copyWith(savedByMe: !wasSaved);
@@ -103,6 +124,9 @@ class PostStoreProvider extends ChangeNotifier {
 
     // Llamada al backend
     final success = await _postService.toggleSave(postId, wasSaved);
+
+    // Quitar marca de pendiente
+    _pendingOptimistic.remove(postId);
 
     if (!success) {
       // Rollback

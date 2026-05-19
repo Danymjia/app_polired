@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../settings/notifications_screen.dart';
@@ -15,27 +16,33 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isAdmin = context.select<AuthProvider, bool>(
+      (auth) => auth.user?.esAdminRed ?? false,
+    );
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.surfaceContainerLowest,
       appBar: AppBar(
-        backgroundColor: Colors.white.withValues(alpha: 0.9),
+        backgroundColor: AppTheme.surfaceContainerLowest,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         leadingWidth: 48,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.onBackground),
+          icon: const Icon(Icons.arrow_back_ios_new_outlined, size: 20, color: AppTheme.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Configuración',
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.5,
+        title: Text(
+          'Configuración y actividad',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
             color: AppTheme.onBackground,
           ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
         ),
       ),
       body: SingleChildScrollView(
@@ -43,99 +50,96 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search, color: AppTheme.outline, size: 20),
-                    SizedBox(width: 12),
-                    Text(
-                      'Buscar',
-                      style: TextStyle(
-                        color: AppTheme.onSurfaceVariant,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const SizedBox(height: 8),
 
             // Group 1: Tu interacción
             _buildSectionTitle('Tu interacción'),
-            _buildMenuItem(context, 'Guardados', Icons.bookmark),
-            _buildMenuItem(context, 'Me gusta', Icons.favorite),
-            
-            const SizedBox(height: 24),
-            
+            _buildMenuItem(
+              context,
+              'Guardados',
+              Icons.bookmark_outline,
+            ),
+            _buildMenuItem(
+              context,
+              'Me gusta',
+              Icons.favorite_outline,
+            ),
+
+            const SizedBox(height: 20),
+
             // Group 2: Ajustes del sistema
             _buildSectionTitle('Ajustes del sistema'),
-            _buildMenuItem(context, 'Notificaciones', Icons.notifications, screen: const NotificationsScreen()),
+            _buildMenuItem(
+              context,
+              'Notificaciones',
+              Icons.notifications_outlined,
+              screen: const NotificationsScreen(),
+            ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Group 3: Soporte y recursos
             _buildSectionTitle('Soporte y recursos'),
-            _buildMenuItem(context, 'Ayuda', Icons.help, screen: const HelpScreen()),
-            _buildMenuItem(context, 'Asistencia', Icons.contact_support, screen: const SupportScreen()),
-            _buildMenuItem(context, 'Información', Icons.info, screen: const AboutScreen()),
-            _buildMenuItem(context, 'Políticas de privacidad', Icons.policy, screen: const PrivacyScreen()),
+            _buildMenuItem(context, 'Ayuda', Icons.help_outline, screen: const HelpScreen()),
+            _buildMenuItem(context, 'Asistencia', Icons.support_agent_outlined, screen: const SupportScreen()),
+            _buildMenuItem(context, 'Información', Icons.info_outline, screen: const AboutScreen()),
+            _buildMenuItem(context, 'Políticas de privacidad', Icons.policy_outlined, screen: const PrivacyScreen()),
 
-            const SizedBox(height: 24),
-
-            // Featured Action
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestNetworkScreen()));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFBD1119), // primary-fixed (Rojo oscuro)
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.hub, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Solicitar apertura de red',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(top: 12, left: 24, right: 24),
-              child: Text(
-                'Envía una solicitud para crear un nuevo nodo de red en tu facultad o departamento académico.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.outline,
-                  height: 1.5,
+            // Featured Action — solo para usuarios SIN rol admin_red
+            if (!isAdmin) ...[
+              const SizedBox(height: 28),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RequestNetworkScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.hub_outlined, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Solicitar apertura de red',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const Padding(
+                padding: EdgeInsets.only(top: 10, left: 24, right: 24),
+                child: Text(
+                  'Envía una solicitud para crear un nuevo nodo de red en tu facultad o departamento académico.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.outline,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
 
-            const SizedBox(height: 40),
-            
+            const SizedBox(height: 36),
+
             // Divider
             const Divider(color: AppTheme.surfaceContainerHigh, height: 1, indent: 16, endIndent: 16),
-            
-            const SizedBox(height: 32),
+
+            const SizedBox(height: 28),
 
             // Logout
             Padding(
@@ -147,18 +151,22 @@ class SettingsScreen extends StatelessWidget {
                     context.go('/login');
                   }
                 },
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.logout, size: 20, color: AppTheme.error),
-                      SizedBox(width: 8),
+                      const Icon(Icons.logout_outlined, size: 20, color: AppTheme.error),
+                      const SizedBox(width: 8),
                       Text(
                         'Cerrar sesión',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.error),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.error,
+                        ),
                       ),
                     ],
                   ),
@@ -169,14 +177,14 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Version
-            const Center(
+            Center(
               child: Text(
                 'POLIRED V2.4.0-ACADEMIC',
-                style: TextStyle(
-                  fontSize: 11,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
-                  color: AppTheme.outline,
+                  color: AppTheme.outlineVariant,
                 ),
               ),
             ),
@@ -188,10 +196,10 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.5,
@@ -204,25 +212,28 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildMenuItem(BuildContext context, String title, IconData icon, {Widget? screen}) {
     return InkWell(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => screen ?? DummyScreen(title: title)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => screen ?? DummyScreen(title: title)),
+        );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
         child: Row(
           children: [
-            Icon(icon, size: 24, color: AppTheme.onBackground),
+            Icon(icon, size: 22, color: AppTheme.onBackground),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: AppTheme.onBackground,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, size: 24, color: AppTheme.outlineVariant),
+            const Icon(Icons.chevron_right, size: 22, color: AppTheme.outlineVariant),
           ],
         ),
       ),
@@ -239,21 +250,21 @@ class DummyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.surfaceContainerLowest,
         centerTitle: true,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.construction, size: 64, color: AppTheme.outlineVariant),
+            const Icon(Icons.construction_outlined, size: 56, color: AppTheme.outlineVariant),
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(

@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 
 class ExploreHeader extends StatelessWidget {
@@ -37,7 +38,12 @@ class ExploreHeader extends StatelessWidget {
                   style: AppTheme.displayMedium.copyWith(fontSize: 18, letterSpacing: -0.5),
                 ),
                 const Spacer(),
-                _ExploreIconButton(icon: Icons.search_rounded, onTap: () {}),
+                _ExploreIconButton(
+                  icon: Icons.search_rounded,
+                  onTap: () {
+                    context.push('/explore/networks');
+                  },
+                ),
               ],
             ),
           ),

@@ -1,7 +1,7 @@
 # Informe Técnico Completo — Polired Mobile App
 
-> **Versión:** 1.13 — Sistema Social Unificado: PostStoreProvider, interacciones sociales para Publicacion y Articulo, rediseño del Explore Feed y corrección de replies  
-> **Fecha:** 18 de mayo de 2026  
+> **Versión:** 1.15 — Rediseño de Perfil y Ajustes, Estadísticas en Tiempo Real y Flujo de Redes
+> **Fecha:** 19 de mayo de 2026  
 > **Plataforma:** Flutter (Android / iOS)  
 > **Backend:** Node.js + Express + MongoDB (BackendV2)
 
@@ -930,4 +930,97 @@ flutter analyze
 # Resultado: No issues found! ✅
 ```
 
+---
+
+## 20. Rediseño de Hojas Inferiores (Mockup HTML Parity) — 18 de mayo de 2026
+
+Se rediseñó la estética de las tres hojas inferiores principales (`bottom sheets`) del sistema social para alinearlas de forma idéntica con el estilo visual minimalista y la estructura de los mockups HTML proporcionados:
+
+### 20.1 Hojas Inferiores Modificadas
+
+1. **`ReportPostBottomSheet` (Reportar)**:
+   - Se reemplazaron las tarjetas circulares por un listado de filas minimalistas con borde inferior (`border-neutral-100` / `AppTheme.surfaceContainerHigh`).
+   - Se simplificó el título superior a únicamente `"Reportar"`.
+   - Se cambió el control de selección a un check box cuadrado minimalista (`rounded`, 20x20px) con borde e ícono de marca de verificación blanco sobre fondo azul marino.
+   - El botón de envío se rediseñó como una barra plana de ancho completo con texto `"Enviar"`.
+   - Se configuró la curvatura superior de la hoja a `rounded-t-[20px]`.
+
+2. **`PostOptionsBottomSheet` (Menú de Opciones)**:
+   - Se rediseñó por completo eliminando íconos y contenedores sombreados.
+   - Se implementó como una pila vertical plana de dos botones de texto centrados:
+     - **Reportar**: en color rojo (`AppTheme.error`), con peso `FontWeight.w600` (semibold), separado por una línea divisoria inferior.
+     - **Guardar / Eliminar de guardados**: en color negro (`AppTheme.onSurface`), con peso `FontWeight.w500` (medium).
+   - Se ajustó el radio superior a `rounded-t-[20px]`.
+
+3. **`LikesBottomSheet` (Me gusta)**:
+   - Se cambió el título a `"Me gusta"` (anteriormente `"Likes"`), centrado con una línea de división inferior como en el diseño de referencia.
+   - El radio superior se configuró a `rounded-t-[2.5rem]` (`Radius.circular(40)`).
+   - Los avatares del listado se incrementaron a 48px (`w-12 h-12`).
+   - Se refinó la tipografía del username (`text-primary`, negrita, tracking-tight) y del nombre completo (`text-on-surface-variant`, 12px, font-medium) para que coincida exactamente con las clases CSS del mockup.
+
+---
+
+## 21. Refactorización del Sistema de Respuestas Planas (Fin del Árbol Recursivo Infinito)
+
+Para mejorar la legibilidad y evitar el desplazamiento horizontal indefinido de las respuestas anidadas a la derecha de la pantalla (típico de estructuras en árbol infinito), se refactorizó por completo el renderizado y parsing del árbol de comentarios en la aplicación:
+
+### 21.1 Lógica de Respuestas Planas (Single-Level Replies)
+
+* **Eliminación de la Recursividad Visual**:
+  - Toda respuesta asociada a un comentario raíz se renderiza dentro de un único nivel plano de indentación fija (`left: 48`), sin importar la profundidad en el árbol de datos de MongoDB.
+  - Se eliminaron las sub-ramas de identación progresiva.
+
+* **Detección Dinámica de Menciones (`@username`)**:
+  - Al procesar recursivamente mediante DFS (`_flattenReplies`) la respuesta obtenida del backend, si el padre directo de una respuesta no es el comentario raíz, se extrae el nombre del autor del comentario padre y se asocia al campo `replyingToUsername`.
+  - En la UI, el texto de la respuesta se compone dinámicamente mediante `Text.rich`: prepende `@username ` en negrita con el color azul institucional (`AppTheme.primary`), seguido del texto del mensaje en una sola línea inline.
+
+* **UX del Input de Respuesta**:
+  - Al hacer clic en "Responder" en cualquier comentario o respuesta secundaria, la barra inferior de entrada de texto muestra el banner `"Respondiendo a @usuario"`.
+  - Sin embargo, para mantener la coherencia y estabilidad visual de la conversación, el envío de la respuesta se mantiene asociado directamente a la rama visual del comentario raíz.
+
+* **Optimización de Carga y Rebuilds**:
+  - Se utiliza `ListView.builder` de forma plana y eficiente en lugar de estructuras de widgets recursivos anidados.
+  - Se añadió la capacidad de colapsar o expandir el listado de respuestas por cada comentario raíz de manera limpia e instantánea.
+  - Se eliminó el botón de corazón de los comentarios/respuestas dentro del árbol de comentarios por requerimiento de diseño.
+
+* **Soporte Backend**:
+  - Se actualizó el controlador `listarComentariosArbol` en `socialController.js` para añadir el campo `username` al `populate` de la entidad de usuario (`userId`). Esto permite que el frontend obtenga los handles correctos de manera inmediata sin requerir llamadas HTTP adicionales.
+
+### 21.2 Archivos Afectados
+
+| Archivo | Rol en el Cambio |
+|---|---|
+| `polired/lib/widgets/comment_tree_sheet.dart` | Reescritura completa del parsing (DFS flattening), renderizado plano con indentación fija de 48px, menciones inline `@username` con `Text.rich`, toggle de expansión y remoción del ícono de corazón. |
+| `BackendV2/src/controllers/socialController.js` | Modificación de `listarComentariosArbol` para incluir `username` en el `populate` de `userId`. |
+
 _Documento actualizado progresivamente con cada fase del desarrollo._
+
+---
+
+## 22. Rediseño Visual y Funcional de Perfil y Configuración (Polired V2.4.0)
+
+### 22.1 Objetivos de la Refactorización
+* **Rediseño del Perfil (Header Superior)**: Adaptar la cabecera a un estilo minimalista premium tipo Instagram/Threads. Se reorganizó la estructura del avatar y del nombre, ubicando el nombre a la derecha del avatar (en lugar de abajo), y se añadió el ícono de candado minimalista al lado izquierdo del nombre de usuario en la barra de navegación superior.
+* **Consumo de Datos Reales de Estadísticas**: Sustituir el contador local del perfil por el consumo directo del endpoint `GET /perfil-estudiante`, obteniendo el total de publicaciones reales del usuario (`publicacionesCount`) calculadas de forma dinámica en el backend.
+* **Integración del Rol Administrador**: Condicionar la aparición del botón **"Gestionar red"** únicamente a los usuarios con el rol `admin_red` (determinado desde el `AuthProvider`), alineado a la derecha de "Editar Perfil".
+* **Unificación de Vistas (Instagram-Style Grid)**: Eliminar el sistema redundante de múltiples pestañas y reemplazarlo por una sola pestaña visual ("Publicaciones") con un grid moderno de 4 columnas que muestra placeholders de imágenes correspondientes al número total de posts reales del usuario.
+* **Rebranding de la Sección de Configuración**: Eliminar la barra de búsqueda redundante, renombrar el título central a **"Configuración y actividad"** (bold, centrado), y estandarizar todos los íconos de los elementos del menú con estilo lineal/contorno (`_outlined`).
+* **Visibilidad Condicionada por Rol en Configuración**: Ocultar por completo la sección destacada **"Solicitar apertura de red"** si el usuario tiene asignado el rol de `admin_red`, previniendo que administradores existentes realicen solicitudes duplicadas de red.
+* **Módulo Completo de "Solicitar Apertura de Red"**: Implementar una pantalla stateful con validaciones estrictas y consumo directo del endpoint `POST /redes/solicitar-creacion`, manejando estados de carga, deshabilitación de doble envío y retroalimentación inmediata al usuario a través de snackbars flotantes.
+
+### 22.2 Estructura y Validaciones del Formulario de Solicitud
+El formulario de solicitud de red comunitaria se comunica directamente con el backend y valida las siguientes reglas de negocio antes del envío:
+* **Nombre de la red**: Campo requerido, longitud entre 3 y 80 caracteres.
+* **Descripción / Propósito**: Campo requerido, longitud entre 10 y 300 caracteres, con contador visual en tiempo real en formato `longitud/300`.
+* **Manejo de Respuestas del Backend**: Se controla el estado de carga bloqueando la interfaz e insertando un indicador circular de progreso. En caso de éxito (código 201), se muestra un snackbar verde de confirmación y se retorna a la pantalla anterior. En caso de conflicto o error (ej. nombre de red duplicado), se renderiza un snackbar de alerta con el color institucional de error.
+
+### 22.3 Resumen de Archivos Modificados
+
+| Archivo | Rol en el Cambio |
+|---|---|
+| `polired/lib/models/user_model.dart` | Añadido el campo `publicacionesCount` para mapear el número de publicaciones del usuario retornado por `GET /perfil-estudiante`. |
+| `polired/lib/services/network_service.dart` | Integración del método `solicitarCreacionRed` para enviar el body `{ nombre, descripcion }` mediante petición HTTP POST a `/redes/solicitar-creacion`. |
+| `polired/lib/screens/profile/profile_screen.dart` | Rediseño estructural total: lock icon, nombre al lado de la foto de perfil, consumo real de publicaciones y redes, renderizado reactivo del botón "Gestionar red" por rol, pestaña única de publicaciones y grid moderno de 4 columnas. |
+| `polired/lib/screens/profile/settings_screen.dart` | Eliminación de buscador, centrado de título principal, iconos en estilo outline lineal, e introducción del botón azul institucional para la solicitud de red, condicionado a no mostrarse si el usuario posee el rol `admin_red`. |
+| `polired/lib/screens/settings/request_network_screen.dart` | Reescritura funcional completa a `StatefulWidget` con validación estricta de campos, contador de caracteres interactivo, deshabilitación de controles durante envío, spinner de carga e integración completa con `NetworkService`. |
+_

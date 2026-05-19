@@ -10,6 +10,8 @@ class UserModel {
   /// Biografía o descripción corta del perfil (máx. 150 caracteres en backend).
   final String? biografia;
   final bool perfilCompleto;
+  /// Total de publicaciones del usuario (viene de GET /perfil-estudiante).
+  final int publicacionesCount;
 
   const UserModel({
     required this.id,
@@ -21,6 +23,7 @@ class UserModel {
     this.fotoPerfil,
     this.biografia,
     required this.perfilCompleto,
+    this.publicacionesCount = 0,
   });
 
   String get nombreCompleto => '$nombre $apellido';
@@ -38,6 +41,7 @@ class UserModel {
       fotoPerfil: json['fotoPerfil'] as String?,
       biografia: json['biografia'] as String?,
       perfilCompleto: json['perfilCompleto'] as bool? ?? false,
+      publicacionesCount: (json['publicacionesCount'] as num?)?.toInt() ?? 0,
     );
   }
 

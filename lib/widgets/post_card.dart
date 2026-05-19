@@ -7,12 +7,9 @@ import 'package:provider/provider.dart';
 import 'safe_network_image.dart';
 import 'post_image_carousel.dart';
 import 'comment_tree_sheet.dart';
+import 'likes_bottom_sheet.dart';
+import 'post_options_bottom_sheet.dart';
 
-/// Tarjeta de publicación adaptada al modelo real del backend.
-/// Soporta publicaciones de texto, imagen y video (con poster).
-/// Muestra: avatar del autor, username/nombre, fecha relativa,
-/// contenido, imagen (si aplica), likes y comentarios.
-/// Sin estado local — toda la información proviene de PostStoreProvider.
 class PostCard extends StatelessWidget {
   final PostModel post;
 
@@ -20,13 +17,21 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (post.hasImage) {
+      return _buildImagePost(context);
+    } else {
+      return _buildTextPost(context);
+    }
+  }
+
+  Widget _buildImagePost(BuildContext context) {
     return Container(
       color: AppTheme.surfaceContainerLowest,
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ──────────────────────────────────────────────────────────
+          // ── Header ────────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
@@ -37,136 +42,256 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.authorUsername,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.onSurface,
-                        ),
-                      ),
-                      if (post.networkName.isNotEmpty)
-                        Text(
-                          post.networkName,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: AppTheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-                Text(
-                  post.timeAgo,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.more_horiz,
-                  color: AppTheme.onSurfaceVariant,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
-
-          // ── Imagen (si aplica) ───────────────────────────────────────────────
-          if (post.hasImage) PostImageCarousel(mediaUrls: post.mediaUrls),
-
-          // ── Acciones ────────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    context.read<PostStoreProvider>().toggleLike(post.id);
-                  },
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      post.likedByMe ? Icons.favorite : Icons.favorite_border,
-                      key: ValueKey(post.likedByMe),
-                      color: post.likedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
-                      size: 24,
+                  child: Text(
+                    post.authorUsername,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.onSurface,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${post.likesCount}',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 16),
                 GestureDetector(
                   onTap: () {
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
-                      builder: (_) => CommentTreeSheet(postId: post.id),
+                      builder: (_) => PostOptionsBottomSheet(post: post),
                     );
                   },
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.chat_bubble_outline,
-                        color: AppTheme.onSurfaceVariant,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${post.commentsCount}',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: AppTheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () {
-                    context.read<PostStoreProvider>().toggleSave(post.id);
-                  },
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      post.savedByMe ? Icons.bookmark : Icons.bookmark_border,
-                      key: ValueKey(post.savedByMe),
-                      color: post.savedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
-                      size: 22,
-                    ),
+                  child: const Icon(
+                    Icons.more_horiz,
+                    color: AppTheme.onSurfaceVariant,
+                    size: 20,
                   ),
                 ),
               ],
             ),
           ),
+          
+          // ── Imagen ────────────────────────────────────────────────────────
+          Stack(
+            children: [
+              PostImageCarousel(mediaUrls: post.mediaUrls),
+              if (post.isArticle && post.priceLabel.isNotEmpty)
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      post.priceLabel,
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          // ── Acciones ────────────────────────────────────────────────────────
+          _buildActions(context),
 
           // ── Contenido ───────────────────────────────────────────────────────
-          if (post.contenido.isNotEmpty)
+          if (post.displayContent.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: _PostContent(post: post),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+              child: _PostContentImage(post: post),
             ),
 
-          // Separador
-          const Divider(
-            height: 1,
-            thickness: 0.5,
-            color: AppTheme.surfaceContainerHigh,
+          // ── Tiempo ──────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: Text(
+              post.timeAgo,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextPost(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ────────────────────────────────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _AuthorAvatar(
+                imageUrl: post.authorImageUrl,
+                name: post.authorUsername,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.authorUsername,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      post.timeAgo,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => PostOptionsBottomSheet(post: post),
+                  );
+                },
+                child: const Icon(
+                  Icons.more_horiz,
+                  color: AppTheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // ── Título ──────────────────────────────────────────────────────────
+          if (post.titulo.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                post.titulo,
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+            ),
+
+          // ── Contenido ───────────────────────────────────────────────────────
+          if (post.displayContent.isNotEmpty)
+            _PostContentText(post: post),
+
+          const SizedBox(height: 12),
+
+          // ── Acciones ────────────────────────────────────────────────────────
+          _buildActions(context, padding: EdgeInsets.zero),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActions(BuildContext context, {EdgeInsetsGeometry? padding}) {
+    return Padding(
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.read<PostStoreProvider>().toggleLike(post.id),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                post.likedByMe ? Icons.favorite : Icons.favorite_border,
+                key: ValueKey(post.likedByMe),
+                color: post.likedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                size: 26,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => LikesBottomSheet(postId: post.id),
+              );
+            },
+            child: Text(
+              '${post.likesCount}',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => CommentTreeSheet(postId: post.id),
+              );
+            },
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.chat_bubble_outline,
+                  color: AppTheme.onSurfaceVariant,
+                  size: 24,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${post.commentsCount}',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => context.read<PostStoreProvider>().toggleSave(post.id),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                post.savedByMe ? Icons.bookmark : Icons.bookmark_border,
+                key: ValueKey(post.savedByMe),
+                color: post.savedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                size: 26,
+              ),
+            ),
           ),
         ],
       ),
@@ -197,24 +322,23 @@ class _AuthorAvatar extends StatelessWidget {
   }
 }
 
-
-
-// ─── Contenido textual ────────────────────────────────────────────────────────
-class _PostContent extends StatefulWidget {
+// ─── Contenido Textual (Imagen) ───────────────────────────────────────────────
+class _PostContentImage extends StatefulWidget {
   final PostModel post;
-  const _PostContent({required this.post});
+  const _PostContentImage({required this.post});
 
   @override
-  State<_PostContent> createState() => _PostContentState();
+  State<_PostContentImage> createState() => _PostContentImageState();
 }
 
-class _PostContentState extends State<_PostContent> {
+class _PostContentImageState extends State<_PostContentImage> {
   bool _expanded = false;
-  static const int _maxLines = 4;
 
   @override
   Widget build(BuildContext context) {
-    final text = widget.post.contenido;
+    final text = widget.post.displayContent;
+    if (text.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -223,27 +347,81 @@ class _PostContentState extends State<_PostContent> {
             style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurface),
             children: [
               TextSpan(
-                text: '${widget.post.authorUsername} ',
+                text: widget.post.authorUsername,
                 style: GoogleFonts.inter(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                 ),
               ),
+              const WidgetSpan(child: SizedBox(width: 8)),
               TextSpan(text: text),
             ],
           ),
-          maxLines: _expanded ? null : _maxLines,
+          maxLines: _expanded ? null : 2,
           overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
         ),
-        if (!_expanded && text.length > 200)
+        if (!_expanded && text.length > 80)
           GestureDetector(
             onTap: () => setState(() => _expanded = true),
-            child: Text(
-              'Ver más',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppTheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Ver más',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ─── Contenido Textual (Solo Texto) ───────────────────────────────────────────
+class _PostContentText extends StatefulWidget {
+  final PostModel post;
+  const _PostContentText({required this.post});
+
+  @override
+  State<_PostContentText> createState() => _PostContentTextState();
+}
+
+class _PostContentTextState extends State<_PostContentText> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.post.displayContent;
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            color: AppTheme.onSurface,
+            height: 1.4,
+          ),
+          maxLines: _expanded ? null : 5,
+          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        ),
+        if (!_expanded && text.length > 180)
+          GestureDetector(
+            onTap: () => setState(() => _expanded = true),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Ver más',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

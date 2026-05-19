@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../models/post_model.dart';
@@ -36,8 +37,25 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      context.read<CommunityFeedProvider>().loadInitial();
       _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final netProvider = context.read<NetworkProvider>();
+          void checkNetwork() {
+            if (!netProvider.isLoading) {
+              if (netProvider.networkStories.any((n) => n.isJoined)) {
+                context.read<CommunityFeedProvider>().loadInitial();
+              }
+              netProvider.removeListener(checkNetwork);
+            }
+          }
+          if (netProvider.isLoading) {
+            netProvider.addListener(checkNetwork);
+          } else {
+            checkNetwork();
+          }
+        }
+      });
     }
   }
 
@@ -121,7 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: RefreshIndicator(
         color: AppTheme.primary,
-        onRefresh: () => communityProvider.refreshFeed(),
+        onRefresh: () async {
+          await networkProvider.loadStudentNetworks();
+          if (networkProvider.networkStories.any((n) => n.isJoined)) {
+            await communityProvider.refreshFeed();
+          }
+        },
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -137,7 +160,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             // ── Feed Content ────────────────────────────────────────────────
-            if (communityProvider.isLoadingInitial && communityProvider.postIds.isEmpty)
+            if (networkProvider.isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+              )
+            else if (!networkProvider.networkStories.any((n) => n.isJoined))
+              SliverFillRemaining(
+                child: Center(
+                  child: Text(
+                    'No perteneces a ninguna red aún.\nÚnete a una para ver sus publicaciones.',
+                    style: AppTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            else if (communityProvider.isLoadingInitial && communityProvider.postIds.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
               )
@@ -239,7 +276,9 @@ class _NetworkStoriesSection extends StatelessWidget {
                     child: NetworkAvatar(
                       network: network,
                       isSelected: isSelected,
-                      onTap: () {},
+                      onTap: () {
+                        context.push('/explore/networks/${network.id}');
+                      },
                     ),
                   );
                 }).toList(),

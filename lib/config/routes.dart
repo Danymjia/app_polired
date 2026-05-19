@@ -8,6 +8,8 @@ import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/complete_profile_screen.dart';
 import '../screens/auth/welcome_screen.dart';
 import '../screens/main_layout_screen.dart';
+import '../screens/explore/explore_networks_screen.dart';
+import '../screens/explore/network_profile_screen.dart';
 
 /// Configuración centralizada de navegación con go_router.
 final GoRouter appRouter = GoRouter(
@@ -49,5 +51,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/complete-profile', builder: (ctx, state) => const CompleteProfileScreen()),
     GoRoute(path: '/welcome', builder: (ctx, state) => const WelcomeScreen()),
     GoRoute(path: '/home', builder: (ctx, state) => const MainLayoutScreen()),
+    GoRoute(path: '/explore/networks', builder: (ctx, state) => const ExploreNetworksScreen()),
+    GoRoute(
+      path: '/explore/networks/:id',
+      builder: (ctx, state) => NetworkProfileScreen(
+        networkId: state.pathParameters['id']!,
+      ),
+    ),
   ],
 );

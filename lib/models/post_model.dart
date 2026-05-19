@@ -250,4 +250,18 @@ class PostModel {
     if (precio is num) return '\$${precio.toString()}';
     return precio.toString();
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! PostModel) return false;
+    return id == other.id &&
+        likedByMe == other.likedByMe &&
+        savedByMe == other.savedByMe &&
+        likesCount == other.likesCount &&
+        commentsCount == other.commentsCount;
+  }
+
+  @override
+  int get hashCode => Object.hash(id, likedByMe, savedByMe, likesCount, commentsCount);
 }

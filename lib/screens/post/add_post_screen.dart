@@ -22,6 +22,7 @@ class AddPostScreen extends StatefulWidget {
 class _AddPostScreenState extends State<AddPostScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  String? _postType; // 'imagen' | 'texto'
   String _category = 'Comunidad'; // 'Comunidad', 'Noticias', 'Venta', 'Cursos'
 
   NetworkStoryModel? _selectedNetwork;
@@ -90,12 +91,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final title = _titleController.text.trim();
+      final title = _postType == 'texto' ? _titleController.text.trim() : '';
       final content = _descriptionController.text.trim();
       final categoryValue = _category.toLowerCase();
-      final comunidadId = _category == 'Comunidad'
-          ? _selectedNetwork?.id
-          : null;
+      final comunidadId = _selectedNetwork?.id;
 
       if (categoryValue == 'comunidad' && comunidadId == null) {
         if (mounted) {
@@ -103,7 +102,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Selecciona una red comunitaria para la categoría Comunidad',
+                'Selecciona una red comunitaria',
               ),
             ),
           );
@@ -118,14 +117,14 @@ class _AddPostScreenState extends State<AddPostScreen> {
               precio: double.tryParse(_priceController.text.trim()) ?? 0.0,
               categoria: categoryValue,
               comunidadId: comunidadId,
-              imageFiles: _selectedImages,
+              imageFiles: _postType == 'imagen' ? _selectedImages : null,
             )
           : await _postService.createPost(
               titulo: title,
               contenido: content,
               categoria: categoryValue,
               comunidadId: comunidadId,
-              imageFiles: _selectedImages,
+              imageFiles: _postType == 'imagen' ? _selectedImages : null,
             );
 
       if (result.success) {
@@ -179,7 +178,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppTheme.onSurface),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_postType != null) {
+              setState(() => _postType = null);
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
         title: const Text(
           'Nueva publicación',
@@ -193,194 +198,294 @@ class _AddPostScreenState extends State<AddPostScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Categories Selector
-                    _buildSectionLabel('CATEGORÍA'),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+          : _postType == null
+              ? _buildTypeSelection()
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        'Comunidad',
-                        'Noticias',
-                        'Venta',
-                        'Cursos',
-                      ].map((cat) => _buildCategoryChip(cat)).toList(),
-                    ),
-                    const SizedBox(height: 24),
+                        _buildSectionLabel('CATEGORÍA'),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            'Comunidad',
+                            'Noticias',
+                            'Venta',
+                            'Cursos',
+                          ].map((cat) => _buildCategoryChip(cat)).toList(),
+                        ),
+                        const SizedBox(height: 24),
 
-                    // Cursos Paid/Free Selector
-
-                    // Network Selector (Only show for 'Comunidad')
-                    if (_category == 'Comunidad') ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                        if (_category == 'Comunidad') ...[
                           _buildSectionLabel('SELECCIONAR RED'),
-                          const Text(
-                            'Ver todas',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryText,
-                            ),
-                          ),
+                          const SizedBox(height: 12),
+                          _buildNetworkSelector(networks),
+                          const SizedBox(height: 24),
                         ],
-                      ),
-                      const SizedBox(height: 12),
-                      _buildNetworkSelector(networks),
-                      const SizedBox(height: 24),
-                    ],
 
-                    // Title Field (Mandatory for Text, optional/hidden logic for others)
-                    _buildSectionLabel('TÍTULO'),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _titleController,
-                      validator: (value) =>
-                          value!.trim().isEmpty ? 'Requerido' : null,
-                      style: const TextStyle(fontSize: 15),
-                      decoration: InputDecoration(
-                        hintText: 'Añade un título...',
-                        filled: true,
-                        fillColor: AppTheme.surfaceContainerLow,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Description Field
-                    _buildSectionLabel('DESCRIPCIÓN'),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _descriptionController,
-                      validator: (value) =>
-                          value!.trim().isEmpty ? 'Requerido' : null,
-                      maxLines: 4,
-                      style: const TextStyle(fontSize: 15, height: 1.5),
-                      decoration: InputDecoration(
-                        hintText: 'Escribe algo...',
-                        filled: true,
-                        fillColor: AppTheme.surfaceContainerLow,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    if (_category == 'Venta' || _category == 'Cursos') ...[
-                      _buildSectionLabel('PRECIO (\$)'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _priceController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        validator: (value) {
-                          if (_category != 'Venta' && _category != 'Cursos') {
-                            return null;
-                          }
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Requerido';
-                          }
-                          if (double.tryParse(value.trim()) == null) {
-                            return 'Precio inválido';
-                          }
-                          return null;
-                        },
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '0.00',
-                          prefixIcon: const Icon(Icons.attach_money, size: 20),
-                          filled: true,
-                          fillColor: AppTheme.surfaceContainerLow,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        if (_postType == 'texto') ...[
+                          _buildSectionLabel('TÍTULO'),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _titleController,
+                            validator: (value) =>
+                                value!.trim().isEmpty ? 'Requerido' : null,
+                            style: const TextStyle(fontSize: 15),
+                            decoration: InputDecoration(
+                              hintText: 'Añade un título...',
+                              filled: true,
+                              fillColor: AppTheme.surfaceContainerLow,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.all(16),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                          const SizedBox(height: 24),
+                        ],
 
-                    // Selector de imágenes
-                    _buildSectionLabel('IMÁGENES (OPCIONAL, MÁX. 3)'),
-                    const SizedBox(height: 12),
-                    _buildImagePickerSection(),
-                    const SizedBox(height: 24),
-
-                    // Privacy Checkbox
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Checkbox(
-                          value: _isPrivacyAccepted,
-                          onChanged: (val) =>
-                              setState(() => _isPrivacyAccepted = val ?? false),
-                          activeColor: AppTheme.primaryText,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
+                        _buildSectionLabel('CONTENIDO'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _descriptionController,
+                          validator: (value) =>
+                              value!.trim().isEmpty ? 'Requerido' : null,
+                          maxLines: 4,
+                          maxLength: _postType == 'imagen' ? 300 : 1000,
+                          buildCounter: (context, {
+                            required int currentLength,
+                            required bool isFocused,
+                            required int? maxLength,
+                          }) {
+                            if (maxLength == null) return null;
+                            final isLimitReached = currentLength >= maxLength;
+                            return Text(
+                              '$currentLength/$maxLength',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isLimitReached
+                                    ? AppTheme.error
+                                    : AppTheme.outline,
+                              ),
+                            );
+                          },
+                          style: const TextStyle(fontSize: 15, height: 1.5),
+                          decoration: InputDecoration(
+                            hintText: 'Escribe algo...',
+                            filled: true,
+                            fillColor: AppTheme.surfaceContainerLow,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
                           ),
                         ),
-                        const Expanded(
-                          child: Text(
-                            'Esta publicación no viola las políticas de privacidad de la aplicación',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.onSurfaceVariant,
+                        const SizedBox(height: 24),
+
+                        if (_postType == 'imagen' &&
+                            (_category == 'Venta' || _category == 'Cursos')) ...[
+                          _buildSectionLabel('PRECIO (\$)'),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _priceController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (value) {
+                              if (_category != 'Venta' && _category != 'Cursos') {
+                                return null;
+                              }
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Requerido';
+                              }
+                              if (double.tryParse(value.trim()) == null) {
+                                return 'Precio inválido';
+                              }
+                              return null;
+                            },
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '0.00',
+                              prefixIcon: const Icon(Icons.attach_money, size: 20),
+                              filled: true,
+                              fillColor: AppTheme.surfaceContainerLow,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        if (_postType == 'imagen') ...[
+                          _buildSectionLabel('IMÁGENES (OPCIONAL, MÁX. 3)'),
+                          const SizedBox(height: 12),
+                          _buildImagePickerSection(),
+                          const SizedBox(height: 24),
+                        ],
+
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Checkbox(
+                              value: _isPrivacyAccepted,
+                              onChanged: (val) => setState(
+                                  () => _isPrivacyAccepted = val ?? false),
+                              activeColor: AppTheme.primaryText,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'Esta publicación no viola las políticas de privacidad de la aplicación',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isPrivacyAccepted ? _submit : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary, // Using main global dark blue
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 4,
+                              shadowColor: Colors.black12,
+                            ),
+                            child: const Text(
+                              'Publicar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
+                        const SizedBox(height: 80),
                       ],
                     ),
-                    const SizedBox(height: 32),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isPrivacyAccepted ? _submit : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryText,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 4,
-                          shadowColor: Colors.black12,
-                        ),
-                        child: const Text(
-                          'Publicar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 80), // Padding for bottom nav
-                  ],
+                  ),
                 ),
+    );
+  }
+
+  Widget _buildTypeSelection() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              '¿Qué tipo de publicación deseas crear?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.onSurface,
               ),
             ),
+            const SizedBox(height: 40),
+            _buildTypeCard(
+              title: 'Publicación de texto',
+              description: 'Comparte una idea, pregunta o noticia en texto.',
+              icon: Icons.text_fields_rounded,
+              onTap: () => setState(() => _postType = 'texto'),
+            ),
+            const SizedBox(height: 20),
+            _buildTypeCard(
+              title: 'Publicación con imagen',
+              description: 'Sube fotos, vende artículos o promociona cursos.',
+              icon: Icons.image_rounded,
+              onTap: () => setState(() => _postType = 'imagen'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeCard({
+    required String title,
+    required String description,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppTheme.primary, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppTheme.outline),
+          ],
+        ),
+      ),
     );
   }
 
@@ -483,9 +588,9 @@ class _AddPostScreenState extends State<AddPostScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryText : Colors.transparent,
+          color: isSelected ? AppTheme.primary : Colors.transparent,
           border: Border.all(
-            color: isSelected ? AppTheme.primaryText : AppTheme.outlineVariant,
+            color: isSelected ? AppTheme.primary : AppTheme.outlineVariant,
           ),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -545,11 +650,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
                         border: Border.all(color: Colors.white, width: 2),
                       ),
                       child: ClipOval(
-                        child: SafeNetworkImage(
-                          url: net.imageUrl,
-                          fit: BoxFit.cover,
-                          errorWidget: const Icon(Icons.group),
-                        ),
+                        child: net.imageUrl.trim().isNotEmpty
+                            ? SafeNetworkImage(
+                                url: net.imageUrl,
+                                fit: BoxFit.cover,
+                                errorWidget: _buildInitialsAvatar(net),
+                              )
+                            : _buildInitialsAvatar(net),
                       ),
                     ),
                   ),
@@ -557,7 +664,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                   Text(
                     net.acronym.isNotEmpty
                         ? net.acronym
-                        : net.name.substring(0, 3),
+                        : (net.name.length >= 3 ? net.name.substring(0, 3) : net.name),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected
@@ -573,6 +680,23 @@ class _AddPostScreenState extends State<AddPostScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildInitialsAvatar(NetworkStoryModel net) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: AppTheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: Text(
+        net.acronym.isNotEmpty ? net.acronym : (net.name.isNotEmpty ? net.name.substring(0, 1).toUpperCase() : '?'),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
       ),
     );
   }

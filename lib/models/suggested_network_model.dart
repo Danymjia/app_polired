@@ -7,12 +7,16 @@ class SuggestedNetworkModel {
   final String nombre;
   final String descripcion;
   final String acronym;
+  final int cantidadMiembros;
+  final String? fotoPerfil;
 
   const SuggestedNetworkModel({
     required this.id,
     required this.nombre,
     required this.descripcion,
     required this.acronym,
+    this.cantidadMiembros = 0,
+    this.fotoPerfil,
   });
 
   factory SuggestedNetworkModel.fromApiMap(Map<String, dynamic> json) {
@@ -22,6 +26,8 @@ class SuggestedNetworkModel {
       nombre: nombre,
       descripcion: (json['descripcion'] as String?) ?? '',
       acronym: buildNetworkAcronym(nombre),
+      cantidadMiembros: (json['cantidadMiembros'] as num?)?.toInt() ?? 0,
+      fotoPerfil: json['fotoPerfil'] as String?,
     );
   }
 }

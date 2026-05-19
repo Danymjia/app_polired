@@ -74,21 +74,29 @@ class PostService {
 
   // ─── Feed por Red ─────────────────────────────────────────────────────────
   /// GET /publicaciones/red/:redId
-  Future<ApiResult<List<PostModel>>> fetchFeedByNetwork(
-    String redId, {
-    int page = 1,
-    int limit = 10,
-  }) async {
+  Future<ApiResult<List<PostModel>>> fetchFeedByNetwork(String redId) async {
     final result = await _api.get(
-      '${AppConstants.publicacionesPorRedEndpoint}/$redId?page=$page&limit=$limit',
+      '${AppConstants.publicacionesPorRedEndpoint}/$redId',
     );
-    return _parseItems(result);
+
+    if (result.success && result.data is Map) {
+      final data = result.data as Map<String, dynamic>;
+      final rawList = data['publicaciones'];
+      if (rawList is List) {
+        final posts = rawList
+            .whereType<Map<String, dynamic>>()
+            .map((j) => PostModel.fromJson(j))
+            .toList();
+        return ApiResult.ok(posts);
+      }
+    }
+    return ApiResult.error(result.message ?? 'Error al cargar publicaciones');
   }
 
   // ─── Crear Publicación Simple ─────────────────────────────────────────────
   /// POST /estudiantes/publicaciones
   Future<ApiResult<dynamic>> createPost({
-    required String titulo,
+    String? titulo,
     required String contenido,
     required String categoria,
     String? comunidadId,
@@ -97,11 +105,11 @@ class PostService {
   }) async {
     if (imageFiles != null && imageFiles.isNotEmpty) {
       final fields = <String, String>{
-        'titulo': titulo,
         'contenido': contenido,
         'categoria': categoria,
         'tipoContenido': 'imagen',
       };
+      if (titulo != null && titulo.isNotEmpty) fields['titulo'] = titulo;
       if (comunidadId != null) fields['comunidadId'] = comunidadId;
       final files = <http.MultipartFile>[];
       for (final file in imageFiles) {
@@ -111,11 +119,11 @@ class PostService {
     }
 
     final body = <String, dynamic>{
-      'titulo': titulo,
       'contenido': contenido,
       'categoria': categoria,
       'tipoContenido': (mediaUrls != null && mediaUrls.isNotEmpty) ? 'imagen' : 'texto',
     };
+    if (titulo != null && titulo.isNotEmpty) body['titulo'] = titulo;
     if (comunidadId != null) body['comunidadId'] = comunidadId;
     if (mediaUrls != null && mediaUrls.isNotEmpty) {
       body['mediaUrls'] = mediaUrls;
@@ -126,7 +134,7 @@ class PostService {
   // ─── Crear Artículo ───────────────────────────────────────────────────────
   /// POST /publicaciones/articulos
   Future<ApiResult<dynamic>> createArticle({
-    required String titulo,
+    String? titulo,
     required String descripcion,
     required dynamic precio,
     required String categoria,
@@ -137,12 +145,12 @@ class PostService {
   }) async {
     if (imageFiles != null && imageFiles.isNotEmpty) {
       final fields = <String, String>{
-        'titulo': titulo,
         'descripcion': descripcion,
         'precio': precio.toString(),
         'categoria': categoria,
         'tipoContenido': 'imagen',
       };
+      if (titulo != null && titulo.isNotEmpty) fields['titulo'] = titulo;
       if (comunidadId != null) fields['comunidadId'] = comunidadId;
       final files = <http.MultipartFile>[];
       for (final file in imageFiles) {
@@ -152,12 +160,12 @@ class PostService {
     }
 
     final body = <String, dynamic>{
-      'titulo': titulo,
       'descripcion': descripcion,
       'precio': precio,
       'categoria': categoria,
       'tipoContenido': tipoContenido,
     };
+    if (titulo != null && titulo.isNotEmpty) body['titulo'] = titulo;
     if (comunidadId != null) body['comunidadId'] = comunidadId;
     if (mediaUrls != null && mediaUrls.isNotEmpty) {
       body['mediaUrls'] = mediaUrls;
@@ -207,6 +215,47 @@ class PostService {
   /// GET /publicaciones/:id/comentarios/arbol
   Future<ApiResult<dynamic>> getCommentsTree(String postId) async {
     return await _api.get('/publicaciones/$postId/comentarios/arbol');
+  }
+
+  /// GET /publicaciones/:id/likes
+  Future<ApiResult<List<dynamic>>> getPostLikes(String postId) async {
+    final result = await _api.get('/publicaciones/$postId/likes');
+    if (result.success && result.data is Map) {
+      final data = result.data as Map<String, dynamic>;
+      final likes = data['likes'];
+      if (likes is List) {
+        return ApiResult.ok(likes);
+      }
+    }
+    return ApiResult.error(result.message ?? 'Error al obtener personas que dieron like');
+  }
+
+  /// POST /reportes/publicacion
+  Future<ApiResult<dynamic>> reportPost({
+    required String postId,
+    required String tipo,
+    required String descripcion,
+  }) async {
+    String normalizedTipo = tipo;
+    final lower = tipo.toLowerCase();
+    if (lower == 'contenido inapropiado') {
+      normalizedTipo = 'Contenido Inapropiado';
+    } else if (lower == 'spam') {
+      normalizedTipo = 'Spam';
+    } else if (lower == 'acoso o bullying') {
+      normalizedTipo = 'Acoso o Bullying';
+    } else if (lower == 'información falsa') {
+      normalizedTipo = 'Información falsa';
+    } else if (lower == 'otro') {
+      normalizedTipo = 'Otro';
+    }
+
+    final body = {
+      'publicacionId': postId,
+      'tipo': normalizedTipo,
+      'descripcion': descripcion,
+    };
+    return await _api.post('/reportes/publicacion', body);
   }
 
   /// POST /publicaciones/:id/comentarios

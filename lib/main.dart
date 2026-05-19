@@ -8,6 +8,8 @@ import 'providers/global_feed_provider.dart';
 import 'providers/messages_inbox_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/community_feed_provider.dart';
+import 'providers/explore_networks_provider.dart';
+import 'providers/network_profile_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/post_store_provider.dart';
 import 'repositories/conversations_repository.dart';
@@ -60,10 +62,19 @@ Future<void> main() async {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => NetworkProvider(networkService, postService),
+          create: (_) => ExploreNetworksProvider(networkService),
         ),
+        // PostStoreProvider must be declared BEFORE any ProxyProvider that depends on it
         ChangeNotifierProvider(
           create: (_) => PostStoreProvider(postService),
+        ),
+        ChangeNotifierProxyProvider<PostStoreProvider, NetworkProvider>(
+          create: (context) => NetworkProvider(networkService, postService, context.read<PostStoreProvider>()),
+          update: (_, store, previous) => previous ?? NetworkProvider(networkService, postService, store),
+        ),
+        ChangeNotifierProxyProvider<PostStoreProvider, NetworkProfileProvider>(
+          create: (context) => NetworkProfileProvider(networkService, context.read<PostStoreProvider>()),
+          update: (_, store, previous) => previous ?? NetworkProfileProvider(networkService, store),
         ),
         ChangeNotifierProxyProvider<PostStoreProvider, CommunityFeedProvider>(
           create: (context) => CommunityFeedProvider(postService, context.read<PostStoreProvider>()),

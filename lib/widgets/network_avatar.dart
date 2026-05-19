@@ -30,9 +30,7 @@ class NetworkAvatar extends StatelessWidget {
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: isSelected
-                      ? const LinearGradient(colors: [Colors.blue, Colors.red])
-                      : null,
+                  color: isSelected ? AppTheme.primary : Colors.transparent,
                 ),
                 padding: EdgeInsets.all(isSelected ? 2.5 : 0),
                 child: Container(
@@ -50,16 +48,41 @@ class NetworkAvatar extends StatelessWidget {
                   padding: EdgeInsets.all(isSelected ? 2 : 0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(36),
-                    child: SafeNetworkImage(
-                      url: network.imageUrl,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      errorWidget: Container(
-                        color: AppTheme.surfaceContainerHighest,
-                        child: const Icon(Icons.domain),
-                      ),
-                    ),
+                    child: network.imageUrl.trim().isNotEmpty
+                        ? SafeNetworkImage(
+                            url: network.imageUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              color: AppTheme.surfaceContainerHighest,
+                              alignment: Alignment.center,
+                              child: Text(
+                                network.acronym,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: AppTheme.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: Text(
+                              network.acronym,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -71,37 +94,18 @@ class NetworkAvatar extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.all(2),
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.secondary,
+                      color: Color(0xFF001B3C),
                     ),
-                    child: const Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Center(
-                          child: Icon(
-                            Icons.home,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Positioned(
-                          top: -4,
-                          right: -4,
-                          child: CircleAvatar(
-                            radius: 6,
-                            backgroundColor:
-                                Colors.black, // Primary equivalent for plus bg
-                            child: Icon(
-                              Icons.add,
-                              size: 8,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: const Center(
+                      child: Icon(
+                        Icons.add,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

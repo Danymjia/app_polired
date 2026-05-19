@@ -5,6 +5,155 @@ import '../services/post_service.dart';
 import '../providers/post_store_provider.dart';
 import 'package:provider/provider.dart';
 
+// ────────────────────────────────────────────────────────
+// Lightweight data models for in-memory use only
+// ────────────────────────────────────────────────────────
+
+class _CommentAuthor {
+  final String displayName;
+  final String username;
+  _CommentAuthor({required this.displayName, required this.username});
+}
+
+class _FlatReply {
+  final String id;
+  final _CommentAuthor author;
+  final String content;
+  final String timeAgo;
+  /// Non-null when this reply answers another reply (not the root comment).
+  final String? replyingToUsername;
+
+  const _FlatReply({
+    required this.id,
+    required this.author,
+    required this.content,
+    required this.timeAgo,
+    this.replyingToUsername,
+  });
+}
+
+class _RootComment {
+  final String id;
+  final _CommentAuthor author;
+  final String content;
+  final String timeAgo;
+  final List<_FlatReply> replies;
+  bool repliesExpanded;
+
+  _RootComment({
+    required this.id,
+    required this.author,
+    required this.content,
+    required this.timeAgo,
+    required this.replies,
+    required this.repliesExpanded,
+  });
+}
+
+// ────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────
+
+_CommentAuthor _parseAuthor(dynamic userId) {
+  if (userId is! Map) {
+    return _CommentAuthor(displayName: 'Usuario', username: 'usuario');
+  }
+  final nombre = (userId['nombre'] ?? '').toString().trim();
+  final apellido = (userId['apellido'] ?? '').toString().trim();
+  final username = (userId['username'] ?? '').toString().trim();
+  final displayName = '$nombre $apellido'.trim();
+  return _CommentAuthor(
+    displayName: displayName.isNotEmpty ? displayName : 'Usuario',
+    username: username.isNotEmpty ? username : (displayName.isNotEmpty ? displayName : 'usuario'),
+  );
+}
+
+String _timeAgo(String? createdAt) {
+  if (createdAt == null) return '';
+  try {
+    final date = DateTime.parse(createdAt).toLocal();
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 60) return 'Ahora';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    return '${diff.inDays}d';
+  } catch (_) {
+    return '';
+  }
+}
+
+/// Flattens a recursive `hijos` tree into a single-level reply list.
+/// The [rootAuthorUsername] is the username of the root comment's author.
+/// When a reply's direct parent is NOT the root, we prepend @parentUsername.
+List<_FlatReply> _flattenReplies(
+  List<dynamic> hijos,
+  String rootCommentId,
+) {
+  final List<_FlatReply> result = [];
+
+  // We do a DFS with each node's immediate parent id recorded.
+  void traverse(dynamic node, String? directParentId) {
+    final author = _parseAuthor(node['userId']);
+    final nodeId = node['_id']?.toString() ?? '';
+
+    // This reply directly answers another reply (not the root comment)
+    final bool isReplyToReply = directParentId != null && directParentId != rootCommentId;
+    String? replyingToUsername;
+
+    if (isReplyToReply) {
+      // directParentId is the id of the reply being answered — we need its author.
+      // We derive it from the existing result list.
+      final parent = result.where((r) => r.id == directParentId).firstOrNull;
+      replyingToUsername = parent?.author.username;
+    }
+
+    result.add(_FlatReply(
+      id: nodeId,
+      author: author,
+      content: (node['contenido'] ?? '').toString(),
+      timeAgo: _timeAgo(node['createdAt']?.toString()),
+      replyingToUsername: replyingToUsername,
+    ));
+
+    final children = node['hijos'];
+    if (children is List && children.isNotEmpty) {
+      for (final child in children) {
+        traverse(child, nodeId);
+      }
+    }
+  }
+
+  for (final hijo in hijos) {
+    traverse(hijo, rootCommentId);
+  }
+
+  return result;
+}
+
+/// Converts raw backend tree into flat _RootComment list.
+List<_RootComment> _parseComments(List<dynamic> raw) {
+  return raw.map((c) {
+    final id = c['_id']?.toString() ?? '';
+    final author = _parseAuthor(c['userId']);
+    final hijos = c['hijos'];
+    final replies = hijos is List && hijos.isNotEmpty
+        ? _flattenReplies(hijos, id)
+        : <_FlatReply>[];
+    return _RootComment(
+      id: id,
+      author: author,
+      content: (c['contenido'] ?? '').toString(),
+      timeAgo: _timeAgo(c['createdAt']?.toString()),
+      replies: replies,
+      repliesExpanded: false,
+    );
+  }).toList();
+}
+
+// ────────────────────────────────────────────────────────
+// Widget
+// ────────────────────────────────────────────────────────
+
 class CommentTreeSheet extends StatefulWidget {
   final String postId;
 
@@ -17,11 +166,12 @@ class CommentTreeSheet extends StatefulWidget {
 class _CommentTreeSheetState extends State<CommentTreeSheet> {
   bool _isLoading = true;
   bool _isSending = false;
-  List<dynamic> _comments = [];
+  List<_RootComment> _comments = [];
   final TextEditingController _commentController = TextEditingController();
-  
-  String? _replyToCommentId;
-  String? _replyToUsername;
+
+  // Null = composing a root comment; non-null = replying to something.
+  String? _replyToCommentId;  // the ID sent to the API (always the root comment id OR a reply id)
+  String? _replyToUsername;   // shown in the "Respondiendo a @..." banner
 
   @override
   void dispose() {
@@ -35,17 +185,19 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
     _loadComments();
   }
 
+  // ── Data loading ──────────────────────────────────────
+
   Future<void> _loadComments() async {
-    List<dynamic> loaded = [];
+    List<dynamic> raw = [];
     try {
       final postService = context.read<PostService>();
       final result = await postService.getCommentsTree(widget.postId);
 
       if (result.success && result.data != null) {
         if (result.data is Map && (result.data as Map)['comentarios'] != null) {
-          loaded = (result.data as Map)['comentarios'] as List<dynamic>;
+          raw = (result.data as Map)['comentarios'] as List<dynamic>;
         } else if (result.data is List) {
-          loaded = result.data as List<dynamic>;
+          raw = result.data as List<dynamic>;
         }
       }
     } catch (e) {
@@ -53,13 +205,14 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
     } finally {
       if (mounted) {
         setState(() {
-          _comments = loaded; // datos + redraw en un solo setState
+          _comments = _parseComments(raw);
           _isLoading = false;
         });
       }
     }
   }
 
+  // ── Submission ────────────────────────────────────────
 
   Future<void> _submitComment() async {
     final text = _commentController.text.trim();
@@ -67,7 +220,6 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
 
     setState(() => _isSending = true);
 
-    // Cachear providers antes del await para evitar uso de BuildContext across async gaps
     final postService = context.read<PostService>();
     final postStore = context.read<PostStoreProvider>();
 
@@ -78,10 +230,11 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
 
       if (result.success) {
         _commentController.clear();
-        _replyToCommentId = null;
-        _replyToUsername = null;
+        setState(() {
+          _replyToCommentId = null;
+          _replyToUsername = null;
+        });
         postStore.incrementCommentsCount(widget.postId);
-        // Refresh the whole tree to get the new comment
         await _loadComments();
       } else {
         if (mounted) {
@@ -97,11 +250,27 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSending = false);
-      }
+      if (mounted) setState(() => _isSending = false);
     }
   }
+
+  // ── Reply target helpers ──────────────────────────────
+
+  void _setReplyTarget(String commentId, String username) {
+    setState(() {
+      _replyToCommentId = commentId;
+      _replyToUsername = username;
+    });
+  }
+
+  void _clearReplyTarget() {
+    setState(() {
+      _replyToCommentId = null;
+      _replyToUsername = null;
+    });
+  }
+
+  // ── Build ─────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +282,7 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
       ),
       child: Column(
         children: [
-          // Handle & Header
+          // Handle
           Padding(
             padding: const EdgeInsets.only(top: 12, bottom: 4),
             child: Container(
@@ -138,112 +307,143 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
             ),
           ),
           const Divider(height: 1, thickness: 1, color: AppTheme.surfaceContainerHigh),
-          
-          // Comments List
+
+          // List
           Expanded(
-            child: _isLoading 
+            child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    itemCount: _comments.length,
-                    itemBuilder: (context, index) {
-                      final comment = _comments[index];
-                      return _buildCommentNode(comment);
-                    },
-                  ),
+                : _comments.isEmpty
+                    ? _buildEmpty()
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 16),
+                        itemCount: _comments.length,
+                        itemBuilder: (ctx, i) => _buildRootComment(_comments[i]),
+                      ),
           ),
-          
-          // Input Area
-          Container(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom > 0 ? 16 : 40),
-            decoration: const BoxDecoration(
-              color: AppTheme.surfaceContainerLowest,
-              border: Border(top: BorderSide(color: AppTheme.surfaceContainerHigh)),
+
+          // Input
+          _buildInput(),
+        ],
+      ),
+    );
+  }
+
+  // ── Empty state ───────────────────────────────────────
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.outline),
+          const SizedBox(height: 12),
+          Text(
+            'Sé el primero en comentar',
+            style: GoogleFonts.inter(
+              color: AppTheme.onSurfaceVariant,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_replyToUsername != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8, left: 12),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Respondiendo a @$_replyToUsername',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppTheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _replyToCommentId = null;
-                              _replyToUsername = null;
-                            });
-                          },
-                          child: const Icon(Icons.close, size: 16, color: AppTheme.outline),
-                        ),
-                      ],
-                    ),
-                  ),
-                Row(
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Root comment ──────────────────────────────────────
+
+  Widget _buildRootComment(_RootComment c) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Author row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _avatar(radius: 18),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: AppTheme.surfaceContainerHighest,
-                      child: Icon(Icons.person, color: AppTheme.onSurfaceVariant),
+                    _authorHeader(c.author.displayName, c.timeAgo, large: true),
+                    const SizedBox(height: 4),
+                    Text(
+                      c.content,
+                      style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurface, height: 1.35),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _commentController,
-                                enabled: !_isSending,
-                                textInputAction: TextInputAction.send,
-                                onSubmitted: (_) => _submitComment(),
-                                decoration: InputDecoration(
-                                  hintText: _replyToUsername != null 
-                                      ? 'Añade una respuesta...' 
-                                      : 'Añade un comentario...',
-                                  hintStyle: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: AppTheme.outline,
-                                  ),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                ),
-                                style: GoogleFonts.inter(fontSize: 14),
-                              ),
-                            ),
-                            if (_isSending)
-                              const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
-                              )
-                            else
-                              GestureDetector(
-                                onTap: _submitComment,
-                                child: Icon(Icons.send, color: AppTheme.primary, size: 20),
-                              ),
-                          ],
-                        ),
+                    const SizedBox(height: 6),
+                    _replyButton(() => _setReplyTarget(c.id, c.author.username), large: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Expand/collapse replies toggle
+          if (c.replies.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 48),
+              child: GestureDetector(
+                onTap: () => setState(() => c.repliesExpanded = !c.repliesExpanded),
+                child: Row(
+                  children: [
+                    Container(width: 24, height: 1, color: AppTheme.outlineVariant),
+                    const SizedBox(width: 10),
+                    Text(
+                      c.repliesExpanded
+                          ? 'Ocultar respuestas'
+                          : 'Ver ${c.replies.length} ${c.replies.length == 1 ? 'respuesta' : 'respuestas'}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.outline,
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ],
+
+          // Flat replies list — all at the same indent level
+          if (c.repliesExpanded && c.replies.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...c.replies.map((r) => _buildFlatReply(r, c.id)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Flat reply (same level for all) ──────────────────
+
+  Widget _buildFlatReply(_FlatReply reply, String rootCommentId) {
+    return Padding(
+      // Fixed left indent — never grows deeper
+      padding: const EdgeInsets.only(left: 48, top: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _avatar(radius: 14),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _authorHeader(reply.author.displayName, reply.timeAgo, large: false),
+                const SizedBox(height: 3),
+                // Content with optional @mention prefix
+                _buildReplyContent(reply),
+                const SizedBox(height: 5),
+                // "Responder" tap targets the *root* comment so the reply
+                // goes into the same flat list, but we show @username in the banner.
+                _replyButton(
+                  () => _setReplyTarget(reply.id, reply.author.username),
+                  large: false,
                 ),
               ],
             ),
@@ -253,142 +453,175 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
     );
   }
 
-  Widget _buildCommentNode(dynamic comment, {bool isReply = false}) {
-    final hasChildren = comment['hijos'] != null && (comment['hijos'] as List).isNotEmpty;
-    
-    // Parse author info from populated userId
-    final author = comment['userId'];
-    String authorName = 'Usuario';
-    if (author is Map) {
-      final nombre = author['nombre'] ?? '';
-      final apellido = author['apellido'] ?? '';
-      authorName = '$nombre $apellido'.trim();
-      if (authorName.isEmpty) authorName = 'Usuario';
+  Widget _buildReplyContent(_FlatReply reply) {
+    if (reply.replyingToUsername == null) {
+      return Text(
+        reply.content,
+        style: GoogleFonts.inter(fontSize: 13, color: AppTheme.onSurface, height: 1.35),
+      );
     }
 
-    // Time Ago
-    String timeAgo = '';
-    if (comment['createdAt'] != null) {
-      try {
-        final date = DateTime.parse(comment['createdAt']).toLocal();
-        final diff = DateTime.now().difference(date);
-        if (diff.inMinutes < 60) {
-          timeAgo = 'Hace ${diff.inMinutes}m';
-        } else if (diff.inHours < 24) {
-          timeAgo = 'Hace ${diff.inHours}h';
-        } else {
-          timeAgo = 'Hace ${diff.inDays}d';
-        }
-      } catch (_) {}
-    }
+    // Inline @mention prefix
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '@${reply.replyingToUsername} ',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.primary,
+            ),
+          ),
+          TextSpan(
+            text: reply.content,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppTheme.onSurface,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // ── Shared sub-widgets ────────────────────────────────
+
+  Widget _avatar({required double radius}) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppTheme.surfaceContainerHighest,
+      child: Icon(Icons.person, size: radius * 1.2, color: AppTheme.onSurfaceVariant),
+    );
+  }
+
+  Widget _authorHeader(String name, String time, {required bool large}) {
+    return Row(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Text(
+          name,
+          style: GoogleFonts.inter(
+            fontSize: large ? 13 : 12,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.onSurface,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          time,
+          style: GoogleFonts.inter(fontSize: large ? 11 : 10, color: AppTheme.outline),
+        ),
+      ],
+    );
+  }
+
+  Widget _replyButton(VoidCallback onTap, {required bool large}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        'Responder',
+        style: GoogleFonts.inter(
+          fontSize: large ? 12 : 11,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.outline,
+        ),
+      ),
+    );
+  }
+
+  // ── Input area ────────────────────────────────────────
+
+  Widget _buildInput() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16, 12, 16,
+        MediaQuery.of(context).viewInsets.bottom > 0 ? 12 : 36,
+      ),
+      decoration: const BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        border: Border(top: BorderSide(color: AppTheme.surfaceContainerHigh)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Reply banner
+          if (_replyToUsername != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, left: 12),
+              child: Row(
+                children: [
+                  Text(
+                    'Respondiendo a @$_replyToUsername',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: _clearReplyTarget,
+                    child: const Icon(Icons.close, size: 16, color: AppTheme.outline),
+                  ),
+                ],
+              ),
+            ),
+          Row(
             children: [
               CircleAvatar(
-                radius: isReply ? 16 : 20,
+                radius: 18,
                 backgroundColor: AppTheme.surfaceContainerHighest,
-                child: Icon(Icons.person, size: isReply ? 20 : 24, color: AppTheme.onSurfaceVariant),
+                child: Icon(Icons.person, color: AppTheme.onSurfaceVariant, size: 20),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          authorName,
-                          style: GoogleFonts.inter(
-                            fontSize: isReply ? 12 : 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.onSurface,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _commentController,
+                          enabled: !_isSending,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _submitComment(),
+                          decoration: InputDecoration(
+                            hintText: _replyToUsername != null
+                                ? 'Añade una respuesta...'
+                                : 'Añade un comentario...',
+                            hintStyle: GoogleFonts.inter(fontSize: 13, color: AppTheme.outline),
+                            border: InputBorder.none,
+                            isDense: true,
                           ),
+                          style: GoogleFonts.inter(fontSize: 13),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          timeAgo,
-                          style: GoogleFonts.inter(
-                            fontSize: isReply ? 10 : 12,
-                            color: AppTheme.outline,
-                          ),
+                      ),
+                      if (_isSending)
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: _submitComment,
+                          child: const Icon(Icons.send, color: AppTheme.primary, size: 18),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      comment['contenido'] ?? '',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppTheme.onSurface,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _replyToCommentId = comment['_id'];
-                          _replyToUsername = authorName;
-                        });
-                      },
-                      child: Row(
-                        children: [
-                          Text(
-                            'Responder',
-                            style: GoogleFonts.inter(
-                              fontSize: isReply ? 11 : 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.outline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (hasChildren && !isReply) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 1,
-                            color: AppTheme.outlineVariant,
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Ver ${(comment['hijos'] as List).length} respuestas',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.outline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ]
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: Icon(Icons.favorite_border, size: 20, color: AppTheme.outline),
               ),
             ],
           ),
-        ),
-        if (hasChildren)
-          Padding(
-            padding: const EdgeInsets.only(left: 56),
-            child: Column(
-              children: (comment['hijos'] as List).map((child) => _buildCommentNode(child, isReply: true)).toList(),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

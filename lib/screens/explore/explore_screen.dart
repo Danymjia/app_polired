@@ -8,7 +8,7 @@ import 'widgets/explore_empty_state.dart';
 import 'widgets/explore_error_state.dart';
 import 'widgets/explore_header.dart';
 import 'widgets/explore_loading.dart';
-import 'widgets/explore_post_card.dart';
+import '../../widgets/post_card.dart';
 import 'widgets/explore_tabs.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -34,10 +34,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      context.read<GlobalFeedProvider>().loadInitial(
-        category: _tabs[_selectedTab].toLowerCase(),
-      );
       _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<GlobalFeedProvider>().loadInitial(
+            category: _tabs[_selectedTab].toLowerCase(),
+          );
+        }
+      });
     }
   }
 
@@ -126,7 +130,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         (store) => store.getPost(postId)
                       );
                       if (post == null) return const SizedBox.shrink();
-                      return ExplorePostCard(post: post);
+                      return PostCard(post: post);
                     },
                   );
                 }, childCount: provider.postIds.length),

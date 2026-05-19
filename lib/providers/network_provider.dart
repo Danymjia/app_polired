@@ -3,6 +3,7 @@ import '../services/network_service.dart';
 import '../services/post_service.dart';
 import '../models/network_story_model.dart';
 import '../models/post_model.dart';
+import 'post_store_provider.dart';
 
 /// Estado del feed.
 enum FeedStatus { idle, loading, success, empty, error }
@@ -13,8 +14,9 @@ enum FeedStatus { idle, loading, success, empty, error }
 class NetworkProvider extends ChangeNotifier {
   final NetworkService _networkService;
   final PostService _postService;
+  final PostStoreProvider _postStore;
 
-  NetworkProvider(this._networkService, this._postService) {
+  NetworkProvider(this._networkService, this._postService, this._postStore) {
     // Cargar redes y feed al iniciar
     loadStudentNetworks();
   }
@@ -68,10 +70,16 @@ class NetworkProvider extends ChangeNotifier {
       // Seleccionar la primera red automáticamente y cargar su feed
       await selectNetwork(_networkStories.first);
     } else {
-      // Sin redes: mostrar estado vacío. El feed global es exclusivo de Explorar.
-      _networkStories = [];
+      // Sin redes unidas: mostrar redes disponibles en el carrusel.
       _feedStatus = FeedStatus.empty;
       _posts = [];
+      
+      final availableResult = await _networkService.getAvailableNetworksStories();
+      if (availableResult.success && availableResult.data != null) {
+        _networkStories = availableResult.data!;
+      } else {
+        _networkStories = [];
+      }
     }
 
     _isLoading = false;
@@ -92,6 +100,8 @@ class NetworkProvider extends ChangeNotifier {
     final result = await _postService.fetchFeedByNetwork(network.id);
     if (result.success && result.data != null) {
       _posts = result.data!;
+      // Registrar en el store global para sincronización de likes/saves
+      _postStore.addPosts(_posts);
       _feedStatus = _posts.isEmpty ? FeedStatus.empty : FeedStatus.success;
     } else {
       _feedStatus = FeedStatus.error;

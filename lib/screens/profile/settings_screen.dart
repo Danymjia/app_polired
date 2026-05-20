@@ -10,6 +10,8 @@ import '../settings/support_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/privacy_screen.dart';
 import '../settings/request_network_screen.dart';
+import 'saved_posts_screen.dart';
+import 'liked_posts_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -58,11 +60,13 @@ class SettingsScreen extends StatelessWidget {
               context,
               'Guardados',
               Icons.bookmark_outline,
+              screen: const SavedPostsScreen(),
             ),
             _buildMenuItem(
               context,
               'Me gusta',
               Icons.favorite_outline,
+              screen: const LikedPostsScreen(),
             ),
 
             const SizedBox(height: 20),

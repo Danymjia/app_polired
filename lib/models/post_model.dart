@@ -157,8 +157,14 @@ class PostModel {
     final descripcion = json['descripcion'] as String?;
     final precio = json['precio'];
 
+    final rawId = (json['_id'] as String?) ?? '';
+    final isArticle = categoria == 'venta' || categoria == 'cursos';
+    final idWithPrefix = rawId.isNotEmpty
+        ? (isArticle ? 'articulo:$rawId' : 'publicacion:$rawId')
+        : '';
+
     return PostModel(
-      id: (json['_id'] as String?) ?? '',
+      id: idWithPrefix,
       networkId: networkId,
       networkName: networkName,
       authorId: authorId,
@@ -250,6 +256,9 @@ class PostModel {
     if (precio is num) return '\$${precio.toString()}';
     return precio.toString();
   }
+
+  bool get liked => likedByMe;
+  bool get saved => savedByMe;
 
   @override
   bool operator ==(Object other) {

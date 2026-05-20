@@ -240,8 +240,8 @@ class _PostActions extends StatelessWidget {
       children: [
         // Like
         _ActionButton(
-          icon: post.likedByMe ? Icons.favorite : Icons.favorite_border,
-          color: post.likedByMe ? AppTheme.primary : AppTheme.onSurface.withAlpha(180),
+          icon: post.liked ? Icons.favorite : Icons.favorite_border,
+          color: post.liked ? AppTheme.primary : AppTheme.onSurface.withAlpha(180),
           label: '${post.likesCount}',
           onTap: () => context.read<PostStoreProvider>().toggleLike(post.id),
         ),
@@ -262,8 +262,8 @@ class _PostActions extends StatelessWidget {
         const Spacer(),
         // Save
         _ActionButton(
-          icon: post.savedByMe ? Icons.bookmark : Icons.bookmark_border,
-          color: post.savedByMe ? AppTheme.primary : AppTheme.onSurface.withAlpha(180),
+          icon: post.saved ? Icons.bookmark : Icons.bookmark_border,
+          color: post.saved ? AppTheme.primary : AppTheme.onSurface.withAlpha(180),
           onTap: () => context.read<PostStoreProvider>().toggleSave(post.id),
         ),
       ],

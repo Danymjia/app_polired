@@ -9,6 +9,7 @@ import '../../../models/post_model.dart';
 import '../../../providers/post_store_provider.dart';
 import '../../../widgets/post_card.dart';
 import '../../../widgets/primary_button.dart';
+import '../../../widgets/network_options_bottom_sheet.dart';
 import 'widgets/restricted_feed_overlay.dart';
 
 class NetworkProfileScreen extends StatefulWidget {
@@ -108,7 +109,18 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.more_horiz, color: AppTheme.onSurface),
-                    onPressed: () {},
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => NetworkOptionsBottomSheet(
+                          networkId: widget.networkId,
+                          networkName: profile.nombre,
+                          isMember: isMember,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

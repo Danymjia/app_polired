@@ -36,7 +36,8 @@ class NetworkProvider extends ChangeNotifier {
   Future<void> fetchRedesDelEstudiante() async {
     final result = await _networkService.getRedesDelEstudiante();
     if (result.success && result.data != null) {
-      _redesCount = result.data;
+      _redes = result.data!;
+      _redesCount = _redes.length;
       notifyListeners();
     }
   }
@@ -101,7 +102,7 @@ class NetworkProvider extends ChangeNotifier {
     if (result.success && result.data != null) {
       _posts = result.data!;
       // Registrar en el store global para sincronización de likes/saves
-      _postStore.addPosts(_posts);
+      _postStore.mergePosts(_posts);
       _feedStatus = _posts.isEmpty ? FeedStatus.empty : FeedStatus.success;
     } else {
       _feedStatus = FeedStatus.error;
@@ -171,6 +172,26 @@ class NetworkProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ─── Abandonar una red ────────────────────────────────────────────────────
+  Future<bool> abandonarRed(String redId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final result = await _networkService.salirseRed(redId);
+    if (result.success) {
+      await loadStudentNetworks();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } else {
+      _errorMessage = result.message;
       _isLoading = false;
       notifyListeners();
       return false;

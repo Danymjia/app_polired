@@ -17,13 +17,13 @@ class NetworkService {
   // ─── Redes del estudiante (lista completa) ────────────────────────────────
   /// GET /estudiantes/listar/redes
   /// Respuesta: { redes: [ { _id | id, nombre, descripcion } ] }
-  Future<ApiResult<int>> getRedesDelEstudiante() async {
+  Future<ApiResult<List<dynamic>>> getRedesDelEstudiante() async {
     final result = await _api.get(AppConstants.redesEstudianteEndpoint);
 
     if (result.success && result.data is Map) {
       final redes = (result.data as Map)['redes'];
       if (redes is List) {
-        return ApiResult.ok(redes.length);
+        return ApiResult.ok(redes);
       }
     }
 
@@ -153,4 +153,29 @@ class NetworkService {
     return await _api.post('/redes/solicitar-creacion', body);
   }
 
+  // ─── Reportar red ─────────────────────────────────────────────────────────
+  /// POST /estudiantes/reportes/red
+  /// Body: { redId, tipo, descripcion }
+  Future<ApiResult<dynamic>> reportNetwork({
+    required String redId,
+    required String tipo,
+    required String descripcion,
+  }) async {
+    final body = {
+      'redId': redId.trim(),
+      'tipo': tipo.trim(),
+      'descripcion': descripcion.trim(),
+    };
+    return await _api.post('/estudiantes/reportes/red', body);
+  }
+
+  // ─── Abandonar una red ────────────────────────────────────────────────────
+  /// POST /estudiantes/salirse/red
+  /// Body: { redId }
+  Future<ApiResult<dynamic>> salirseRed(String redId) async {
+    final body = {
+      'redId': redId.trim(),
+    };
+    return await _api.post('/estudiantes/salirse/red', body);
+  }
 }

@@ -40,6 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _initialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          final store = context.read<PostStoreProvider>();
+          if (!store.isSocialStateInitialized) {
+            store.initializeSocialState();
+          }
+
           final netProvider = context.read<NetworkProvider>();
           void checkNetwork() {
             if (!netProvider.isLoading) {

@@ -12,6 +12,9 @@ import 'providers/explore_networks_provider.dart';
 import 'providers/network_profile_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/post_store_provider.dart';
+import 'providers/explore_users_provider.dart';
+import 'providers/public_profile_provider.dart';
+import 'providers/my_profile_feed_provider.dart';
 import 'repositories/conversations_repository.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
@@ -20,6 +23,8 @@ import 'services/notification_service.dart';
 import 'services/post_service.dart';
 import 'services/socket_service.dart';
 import 'services/storage_service.dart';
+import 'services/explore_user_service.dart';
+import 'services/public_profile_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +52,8 @@ Future<void> main() async {
   final networkService = NetworkService(apiService);
   final postService = PostService(apiService);
   final notificationService = NotificationService(apiService);
+  final exploreUserService = ExploreUserService(apiService);
+  final publicProfileService = PublicProfileService(apiService);
 
   runApp(
     MultiProvider(
@@ -55,6 +62,8 @@ Future<void> main() async {
         Provider<PostService>.value(value: postService),
         Provider<SocketService>.value(value: socketService),
         Provider<NetworkService>.value(value: networkService),
+        Provider<ExploreUserService>.value(value: exploreUserService),
+        Provider<PublicProfileService>.value(value: publicProfileService),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
             authService: authService,
@@ -63,6 +72,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => ExploreNetworksProvider(networkService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ExploreUsersProvider(exploreUserService),
         ),
         // PostStoreProvider must be declared BEFORE any ProxyProvider that depends on it
         ChangeNotifierProvider(
@@ -83,6 +95,14 @@ Future<void> main() async {
         ChangeNotifierProxyProvider<PostStoreProvider, GlobalFeedProvider>(
           create: (context) => GlobalFeedProvider(postService, context.read<PostStoreProvider>()),
           update: (_, store, previous) => previous ?? GlobalFeedProvider(postService, store),
+        ),
+        ChangeNotifierProxyProvider<PostStoreProvider, PublicProfileProvider>(
+          create: (context) => PublicProfileProvider(publicProfileService, context.read<PostStoreProvider>()),
+          update: (_, store, previous) => previous ?? PublicProfileProvider(publicProfileService, store),
+        ),
+        ChangeNotifierProxyProvider<PostStoreProvider, MyProfileFeedProvider>(
+          create: (context) => MyProfileFeedProvider(publicProfileService, context.read<PostStoreProvider>()),
+          update: (_, store, previous) => previous ?? MyProfileFeedProvider(publicProfileService, store),
         ),
         ChangeNotifierProvider(
           create: (_) => NotificationProvider(notificationService),

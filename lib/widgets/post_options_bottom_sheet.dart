@@ -15,7 +15,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     // Selector to listen to global save state
     final isSaved = context.select<PostStoreProvider, bool>(
-      (store) => store.getPost(post.id)?.savedByMe ?? post.savedByMe,
+      (store) => store.getPost(post.id)?.saved ?? post.saved,
     );
 
     return Container(

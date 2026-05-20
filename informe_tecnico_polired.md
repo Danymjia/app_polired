@@ -1023,4 +1023,107 @@ El formulario de solicitud de red comunitaria se comunica directamente con el ba
 | `polired/lib/screens/profile/profile_screen.dart` | Rediseño estructural total: lock icon, nombre al lado de la foto de perfil, consumo real de publicaciones y redes, renderizado reactivo del botón "Gestionar red" por rol, pestaña única de publicaciones y grid moderno de 4 columnas. |
 | `polired/lib/screens/profile/settings_screen.dart` | Eliminación de buscador, centrado de título principal, iconos en estilo outline lineal, e introducción del botón azul institucional para la solicitud de red, condicionado a no mostrarse si el usuario posee el rol `admin_red`. |
 | `polired/lib/screens/settings/request_network_screen.dart` | Reescritura funcional completa a `StatefulWidget` con validación estricta de campos, contador de caracteres interactivo, deshabilitación de controles durante envío, spinner de carga e integración completa con `NetworkService`. |
-_
+
+---
+
+## 23. Sincronización Social Reactiva Global y Normalización de Entidades (Polired V2.5.0)
+
+### 23.1 El Desafío de la Sincronización en Feeds Distribuidos
+En redes sociales, una misma publicación puede aparecer en múltiples contextos (Feed de Home, feed de categoría en Explorar, pantalla de detalle, listado de Guardados o listado de Me gusta).
+* **El Problema**: Anteriormente, cada feed descargaba sus propios modelos del backend. Al reconstruir los feeds o hacer un pull-to-refresh, las respuestas HTTP sobreescribían los estados locales de `likedByMe` y `savedByMe`. Esto producía inconsistencias visuales donde un post marcado como "Me gusta" o "Guardado" en una vista volvía a aparecer sin marcar al refrescar o cambiar de categoría.
+* **La Solución**: Implementación de una arquitectura **Source of Truth** centralizada y reactiva gestionada por `PostStoreProvider`.
+
+### 23.2 Arquitectura del Store Centralizado (`PostStoreProvider`)
+Se rediseñó el store global en `lib/providers/post_store_provider.dart` para actuar como base de datos en memoria local para todas las publicaciones:
+
+```
+        Pantalla / Widget (ej. PostCard, PostDetailScreen)
+                       │
+                       ▼  (context.select para rebuilds O(1))
+              ┌──────────────────┐
+              │PostStoreProvider │ ◄── [Set] _likedPostIds, _savedPostIds
+              └────────┬─────────┘     (Verdad autoritativa local)
+                       │
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+    mergePosts()             Mutación Optimista
+(Mezcla incremental      (toggleLike / toggleSave)
+ preservando estados)                │
+                                     ▼
+                          Llamada HTTP (PostService)
+                          En caso de fallo: rollback automático
+```
+
+* **Sets Autoritativos Locales**: La clase mantiene los conjuntos `_likedPostIds` y `_savedPostIds` que representan el estado social real del usuario autenticado.
+* **Hidratación en Segundo Plano (`initializeSocialState`)**: Durante el montaje de la pantalla principal (`HomeScreen`), la aplicación inicia una consulta asíncrona al backend para obtener la totalidad de IDs que el usuario ha marcado con Like o Guardado, poblando los sets locales.
+* **Merge Inteligente (`mergePosts`)**: Al recibir nuevos datos de publicaciones desde cualquier feed o endpoint, el store mezcla los campos comunes de forma incremental. Prioriza la verdad local sobre las banderas visuales de la respuesta del servidor (`likedByMe` / `savedByMe`), protegiendo el estado contra respuestas desactualizadas o stale del backend.
+* **Mutaciones Optimistas con Fallback**: Las interacciones de "Me gusta" y "Guardado" actualizan el estado visual y los contadores en memoria de forma inmediata. Si la llamada HTTP correspondiente al backend falla, el store realiza un rollback del estado interno y notifica a los widgets para revertir la UI sin interrumpir al usuario.
+* **Política de Poda (`pruneCache`)**: Para evitar el consumo desmedido de memoria por persistir publicaciones indefinidamente, se implementó un recolector de basura simple que mantiene en el caché solo las publicaciones visualizadas recientemente o las que están guardadas/con like de forma activa.
+
+### 23.3 Normalización Polimórfica de IDs (MongoDB Compatibility)
+El backend maneja publicaciones en la colección `Publicacion` (Noticias y Comunidades) y artículos en la colección `Articulo` (Marketplace y Cursos). A nivel de base de datos, las llaves primarias pueden colisionar si ambas colecciones generan identificadores similares.
+* **Prefijos de ID en Ingesta**: Al instanciar un `PostModel` en la factoría `fromJson`, el cliente prepende automáticamente un prefijo unificado (`publicacion:` o `articulo:`) al campo de ID.
+* **Limpieza de ID en Comunicación (`cleanId`)**: Al realizar operaciones CRUD u operaciones sociales (likes, comentarios, reportes, guardados), `PostService` utiliza el método estático `cleanId` para eliminar el prefijo antes de enviar la petición HTTP al backend. Esto permite la coexistencia limpia de tipos polimórficos en la UI.
+
+### 23.4 UI Reactiva y Rendimiento
+* **Consumo Eficiente con Selectors**: Los widgets de tarjetas (`PostCard`), pantallas de detalle (`PostDetailScreen`) y modales de opciones (`PostOptionsBottomSheet`) se suscriben granularmente al store utilizando `context.select<PostStoreProvider, T>()`. Esto previene rebuilds de toda la lista y optimiza el refresco del widget específico al ID mutado.
+* **Listas Filtradas en Tiempo Real**: Las pantallas de `LikedPostsScreen` y `SavedPostsScreen` computan dinámicamente sus listas cruzando sus arreglos de IDs con los sets del store. Si el usuario remueve un bookmark o un like de un post desde el detalle o el bottom sheet de opciones, la publicación desaparece instantáneamente y de forma animada del listado respectivo.
+
+### 23.5 Archivos Involucrados en la Refactorización
+
+| Archivo | Rol de la Modificación |
+|---|---|
+| `polired/lib/models/post_model.dart` | Agregados getters reactivos `liked` y `saved`. Normalización de `id` con prefijo según categoría en la factoría `fromJson`. |
+| `polired/lib/services/post_service.dart` | Implementación de `cleanId`. Normalización y limpieza de parámetros de ID en métodos de me gusta, guardar, reportar y comentar. |
+| `polired/lib/providers/post_store_provider.dart` | Creación de sets autoritativos, hidratación asíncrona, merge incremental, mutaciones optimistas con rollback y estrategia de poda de caché. |
+| `polired/lib/widgets/post_card.dart` | Refactorizado a `StatelessWidget` y enlazado reactivamente al store global a través de selectores. |
+| `polired/lib/screens/post/post_detail_screen.dart` | Enlazado reactivamente al store global para acciones sociales e incrementos. |
+| `polired/lib/widgets/post_options_bottom_sheet.dart` | Selector dinámico del estado de guardado. |
+| `polired/lib/screens/profile/saved_posts_screen.dart` | Filtrado dinámico y reactivo basado en el store central. |
+| `polired/lib/screens/profile/liked_posts_screen.dart` | Filtrado dinámico y reactivo basado en el store central. |
+| `polired/lib/screens/home/home_screen.dart` | Inicia la hidratación de estado social en segundo plano (`initializeSocialState`). |
+| `polired/lib/providers/global_feed_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
+| `polired/lib/providers/community_feed_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
+| `polired/lib/providers/network_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
+| `polired/lib/providers/network_profile_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
+
+---
+
+## 24. Rediseño del Perfil Privado, Exclusión de la Red Global, Sincronización Social Corregida y Control de Selección de Redes (Polired V2.6.0)
+
+### 24.1 Exclusión de la Red Global en Listados
+* **Backend**: Se actualizaron los controladores `listarRedesDelEstudiante` y `obtenerPerfilPublicoInfo` en `estudiantesController.js` para utilizar la función de utilidad `populateExcludeGlobalMatch` y aplicar un filtrado estricto `.filter(Boolean)` sobre el arreglo de redes devuelto. Esto garantiza que la red global automática nunca se liste dentro de los listados de comunidades.
+* **Frontend**: Se modificó `NetworkService` y `NetworkProvider` para descargar la lista real completa de redes del estudiante (`getRedesDelEstudiante`) en lugar de depender de un conteo bruto, permitiendo calcular el contador y renderizar los chips comunitarios con datos reales del usuario.
+
+### 24.2 Rediseño Estructural del Perfil Privado
+* **Nueva Estructura de Cabecera**: En `profile_screen.dart`, se reestructuró la información de perfil para colocar el nombre y apellido al lado derecho del avatar, y debajo de este colocar los contadores y etiquetas de **Publicaciones** y **Redes** en formato vertical. La biografía se desplaza debajo del avatar, seguido de un carrusel horizontal con chips con el nombre de las redes comunitarias a las que el estudiante está unido (sin avatar/foto).
+* **Conteo Unificado de Publicaciones**: En el backend, el endpoint `/perfil-estudiante` ahora suma de forma paralela las publicaciones y los artículos del estudiante (`Promise.all` para `Publicacion.countDocuments` y `Articulo.countDocuments`), entregando el valor exacto en `publicacionesCount`.
+* **Soporte Multi-Tab y Grid de Contenido**: Implementación de un `NestedScrollView` con sticky `TabBar` y `TabBarView` que separa los contenidos del perfil en dos pestañas ("Publicaciones" y "Artículos") con soporte de refrescado vertical (`RefreshIndicator`) e ingesta directa en el store unificado mediante `MyProfileFeedProvider`.
+
+### 24.3 Sincronización Social Corregida (Likes/Saved)
+* **Ingesta de Banderas Positivas**: Modificada la lógica de sincronización en `PostStoreProvider` para que confíe en cualquier confirmación explícita `likedByMe: true` o `savedByMe: true` recibida de endpoints de consulta específicos (como los listados de likes y guardados). Al detectar estas banderas en posts entrantes, sus IDs se inyectan automáticamente en los conjuntos locales `_likedPostIds` y `_savedPostIds`.
+* **Inicialización Segura**: La bandera `_isSocialStateInitialized` en `PostStoreProvider` ahora solo se marca como activa si las peticiones iniciales para likes y guardados se completan con éxito.
+
+### 24.4 Control de Selección de Redes y Alineación en Creación de Publicaciones (`AddPostScreen`)
+* **Filtrado de Redes Unidas**: Se modificó `add_post_screen.dart` para filtrar la lista de redes comunitarias en el selector bajo la categoría "Comunidad" mediante el predicado `n.isJoined == true`. Esto previene que el usuario intente publicar en redes a las que no se ha unido.
+* **Mensaje de Advertencia Gris**: Si la lista de redes unidas está vacía, se muestra un mensaje informativo en color gris: *"No estás unido a ninguna red comunitaria. Únete a una red para poder publicar aquí."*, deshabilitando y controlando la publicación en dicha categoría.
+* **Alineación Superior del Selector**: Se eliminó el centrado vertical de la pantalla de selección del tipo de publicación, ubicando el contenido (el texto instructivo y las tarjetas selectoras) en la parte superior de la vista, justo debajo de la cabecera.
+
+### 24.5 Resumen de Archivos Modificados
+
+| Archivo | Rol en el Cambio |
+|---|---|
+| `BackendV2/src/controllers/estudiantesController.js` | Modificó `listarRedesDelEstudiante`, `obtenerPerfilPublicoInfo` (exclusión global) y `perfilEstudiante` (conteo unificado). |
+| `polired/lib/providers/post_store_provider.dart` | Sincronización de flags directas true y verificación en inicialización social. |
+| `polired/lib/providers/network_provider.dart` | Almacenamiento y cálculo reactivo del listado completo de redes del estudiante. |
+| `polired/lib/services/network_service.dart` | Devolución de listado completo de redes en `getRedesDelEstudiante`. |
+| `polired/lib/providers/my_profile_feed_provider.dart` | [NUEVO] Proveedor de feed paginado y aislado para publicaciones y artículos de perfil privado. |
+| `polired/lib/main.dart` | Registro de `MyProfileFeedProvider`. |
+| `polired/lib/screens/profile/profile_screen.dart` | Rediseño estructural, soporte multi-tab, carrusel horizontal e integración con providers de perfil. |
+| `polired/lib/screens/post/add_post_screen.dart` | Filtrado del selector de redes por estado univo (`isJoined`), auto-selección depurada y advertencia en gris. |
+| `polired/lib/screens/explore/network_profile_screen.dart` | Cambió el icono de opciones de 3 puntos en AppBar de vertical (`Icons.more_vert`) a horizontal (`Icons.more_horiz`). |
+| `polired/lib/screens/settings/privacy_screen.dart` | Redirección del botón "Contactar Soporte" para que navegue directamente a la pantalla de Asistencia (`SupportScreen`). |
+
+---
+_Documento actualizado progresivamente con cada fase del desarrollo._
+

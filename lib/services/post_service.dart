@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import 'api_service.dart';
@@ -198,28 +199,34 @@ class PostService {
 
   // ─── Interacciones Sociales ───────────────────────────────────────────────
   
+  String cleanId(String id) => id.split(':').last;
+
   /// POST /publicaciones/:id/like o DELETE /publicaciones/:id/like
   Future<bool> toggleLike(String postId, bool isCurrentlyLiked) async {
-    final endpoint = '/publicaciones/$postId/like';
+    final rawId = cleanId(postId);
+    final endpoint = '/publicaciones/$rawId/like';
     final result = isCurrentlyLiked ? await _api.delete(endpoint) : await _api.post(endpoint, {});
     return result.success;
   }
 
   /// POST /publicaciones/:id/guardar o DELETE /publicaciones/:id/guardar
   Future<bool> toggleSave(String postId, bool isCurrentlySaved) async {
-    final endpoint = '/publicaciones/$postId/guardar';
+    final rawId = cleanId(postId);
+    final endpoint = '/publicaciones/$rawId/guardar';
     final result = isCurrentlySaved ? await _api.delete(endpoint) : await _api.post(endpoint, {});
     return result.success;
   }
 
   /// GET /publicaciones/:id/comentarios/arbol
   Future<ApiResult<dynamic>> getCommentsTree(String postId) async {
-    return await _api.get('/publicaciones/$postId/comentarios/arbol');
+    final rawId = cleanId(postId);
+    return await _api.get('/publicaciones/$rawId/comentarios/arbol');
   }
 
   /// GET /publicaciones/:id/likes
   Future<ApiResult<List<dynamic>>> getPostLikes(String postId) async {
-    final result = await _api.get('/publicaciones/$postId/likes');
+    final rawId = cleanId(postId);
+    final result = await _api.get('/publicaciones/$rawId/likes');
     if (result.success && result.data is Map) {
       final data = result.data as Map<String, dynamic>;
       final likes = data['likes'];
@@ -236,6 +243,7 @@ class PostService {
     required String tipo,
     required String descripcion,
   }) async {
+    final rawId = cleanId(postId);
     String normalizedTipo = tipo;
     final lower = tipo.toLowerCase();
     if (lower == 'contenido inapropiado') {
@@ -251,7 +259,7 @@ class PostService {
     }
 
     final body = {
-      'publicacionId': postId,
+      'publicacionId': rawId,
       'tipo': normalizedTipo,
       'descripcion': descripcion,
     };
@@ -260,12 +268,87 @@ class PostService {
 
   /// POST /publicaciones/:id/comentarios
   Future<ApiResult<dynamic>> createComment(String postId, String contenido) async {
-    return await _api.post('/publicaciones/$postId/comentarios', {'contenido': contenido});
+    final rawId = cleanId(postId);
+    return await _api.post('/publicaciones/$rawId/comentarios', {'contenido': contenido});
   }
 
   /// POST /comentarios/:commentId/responder
   Future<ApiResult<dynamic>> replyComment(String commentId, String contenido) async {
     return await _api.post('/comentarios/$commentId/responder', {'contenido': contenido});
+  }
+
+  /// GET /usuarios/guardados
+  Future<ApiResult<List<PostModel>>> fetchSavedPosts() async {
+    try {
+      final result = await _api.get('/usuarios/guardados');
+      if (result.success && result.data is Map) {
+        final data = result.data as Map<String, dynamic>;
+        final rawList = data['guardados'] ?? data['items'] ?? data['publicaciones'];
+        if (rawList is List) {
+          final List<PostModel> posts = [];
+          for (final item in rawList) {
+            if (item is Map<String, dynamic>) {
+              try {
+                posts.add(PostModel.fromJson(item));
+              } catch (e, stack) {
+                debugPrint('PostService.fetchSavedPosts: Error parsing item: $item\nError: $e\n$stack');
+              }
+            }
+          }
+          return ApiResult.ok(posts);
+        } else {
+          debugPrint('PostService.fetchSavedPosts: Raw list is not a List: $rawList');
+        }
+      } else {
+        debugPrint('PostService.fetchSavedPosts: Request failed or data is not a Map: ${result.message}');
+      }
+    } catch (e, stack) {
+      debugPrint('PostService.fetchSavedPosts: Exception caught: $e\n$stack');
+    }
+    return ApiResult.error('Error al cargar publicaciones guardadas');
+  }
+
+  /// GET /usuarios/likes?page=&limit=
+  Future<ApiResult<List<PostModel>>> fetchLikedPosts({int page = 1, int limit = 20}) async {
+    try {
+      final result = await _api.get('/usuarios/likes?page=$page&limit=$limit');
+      if (result.success && result.data is Map) {
+        final data = result.data as Map<String, dynamic>;
+        final rawList = data['likes'] ?? data['liked'] ?? data['items'] ?? data['publicaciones'];
+        if (rawList is List) {
+          final List<PostModel> posts = [];
+          for (final item in rawList) {
+            if (item is Map<String, dynamic>) {
+              try {
+                posts.add(PostModel.fromJson(item));
+              } catch (e, stack) {
+                debugPrint('PostService.fetchLikedPosts: Error parsing item: $item\nError: $e\n$stack');
+              }
+            }
+          }
+          return ApiResult.ok(posts);
+        } else {
+          debugPrint('PostService.fetchLikedPosts: Raw list is not a List: $rawList');
+        }
+      } else {
+        debugPrint('PostService.fetchLikedPosts: Request failed or data is not a Map: ${result.message}');
+      }
+    } catch (e, stack) {
+      debugPrint('PostService.fetchLikedPosts: Exception caught: $e\n$stack');
+    }
+    return ApiResult.error('Error al cargar publicaciones gustadas');
+  }
+
+  /// POST /reportes/app
+  Future<ApiResult<dynamic>> reportApp({
+    required String tipo,
+    required String descripcion,
+  }) async {
+    final body = {
+      'tipo': tipo,
+      'descripcion': descripcion,
+    };
+    return await _api.post('/reportes/app', body);
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────

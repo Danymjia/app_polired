@@ -63,15 +63,20 @@ class _AddPostScreenState extends State<AddPostScreen> {
     super.initState();
     _postService = PostService(context.read<ApiService>());
 
-    // Auto-select first network if available
+    // Auto-select first joined network if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final networkProvider = Provider.of<NetworkProvider>(
         context,
         listen: false,
       );
-      if (networkProvider.networkStories.isNotEmpty) {
+      final joinedNetworks = networkProvider.networkStories.where((n) => n.isJoined).toList();
+      if (joinedNetworks.isNotEmpty) {
         setState(() {
-          _selectedNetwork = networkProvider.networkStories.first;
+          _selectedNetwork = joinedNetworks.first;
+        });
+      } else {
+        setState(() {
+          _selectedNetwork = null;
         });
       }
     });
@@ -168,7 +173,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
   @override
   Widget build(BuildContext context) {
     final networkProvider = Provider.of<NetworkProvider>(context);
-    final networks = networkProvider.networkStories;
+    final networks = networkProvider.networkStories.where((n) => n.isJoined).toList();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -397,37 +402,35 @@ class _AddPostScreenState extends State<AddPostScreen> {
   }
 
   Widget _buildTypeSelection() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              '¿Qué tipo de publicación deseas crear?',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.onSurface,
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 32, left: 24, right: 24, bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            '¿Qué tipo de publicación deseas crear?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.onSurface,
             ),
-            const SizedBox(height: 40),
-            _buildTypeCard(
-              title: 'Publicación de texto',
-              description: 'Comparte una idea, pregunta o noticia en texto.',
-              icon: Icons.text_fields_rounded,
-              onTap: () => setState(() => _postType = 'texto'),
-            ),
-            const SizedBox(height: 20),
-            _buildTypeCard(
-              title: 'Publicación con imagen',
-              description: 'Sube fotos, vende artículos o promociona cursos.',
-              icon: Icons.image_rounded,
-              onTap: () => setState(() => _postType = 'imagen'),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 32),
+          _buildTypeCard(
+            title: 'Publicación de texto',
+            description: 'Comparte una idea, pregunta o noticia en texto.',
+            icon: Icons.text_fields_rounded,
+            onTap: () => setState(() => _postType = 'texto'),
+          ),
+          const SizedBox(height: 20),
+          _buildTypeCard(
+            title: 'Publicación con imagen',
+            description: 'Sube fotos, vende artículos o promociona cursos.',
+            icon: Icons.image_rounded,
+            onTap: () => setState(() => _postType = 'imagen'),
+          ),
+        ],
       ),
     );
   }
@@ -608,9 +611,16 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
   Widget _buildNetworkSelector(List<NetworkStoryModel> networks) {
     if (networks.isEmpty) {
-      return const Text(
-        'No tienes redes disponibles',
-        style: TextStyle(color: Colors.grey),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          'No estás unido a ninguna red comunitaria. Únete a una red para poder publicar aquí.',
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       );
     }
 

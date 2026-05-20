@@ -10,6 +10,8 @@ import '../screens/auth/welcome_screen.dart';
 import '../screens/main_layout_screen.dart';
 import '../screens/explore/explore_networks_screen.dart';
 import '../screens/explore/network_profile_screen.dart';
+import '../screens/explore/public_profile_screen.dart';
+import '../screens/post/post_detail_screen.dart';
 
 /// Configuración centralizada de navegación con go_router.
 final GoRouter appRouter = GoRouter(
@@ -56,6 +58,18 @@ final GoRouter appRouter = GoRouter(
       path: '/explore/networks/:id',
       builder: (ctx, state) => NetworkProfileScreen(
         networkId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/explore/public-profile/:id',
+      builder: (ctx, state) => PublicProfileScreen(
+        userId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/post/:id',
+      builder: (ctx, state) => PostDetailScreen(
+        postId: state.pathParameters['id']!,
       ),
     ),
   ],

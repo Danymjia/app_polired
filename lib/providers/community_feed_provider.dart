@@ -37,7 +37,7 @@ class CommunityFeedProvider extends ChangeNotifier {
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
-      _postStore.addPosts(newPosts);
+      _postStore.mergePosts(newPosts);
       
       _postIds
         ..clear()
@@ -71,7 +71,7 @@ class CommunityFeedProvider extends ChangeNotifier {
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
-      _postStore.addPosts(newPosts);
+      _postStore.mergePosts(newPosts);
 
       final filteredIds = _removeDuplicatePosts(newPosts.map((p) => p.id).toList());
       if (filteredIds.isNotEmpty) {

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import '../../config/theme.dart';
 import '../post/add_post_screen.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/network_provider.dart';
+import '../../providers/my_profile_feed_provider.dart';
+import '../../providers/post_store_provider.dart';
 import '../../widgets/safe_network_image.dart';
+import '../../widgets/public_profile_grid.dart';
 
 /// Pantalla de Perfil de Usuario — diseño estilo Instagram/Threads minimalista.
 class ProfileScreen extends StatefulWidget {
@@ -17,13 +21,40 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _scrollController.addListener(_onScroll);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NetworkProvider>().fetchRedesDelEstudiante();
+      final user = context.read<AuthProvider>().user;
+      if (user != null) {
+        context.read<MyProfileFeedProvider>().fetchInitialFeed(user.id);
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final user = context.read<AuthProvider>().user;
+      if (user != null) {
+        context.read<MyProfileFeedProvider>().fetchMoreFeed(user.id);
+      }
+    }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -78,6 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStat(String count, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           count,
@@ -91,29 +123,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 13,
-            color: AppTheme.primaryText,
+            fontSize: 12,
+            color: AppTheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
-    );
-  }
-
-  // ── Grid placeholder card ─────────────────────────────────────────────────
-
-  Widget _buildGridCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          color: AppTheme.outlineVariant,
-          size: 28,
-        ),
-      ),
     );
   }
 
@@ -123,276 +138,368 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     final redesCount = context.watch<NetworkProvider>().redesCount;
+    final redesList = context.watch<NetworkProvider>().redes;
     final bioDescripcion = user?.biografia?.trim();
     final initials = _initials(user?.nombre ?? '', user?.apellido ?? '');
     final isAdmin = user?.esAdminRed ?? false;
 
+    final myProfileFeedProvider = context.watch<MyProfileFeedProvider>();
+    final postStore = context.watch<PostStoreProvider>();
+
+    final allIds = myProfileFeedProvider.postIds;
+    final publicationIds = allIds.where((id) {
+      final post = postStore.getPost(id);
+      return post != null && !post.isArticle;
+    }).toList();
+
+    final articleIds = allIds.where((id) {
+      final post = postStore.getPost(id);
+      return post != null && post.isArticle;
+    }).toList();
+
     return Scaffold(
       backgroundColor: AppTheme.surfaceContainerLowest,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surfaceContainerLowest,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        // "+" minimal icon — no container box
-        leading: IconButton(
-          icon: const Icon(Icons.add, color: AppTheme.primaryText, size: 26),
-          tooltip: 'Nueva publicación',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddPostScreen()),
-            );
-          },
-        ),
-        // Username with lock icon
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.lock_outline, size: 14, color: AppTheme.primaryText),
-            const SizedBox(width: 4),
-            Text(
-              user?.username ?? 'Perfil',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primaryText,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppTheme.primaryText, size: 26),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.outlineVariant.withValues(alpha: 0.3),
-            height: 1.0,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Profile header ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Row: avatar | name + stats
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _buildAvatar(user?.fotoPerfil, initials),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Name (above stats)
-                            Text(
-                              user?.nombreCompleto ?? 'Cargando...',
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.primaryText,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Stats row
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                _buildStat(
-                                  user?.publicacionesCount.toString() ?? '0',
-                                  'Publicaciones',
-                                ),
-                                const SizedBox(width: 28),
-                                _buildStat(
-                                  redesCount?.toString() ?? '0',
-                                  'Redes',
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Bio (below avatar+name row)
-                  if (bioDescripcion != null && bioDescripcion.isNotEmpty) ...[
-                    const SizedBox(height: 14),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          if (user != null) {
+            final myFeed = context.read<MyProfileFeedProvider>();
+            final netProv = context.read<NetworkProvider>();
+            await myFeed.fetchInitialFeed(user.id);
+            await netProv.fetchRedesDelEstudiante();
+          }
+        },
+        color: AppTheme.primary,
+        child: NestedScrollView(
+          controller: _scrollController,
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                backgroundColor: AppTheme.surfaceContainerLowest,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                pinned: true,
+                leading: IconButton(
+                  icon: const Icon(Icons.add, color: AppTheme.primaryText, size: 26),
+                  tooltip: 'Nueva publicación',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AddPostScreen()),
+                    );
+                  },
+                ),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock_outline, size: 14, color: AppTheme.primaryText),
+                    const SizedBox(width: 4),
                     Text(
-                      bioDescripcion,
+                      user?.username ?? 'Perfil',
                       style: GoogleFonts.inter(
-                        fontSize: 13,
-                        height: 1.45,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                         color: AppTheme.primaryText,
                       ),
                     ),
                   ],
-
-                  const SizedBox(height: 16),
-
-                  // ── Action buttons ────────────────────────────────────────
-                  Row(
+                ),
+                centerTitle: true,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.more_horiz, color: AppTheme.primaryText, size: 26),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 34,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const EditProfileScreen(),
+                      // Row: avatar | name + stats
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _buildAvatar(user?.fotoPerfil, initials),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user?.nombreCompleto ?? 'Cargando...',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.primaryText,
+                                  ),
                                 ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.surfaceContainerLow,
-                              foregroundColor: AppTheme.primaryText,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                            child: Text(
-                              'Editar perfil',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    _buildStat(
+                                      user?.publicacionesCount.toString() ?? '0',
+                                      'Publicaciones',
+                                    ),
+                                    const SizedBox(width: 28),
+                                    _buildStat(
+                                      redesCount?.toString() ?? '0',
+                                      'Redes',
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      if (isAdmin) ...[
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: SizedBox(
-                            height: 34,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Placeholder for future admin web redirect
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Gestión de red: próximamente'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: Text(
-                                'Gestionar red',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
+
+                      // Bio
+                      if (bioDescripcion != null && bioDescripcion.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        Text(
+                          bioDescripcion,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            height: 1.45,
+                            color: AppTheme.primaryText,
                           ),
                         ),
                       ],
+
+                      // Networks list (horizontal scroll, only name)
+                      if (redesList.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Redes comunitarias',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.onSurfaceVariant,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 36,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: redesList.length,
+                            itemBuilder: (context, index) {
+                              final net = redesList[index];
+                              final netId = net['_id'] ?? '';
+                              final netNombre = net['nombre'] ?? '';
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ActionChip(
+                                  onPressed: () {
+                                    if (netId.isNotEmpty) {
+                                      context.push('/explore/networks/$netId');
+                                    }
+                                  },
+                                  label: Text(
+                                    netNombre,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.onSurface,
+                                    ),
+                                  ),
+                                  backgroundColor: AppTheme.surfaceContainerLow,
+                                  side: BorderSide(color: AppTheme.outlineVariant.withValues(alpha: 0.5)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+
+                      // Action buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 34,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const EditProfileScreen(),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.surfaceContainerLow,
+                                  foregroundColor: AppTheme.primaryText,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                child: Text(
+                                  'Editar perfil',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (isAdmin) ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: SizedBox(
+                                height: 34,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Gestión de red: próximamente'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primary,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  child: Text(
+                                    'Gestionar red',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-
-            // ── Single tab: Publicaciones ──────────────────────────────────
-            Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: AppTheme.surfaceContainerHigh, width: 0.8),
-                  bottom: BorderSide(color: AppTheme.surfaceContainerHigh, width: 0.8),
                 ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.grid_on, size: 22, color: AppTheme.primaryText),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Publicaciones',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryText,
-                    ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverTabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: AppTheme.primary,
+                    labelColor: AppTheme.primary,
+                    unselectedLabelColor: AppTheme.onSurfaceVariant,
+                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                    unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.grid_on_rounded, size: 20),
+                        text: 'Publicaciones',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.shopping_bag_rounded, size: 20),
+                        text: 'Artículos',
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-
-            // ── 4-column grid ──────────────────────────────────────────────
-            _buildGrid(user?.publicacionesCount ?? 0),
-          ],
+            ];
+          },
+          body: myProfileFeedProvider.isLoadingFeed && allIds.isEmpty
+              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+              : myProfileFeedProvider.feedError != null && allIds.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            myProfileFeedProvider.feedError ?? 'Error al cargar feed',
+                            style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (user != null) {
+                                myProfileFeedProvider.fetchInitialFeed(user.id);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        CustomScrollView(
+                          key: const PageStorageKey('my-publications-scroll'),
+                          slivers: [
+                            PublicProfileGrid(
+                              postIds: publicationIds,
+                              scrollController: _scrollController,
+                              isFetchingMore: myProfileFeedProvider.isLoadingMoreFeed,
+                            ),
+                          ],
+                        ),
+                        CustomScrollView(
+                          key: const PageStorageKey('my-articles-scroll'),
+                          slivers: [
+                            PublicProfileGrid(
+                              postIds: articleIds,
+                              scrollController: _scrollController,
+                              isFetchingMore: myProfileFeedProvider.isLoadingMoreFeed,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildGrid(int count) {
-    if (count == 0) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 60),
-        child: Column(
-          children: [
-            Icon(
-              Icons.camera_alt_outlined,
-              size: 56,
-              color: AppTheme.outlineVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Aún no hay publicaciones',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
 
-    // Show placeholder tiles for each post (no navigation, no interaction)
-    return GridView.builder(
-      padding: const EdgeInsets.all(1),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        crossAxisSpacing: 1.5,
-        mainAxisSpacing: 1.5,
-        childAspectRatio: 1,
-      ),
-      itemCount: count,
-      itemBuilder: (_, i) => _buildGridCard(),
+  _SliverTabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppTheme.surfaceContainerLowest,
+      child: tabBar,
     );
+  }
+
+  @override
+  bool shouldRebuild(covariant _SliverTabBarDelegate oldDelegate) {
+    return false;
   }
 }

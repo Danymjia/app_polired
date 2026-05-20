@@ -225,9 +225,9 @@ class PostCard extends StatelessWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Icon(
-                post.likedByMe ? Icons.favorite : Icons.favorite_border,
-                key: ValueKey(post.likedByMe),
-                color: post.likedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                post.liked ? Icons.favorite : Icons.favorite_border,
+                key: ValueKey(post.liked),
+                color: post.liked ? AppTheme.primary : AppTheme.onSurfaceVariant,
                 size: 26,
               ),
             ),
@@ -286,9 +286,9 @@ class PostCard extends StatelessWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Icon(
-                post.savedByMe ? Icons.bookmark : Icons.bookmark_border,
-                key: ValueKey(post.savedByMe),
-                color: post.savedByMe ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                post.saved ? Icons.bookmark : Icons.bookmark_border,
+                key: ValueKey(post.saved),
+                color: post.saved ? AppTheme.primary : AppTheme.onSurfaceVariant,
                 size: 26,
               ),
             ),

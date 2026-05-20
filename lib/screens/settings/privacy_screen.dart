@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
+import 'support_screen.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
@@ -96,7 +97,10 @@ class PrivacyScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      // Acción futura
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SupportScreen()),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF243C5E), // on-secondary-fixed-variant

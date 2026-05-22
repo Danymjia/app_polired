@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
+import '../../utils/image_compression.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -19,21 +20,55 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   File? _imageFile;
   bool _isLoading = false;
+  bool _isProcessingImage = false;
   String? _errorMessage;
 
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+    setState(() {
+      _isProcessingImage = true;
+    });
+
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+
+      if (pickedFile != null) {
+
+        final originalFile = File(pickedFile.path);
+        final compressedFile = await compressProfileImageFile(originalFile);
+
+        if (mounted) {
+          setState(() {
+            _imageFile = compressedFile ?? originalFile;
+          });
+        }
+      }
+    } catch (e, stack) {
+      debugPrint('[CompleteProfileScreen] Error al seleccionar imagen: $e\n$stack');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo procesar la imagen. Intenta nuevamente.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingImage = false;
+        });
+      }
     }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_isProcessingImage) return;
 
     setState(() {
       _isLoading = true;
@@ -48,9 +83,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       imageFile: _imageFile,
     );
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
 
     if (success) {
       if (mounted) {
@@ -184,6 +221,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 32),
 
                 // Input de Username
@@ -299,7 +337,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
+                    onPressed: _isLoading || _isProcessingImage ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1D3557),
                       shape: RoundedRectangleBorder(

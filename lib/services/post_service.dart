@@ -201,6 +201,15 @@ class PostService {
   
   String cleanId(String id) => id.split(':').last;
 
+  /// DELETE /publicaciones/eliminar/:id o /publicaciones/articulo/eliminar/:id
+  Future<ApiResult<dynamic>> deletePost(String postId, {required bool isArticle}) async {
+    final rawId = cleanId(postId);
+    final endpoint = isArticle
+        ? '/publicaciones/articulo/eliminar/$rawId'
+        : '/publicaciones/eliminar/$rawId';
+    return await _api.delete(endpoint);
+  }
+
   /// POST /publicaciones/:id/like o DELETE /publicaciones/:id/like
   Future<bool> toggleLike(String postId, bool isCurrentlyLiked) async {
     final rawId = cleanId(postId);

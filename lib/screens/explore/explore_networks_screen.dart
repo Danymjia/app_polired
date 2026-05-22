@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import '../../providers/explore_networks_provider.dart';
 import '../../providers/explore_users_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/user_search_tile.dart';
 
@@ -66,7 +67,8 @@ class _ExploreNetworksScreenState extends State<ExploreNetworksScreen> with Sing
     if (_activeTabIndex == 0) {
       context.read<ExploreNetworksProvider>().search(query);
     } else {
-      context.read<ExploreUsersProvider>().search(query);
+      final currentUserId = context.read<AuthProvider>().user?.id;
+      context.read<ExploreUsersProvider>().search(query, currentUserId: currentUserId);
     }
   }
 
@@ -92,17 +94,36 @@ class _ExploreNetworksScreenState extends State<ExploreNetworksScreen> with Sing
           ),
         ),
         centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primary,
-          labelColor: AppTheme.primary,
-          unselectedLabelColor: AppTheme.onSurfaceVariant,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-          unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
-          tabs: const [
-            Tab(text: 'Redes'),
-            Tab(text: 'Usuarios'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: AppTheme.surfaceContainerHighest,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.center,
+              indicatorColor: Colors.black,
+              indicatorWeight: 2,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelColor: Colors.black,
+              unselectedLabelColor: AppTheme.outline,
+              labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              dividerColor: Colors.transparent,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 24),
+              tabs: const [
+                Tab(text: 'Redes'),
+                Tab(text: 'Usuarios'),
+              ],
+            ),
+          ),
         ),
       ),
       body: Column(
@@ -112,10 +133,10 @@ class _ExploreNetworksScreenState extends State<ExploreNetworksScreen> with Sing
             padding: const EdgeInsets.all(16.0),
             child: Container(
               decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: AppTheme.outlineVariant.withValues(alpha: 0.5),
+                  color: AppTheme.outlineVariant.withValues(alpha: 0.3),
                 ),
               ),
               child: TextField(
@@ -127,7 +148,7 @@ class _ExploreNetworksScreenState extends State<ExploreNetworksScreen> with Sing
                 decoration: InputDecoration(
                   hintText: _activeTabIndex == 0 ? 'Buscar redes...' : 'Buscar usuarios...',
                   hintStyle: GoogleFonts.inter(color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6)),
-                  prefixIcon: Icon(Icons.search_rounded, color: AppTheme.primary.withValues(alpha: 0.7), size: 20),
+                  prefixIcon: Icon(Icons.search_rounded, color: AppTheme.onSurfaceVariant.withValues(alpha: 0.7), size: 20),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 ),
@@ -340,7 +361,8 @@ class _UserTabState extends State<_UserTab> {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExploreUsersProvider>().fetchInitial();
+      final currentUserId = context.read<AuthProvider>().user?.id;
+      context.read<ExploreUsersProvider>().fetchInitial(currentUserId: currentUserId);
     });
   }
 

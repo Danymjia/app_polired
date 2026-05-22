@@ -15,6 +15,7 @@ class ExploreUsersProvider extends ChangeNotifier {
   final List<PublicUserModel> _allUsers = [];
   List<PublicUserModel> _filteredUsers = [];
   String _searchQuery = '';
+  String? _currentUserId;
 
   int _currentPage = 1;
   bool _hasMore = true;
@@ -28,7 +29,8 @@ class ExploreUsersProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   String get searchQuery => _searchQuery;
 
-  Future<void> fetchInitial() async {
+  Future<void> fetchInitial({String? currentUserId}) async {
+    if (currentUserId != null) _currentUserId = currentUserId;
     if (_isFetching) return;
     _isFetching = true;
     _status = ExploreUsersStatus.loading;
@@ -73,17 +75,23 @@ class ExploreUsersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void search(String query) {
+  void search(String query, {String? currentUserId}) {
+    if (currentUserId != null) _currentUserId = currentUserId;
     _searchQuery = query.toLowerCase();
     _filterUsers();
     notifyListeners();
   }
 
   void _filterUsers() {
+    List<PublicUserModel> baseList = _allUsers;
+    if (_currentUserId != null) {
+      baseList = baseList.where((u) => u.id != _currentUserId).toList();
+    }
+    
     if (_searchQuery.isEmpty) {
-      _filteredUsers = List.from(_allUsers);
+      _filteredUsers = List.from(baseList);
     } else {
-      _filteredUsers = _allUsers.where((user) {
+      _filteredUsers = baseList.where((user) {
         final matchName = user.nombreCompleto.toLowerCase().contains(_searchQuery);
         final matchUsername = user.username.toLowerCase().contains(_searchQuery);
         return matchName || matchUsername;

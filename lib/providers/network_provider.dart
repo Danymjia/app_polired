@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/network_service.dart';
 import '../services/post_service.dart';
@@ -44,6 +45,8 @@ class NetworkProvider extends ChangeNotifier {
 
   // ─── Home Feed State ───────────────────────────────────────────────────────
   NetworkStoryModel? _selectedNetwork;
+  String? pendingAutoSelectNetworkId;
+
   FeedStatus _feedStatus = FeedStatus.idle;
   String? _feedError;
   List<PostModel> _posts = [];
@@ -58,29 +61,49 @@ class NetworkProvider extends ChangeNotifier {
   List<NetworkStoryModel> get networkStories => _networkStories;
 
   // ─── Cargar redes del estudiante para el Home ─────────────────────────────
-  /// Carga las redes del estudiante desde GET /estudiantes/listar/redes.
-  /// Si el estudiante no pertenece a ninguna red, el feed queda vacío (no hay fallback global).
+  /// Carga las redes del estudiante y las sugerencias combinadas.
   Future<void> loadStudentNetworks() async {
     _isLoading = true;
     notifyListeners();
 
-    final result = await _networkService.getRedesEstudianteStories();
+    final joinedResult = await _networkService.getRedesEstudianteStories();
+    final availableResult = await _networkService.getAvailableNetworksStories();
 
-    if (result.success && result.data != null && result.data!.isNotEmpty) {
-      _networkStories = result.data!;
-      // Seleccionar la primera red automáticamente y cargar su feed
-      await selectNetwork(_networkStories.first);
-    } else {
-      // Sin redes unidas: mostrar redes disponibles en el carrusel.
+    List<NetworkStoryModel> joined = [];
+    if (joinedResult.success && joinedResult.data != null) {
+      joined = joinedResult.data!;
+    }
+
+    List<NetworkStoryModel> available = [];
+    if (availableResult.success && availableResult.data != null) {
+      final joinedIds = joined.map((e) => e.id).toSet();
+      available = availableResult.data!.where((e) => !joinedIds.contains(e.id)).toList();
+    }
+
+    // Mantener las unidas primero, luego las sugerencias
+    _networkStories = [...joined, ...available];
+
+    if (joined.isEmpty) {
       _feedStatus = FeedStatus.empty;
       _posts = [];
-      
-      final availableResult = await _networkService.getAvailableNetworksStories();
-      if (availableResult.success && availableResult.data != null) {
-        _networkStories = availableResult.data!;
-      } else {
-        _networkStories = [];
+    } else {
+      // Manejar auto-selección si existe una red pendiente de seleccionar tras unirse
+      if (pendingAutoSelectNetworkId != null) {
+        final target = joined.cast<NetworkStoryModel?>().firstWhere(
+            (n) => n?.id == pendingAutoSelectNetworkId, orElse: () => null);
+        
+        pendingAutoSelectNetworkId = null; // Consumir evento
+        if (target != null) {
+          await selectNetwork(target);
+        }
+      } 
+      // Seleccionar random inicial si no hay red seleccionada activa
+      else if (_selectedNetwork == null) {
+        final randomIndex = Random().nextInt(joined.length);
+        final randomNetwork = joined[randomIndex];
+        await selectNetwork(randomNetwork);
       }
+      // Si _selectedNetwork != null, respetamos la selección actual y no la sobreescribimos.
     }
 
     _isLoading = false;

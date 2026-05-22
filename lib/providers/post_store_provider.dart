@@ -196,6 +196,33 @@ class PostStoreProvider extends ChangeNotifier {
     upsertPost(post);
   }
 
+  // ─── Remover post (Optimistic Delete) ──────────────────────────────────────
+  void removePost(String id) {
+    _postsById.remove(id);
+    _likedPostIds.remove(id);
+    _savedPostIds.remove(id);
+    _pendingOptimistic.remove(id);
+    notifyListeners();
+  }
+
+  // ─── Reemplazar ID de post (Optimistic Create) ───────────────────────────
+  void replacePost(String oldId, PostModel newPost) {
+    final wasLiked = _likedPostIds.remove(oldId);
+    final wasSaved = _savedPostIds.remove(oldId);
+    _postsById.remove(oldId);
+    _pendingOptimistic.remove(oldId);
+
+    // Mantenemos flags previas temporalmente o confiamos en las de newPost
+    if (wasLiked) _likedPostIds.add(newPost.id);
+    if (wasSaved) _savedPostIds.add(newPost.id);
+
+    _postsById[newPost.id] = newPost.copyWith(
+      likedByMe: wasLiked || newPost.likedByMe,
+      savedByMe: wasSaved || newPost.savedByMe,
+    );
+    notifyListeners();
+  }
+
   // ─── Toggle Like (con optimistic update y rollback) ────────────────────────
   Future<void> toggleLike(String postId) async {
     final post = _postsById[postId];

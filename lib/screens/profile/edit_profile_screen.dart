@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/image_compression.dart';
 import '../../widgets/safe_network_image.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -24,13 +25,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+  bool _isProcessingImage = false;
 
   Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+    setState(() {
+      _isProcessingImage = true;
+    });
+
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+
+      if (pickedFile != null) {
+
+        final originalFile = File(pickedFile.path);
+        final compressedFile = await compressProfileImageFile(originalFile);
+
+        if (mounted) {
+          setState(() {
+            _imageFile = compressedFile ?? originalFile;
+          });
+        }
+      }
+    } catch (e, stack) {
+      debugPrint('[EditProfileScreen] Error al procesar imagen: $e\n$stack');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo procesar la imagen. Intenta de nuevo.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingImage = false;
+        });
+      }
     }
   }
 
@@ -56,8 +89,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isProcessingImage) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     final auth = context.read<AuthProvider>();
     final ok = await auth.actualizarPerfil(
@@ -70,7 +106,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (!mounted) return;
 
-    setState(() => _isLoading = false);
+    setState(() {
+      _isLoading = false;
+    });
 
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +164,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: _isLoading ? null : _submit,
+            onPressed: _isLoading || _isProcessingImage ? null : _submit,
             child: _isLoading
                 ? const SizedBox(
                     width: 20,

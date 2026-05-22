@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
+import '../../post/add_post_screen.dart';
 
 class ExploreHeader extends StatelessWidget {
   const ExploreHeader({super.key});
@@ -31,11 +32,16 @@ class ExploreHeader extends StatelessWidget {
             height: kToolbarHeight,
             child: Row(
               children: [
-                _ExploreIconButton(icon: Icons.add, onTap: () {}),
+                _ExploreIconButton(
+                  icon: Icons.add, 
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPostScreen()));
+                  }
+                ),
                 const Spacer(),
                 Text(
                   'Explorar',
-                  style: AppTheme.displayMedium.copyWith(fontSize: 18, letterSpacing: -0.5),
+                  style: AppTheme.displayMedium.copyWith(fontSize: 18, letterSpacing: -0.5, fontWeight: FontWeight.normal),
                 ),
                 const Spacer(),
                 _ExploreIconButton(

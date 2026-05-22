@@ -28,6 +28,18 @@ class PostCard extends StatelessWidget {
     return Container(
       color: AppTheme.surfaceContainerLowest,
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppTheme.surfaceContainerHighest,
+            width: 1,
+          ),
+          top: BorderSide(
+            color: AppTheme.surfaceContainerHighest,
+            width: 1,
+          ),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -130,8 +142,12 @@ class PostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
+        color: AppTheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.surfaceContainerHighest,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,17 +204,43 @@ class PostCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Título ──────────────────────────────────────────────────────────
-          if (post.titulo.isNotEmpty)
+          // ── Título y Precio ──────────────────────────────────────────────────
+          if (post.titulo.isNotEmpty || (post.isArticle && post.priceLabel.isNotEmpty))
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                post.titulo,
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.onSurface,
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (post.titulo.isNotEmpty)
+                    Expanded(
+                      child: Text(
+                        post.titulo,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  if (post.titulo.isNotEmpty && post.isArticle && post.priceLabel.isNotEmpty)
+                    const SizedBox(width: 8),
+                  if (post.isArticle && post.priceLabel.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        post.priceLabel,
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 

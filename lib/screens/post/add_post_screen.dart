@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../config/theme.dart';
+import '../../utils/image_compression.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../providers/network_provider.dart';
 import '../../providers/global_feed_provider.dart';
@@ -11,6 +12,12 @@ import '../../providers/community_feed_provider.dart';
 import '../../services/post_service.dart';
 import '../../services/api_service.dart';
 import '../../models/network_story_model.dart';
+import '../../widgets/post_image_carousel.dart';
+import '../../providers/post_store_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/my_profile_feed_provider.dart';
+import '../../providers/network_profile_provider.dart';
+import '../../models/post_model.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -41,20 +48,56 @@ class _AddPostScreenState extends State<AddPostScreen> {
       );
       return;
     }
-    final pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles.isNotEmpty) {
+
+    setState(() {
+      _isPreparingImages = true;
+    });
+
+    try {
+      final pickedFiles = await _picker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1440,
+        maxHeight: 1440,
+      );
+
+      if (pickedFiles.isEmpty) return;
+
+      final availableSlots = 3 - _selectedImages.length;
+      final filesToProcess = pickedFiles.take(availableSlots).map((xfile) => File(xfile.path)).toList();
+
+      // Se elimina setState de _statusMessage = 'Comprimiendo...'
+
+
+      final compressedFiles = await Future.wait(filesToProcess.map((originalFile) async {
+        final compressed = await compressPostImageFile(originalFile);
+        return compressed ?? originalFile;
+      }));
+
+      if (!mounted) return;
+
       setState(() {
-        for (final file in pickedFiles) {
-          if (_selectedImages.length < 3) {
-            _selectedImages.add(File(file.path));
-          }
-        }
+        _selectedImages.addAll(compressedFiles);
       });
+    } catch (e, stack) {
+      debugPrint('[AddPostScreen] Error al preparar imágenes: $e\n$stack');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al preparar imágenes. Intenta de nuevo.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPreparingImages = false;
+        });
+      }
     }
   }
 
+  bool _isFree = false;
   bool _isPrivacyAccepted = true;
   bool _isLoading = false;
+  bool _isPreparingImages = false;
 
   late PostService _postService;
 
@@ -93,33 +136,83 @@ class _AddPostScreenState extends State<AddPostScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final title = _postType == 'texto' ? _titleController.text.trim() : '';
       final content = _descriptionController.text.trim();
       final categoryValue = _category.toLowerCase();
-      final comunidadId = _selectedNetwork?.id;
+      final comunidadId = categoryValue == 'comunidad' ? _selectedNetwork?.id : null;
 
       if (categoryValue == 'comunidad' && comunidadId == null) {
         if (mounted) {
-          setState(() => _isLoading = false);
+          setState(() {
+            _isLoading = false;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Selecciona una red comunitaria',
-              ),
+              content: Text('Selecciona una red comunitaria'),
             ),
           );
         }
         return;
       }
 
+      // --- Optimistic UI Update (solo para texto puro para evitar fallos de imagen) ---
+      String? tempId;
+      final store = context.read<PostStoreProvider>();
+      final globalFeed = context.read<GlobalFeedProvider>();
+      final commFeed = context.read<CommunityFeedProvider>();
+      final myProfileFeed = context.read<MyProfileFeedProvider>();
+      final netProfileFeed = context.read<NetworkProfileProvider>();
+
+      if (_selectedImages.isEmpty) {
+        tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+        final currentUser = context.read<AuthProvider>().user;
+        
+        final tempPost = PostModel(
+          id: tempId,
+          networkId: comunidadId ?? '',
+          networkName: _selectedNetwork?.name ?? '',
+          authorId: currentUser?.id ?? '',
+          authorUsername: currentUser?.username ?? 'Usuario',
+          authorFullName: '${currentUser?.nombre ?? ''} ${currentUser?.apellido ?? ''}'.trim(),
+          authorImageUrl: currentUser?.fotoPerfil,
+          titulo: title,
+          contenido: content,
+          tipoContenido: 'texto',
+          categoria: categoryValue,
+          mediaUrls: const [],
+          precio: _isFree ? 0 : (double.tryParse(_priceController.text.trim()) ?? 0.0),
+          likesCount: 0,
+          commentsCount: 0,
+          timestamp: DateTime.now(),
+        );
+
+        // Inserción optimista
+        store.addPost(tempPost);
+        myProfileFeed.prependPostId(tempId);
+        if (categoryValue == 'comunidad') {
+          commFeed.prependPostId(tempId);
+          if (comunidadId != null) {
+            netProfileFeed.prependPostId(tempId);
+          }
+        } else {
+          globalFeed.prependPostId(tempId, category: categoryValue);
+        }
+
+        // Salir inmediatamente si es optimista
+        if (mounted) Navigator.pop(context);
+      }
+
+      // Petición real al backend
       final result = (categoryValue == 'venta' || categoryValue == 'cursos')
           ? await _postService.createArticle(
               titulo: title,
               descripcion: content,
-              precio: double.tryParse(_priceController.text.trim()) ?? 0.0,
+              precio: _isFree ? 0.0 : (double.tryParse(_priceController.text.trim()) ?? 0.0),
               categoria: categoryValue,
               comunidadId: comunidadId,
               imageFiles: _postType == 'imagen' ? _selectedImages : null,
@@ -133,39 +226,65 @@ class _AddPostScreenState extends State<AddPostScreen> {
             );
 
       if (result.success) {
-        if (mounted) {
-          try {
-            if (categoryValue == 'comunidad') {
-              context.read<CommunityFeedProvider>().refreshFeed();
-            } else {
-              context.read<GlobalFeedProvider>().refreshFeed();
+        // Reemplazo del ID optimista por el real
+        if (tempId != null && result.data != null) {
+          final realData = result.data is Map<String, dynamic> ? result.data as Map<String, dynamic> : {};
+          final publicacionRaw = realData['publicacion'] ?? realData['articulo'] ?? realData;
+          if (publicacionRaw is Map<String, dynamic>) {
+            try {
+              final realPost = PostModel.fromJson(publicacionRaw);
+              store.replacePost(tempId, realPost);
+              globalFeed.replacePostId(tempId, realPost.id);
+              commFeed.replacePostId(tempId, realPost.id);
+              myProfileFeed.replacePostId(tempId, realPost.id);
+              netProfileFeed.replacePostId(tempId, realPost.id);
+            } catch (e) {
+              debugPrint('Error parseando post real: $e');
             }
-          } catch (_) {}
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Publicación creada con éxito')),
-          );
-          Navigator.pop(context);
+          }
+        } else if (tempId == null) {
+           // Si no fue optimista (con imagen), salir ahora y refrescar feed
+           if (mounted) {
+             try {
+               if (categoryValue == 'comunidad') {
+                 commFeed.refreshFeed();
+               } else {
+                 globalFeed.refreshFeed();
+               }
+             } catch (_) {}
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(content: Text('Publicación creada con éxito')),
+             );
+             Navigator.pop(context);
+           }
         }
       } else {
+        // Rollback
+        if (tempId != null) {
+          store.removePost(tempId);
+          globalFeed.removePostId(tempId);
+          commFeed.removePostId(tempId);
+          myProfileFeed.removePostId(tempId);
+          netProfileFeed.removePostId(tempId);
+        }
+
         if (mounted) {
           final errorMessage = result.statusCode == 401
               ? 'No autorizado. Verifica tu sesión e intenta de nuevo.'
               : result.message ?? 'Error al publicar';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(errorMessage)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
         }
       }
     } catch (e) {
+      // Rollback en caso de excepción severa
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error inesperado: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error inesperado: $e')));
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -202,7 +321,9 @@ class _AddPostScreenState extends State<AddPostScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
           : _postType == null
               ? _buildTypeSelection()
               : SingleChildScrollView(
@@ -233,6 +354,21 @@ class _AddPostScreenState extends State<AddPostScreen> {
                           _buildSectionLabel('SELECCIONAR RED'),
                           const SizedBox(height: 12),
                           _buildNetworkSelector(networks),
+                          const SizedBox(height: 24),
+                        ],
+
+                        if (_postType == 'imagen') ...[
+                          _buildSectionLabel('IMÁGENES (MÁX. 3)'),
+                          const SizedBox(height: 12),
+                          if (_selectedImages.isNotEmpty) ...[
+                            PostImageCarousel(
+                              localFiles: _selectedImages,
+                              mediaUrls: const [],
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          _buildImagePickerSection(),
                           const SizedBox(height: 24),
                         ],
 
@@ -298,50 +434,63 @@ class _AddPostScreenState extends State<AddPostScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        if (_postType == 'imagen' &&
-                            (_category == 'Venta' || _category == 'Cursos')) ...[
+                        if (_category == 'Venta' || _category == 'Cursos') ...[
                           _buildSectionLabel('PRECIO (\$)'),
                           const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _priceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            validator: (value) {
-                              if (_category != 'Venta' && _category != 'Cursos') {
-                                return null;
-                              }
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Requerido';
-                              }
-                              if (double.tryParse(value.trim()) == null) {
-                                return 'Precio inválido';
-                              }
-                              return null;
-                            },
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '0.00',
-                              prefixIcon: const Icon(Icons.attach_money, size: 20),
-                              filled: true,
-                              fillColor: AppTheme.surfaceContainerLow,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                          if (_category == 'Cursos')
+                            Theme(
+                              data: ThemeData(unselectedWidgetColor: AppTheme.outline),
+                              child: CheckboxListTile(
+                                title: const Text(
+                                  'Es gratis',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                ),
+                                value: _isFree,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _isFree = val ?? false;
+                                    if (_isFree) _priceController.clear();
+                                  });
+                                },
+                                activeColor: AppTheme.primary,
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
                               ),
-                              contentPadding: const EdgeInsets.all(16),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-
-                        if (_postType == 'imagen') ...[
-                          _buildSectionLabel('IMÁGENES (OPCIONAL, MÁX. 3)'),
-                          const SizedBox(height: 12),
-                          _buildImagePickerSection(),
+                          if (!_isFree)
+                            TextFormField(
+                              controller: _priceController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              validator: (value) {
+                                if (_category != 'Venta' && _category != 'Cursos') {
+                                  return null;
+                                }
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Requerido';
+                                }
+                                if (double.tryParse(value.trim()) == null) {
+                                  return 'Precio inválido';
+                                }
+                                return null;
+                              },
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: '0.00',
+                                prefixIcon: const Icon(Icons.attach_money, size: 20),
+                                filled: true,
+                                fillColor: AppTheme.surfaceContainerLow,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.all(16),
+                              ),
+                            ),
                           const SizedBox(height: 24),
                         ],
 
@@ -352,7 +501,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                               value: _isPrivacyAccepted,
                               onChanged: (val) => setState(
                                   () => _isPrivacyAccepted = val ?? false),
-                              activeColor: AppTheme.primaryText,
+                              activeColor: AppTheme.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -374,7 +523,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _isPrivacyAccepted ? _submit : null,
+                            onPressed: _isPrivacyAccepted && !_isPreparingImages ? _submit : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primary, // Using main global dark blue
                               foregroundColor: Colors.white,
@@ -501,7 +650,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
         itemBuilder: (context, index) {
           if (index == _selectedImages.length) {
             return GestureDetector(
-              onTap: _pickImages,
+              onTap: _isPreparingImages || _isLoading ? null : _pickImages,
               child: Container(
                 width: 100,
                 height: 100,

@@ -63,4 +63,39 @@ class MyProfileFeedProvider extends ChangeNotifier {
     _isLoadingMoreFeed = false;
     notifyListeners();
   }
+
+  // ─── Mutadores Síncronos (Optimistic UI) ───────────────────────────────────
+
+  void prependPostId(String id) {
+    if (!_postIds.contains(id)) {
+      _postIds.insert(0, id);
+      notifyListeners();
+    }
+  }
+
+  int removePostId(String id) {
+    final index = _postIds.indexOf(id);
+    if (index != -1) {
+      _postIds.removeAt(index);
+      notifyListeners();
+    }
+    return index;
+  }
+
+  void insertPostId(int index, String id) {
+    if (index < 0) return;
+    if (!_postIds.contains(id)) {
+      final insertIndex = index.clamp(0, _postIds.length);
+      _postIds.insert(insertIndex, id);
+      notifyListeners();
+    }
+  }
+
+  void replacePostId(String oldId, String newId) {
+    final index = _postIds.indexOf(oldId);
+    if (index != -1) {
+      _postIds[index] = newId;
+      notifyListeners();
+    }
+  }
 }

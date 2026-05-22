@@ -15,43 +15,10 @@ class ExploreTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverPersistentHeader(
-      pinned: true,
-      delegate: _ExploreTabsDelegate(
-        selectedIndex: selectedIndex,
-        tabs: tabs,
-        onTabSelected: onTabSelected,
-      ),
-    );
-  }
-}
-
-class _ExploreTabsDelegate extends SliverPersistentHeaderDelegate {
-  final int selectedIndex;
-  final List<String> tabs;
-  final ValueChanged<int> onTabSelected;
-
-  _ExploreTabsDelegate({
-    required this.selectedIndex,
-    required this.tabs,
-    required this.onTabSelected,
-  });
-
-  @override
-  double get minExtent => 48;
-
-  @override
-  double get maxExtent => 48;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
     return Container(
       color: AppTheme.surface.withAlpha(230),
       child: Container(
+        height: 48,
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -93,11 +60,5 @@ class _ExploreTabsDelegate extends SliverPersistentHeaderDelegate {
         ),
       ),
     );
-  }
-
-  @override
-  bool shouldRebuild(covariant _ExploreTabsDelegate oldDelegate) {
-    return oldDelegate.selectedIndex != selectedIndex ||
-        oldDelegate.tabs != tabs;
   }
 }

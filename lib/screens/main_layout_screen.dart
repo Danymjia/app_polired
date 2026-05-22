@@ -19,9 +19,13 @@ class MainLayoutScreen extends StatefulWidget {
 class _MainLayoutScreenState extends State<MainLayoutScreen> {
   int _currentIndex = 0;
 
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+  // GlobalKey para Explore (luego lo agregaremos en ExploreScreen)
+  final GlobalKey _exploreKey = GlobalKey();
+
   late final List<Widget> _screens = [
-    const HomeScreen(),
-    const ExploreScreen(),
+    HomeScreen(key: _homeKey),
+    ExploreScreen(key: _exploreKey),
     const AddPostScreen(),
     const MessagesScreen(),
     const ProfileScreen(),
@@ -53,6 +57,19 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               onTap: (index) {
                 if (index == 2) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPostScreen()));
+                  return;
+                }
+                if (_currentIndex == index) {
+                  if (index == 0) {
+                    _homeKey.currentState?.scrollToTop();
+                  } else if (index == 1) {
+                    // LLamaremos el método a través del cast si ExploreScreenState lo expone
+                    final exploreState = _exploreKey.currentState;
+                    if (exploreState != null) {
+                      // ignore: avoid_dynamic_calls
+                      (exploreState as dynamic).scrollToTop();
+                    }
+                  }
                   return;
                 }
                 setState(() {

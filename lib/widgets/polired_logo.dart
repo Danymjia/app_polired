@@ -30,7 +30,6 @@ class PoliredLogo extends StatelessWidget {
         borderRadius: useRoundedRect
             ? BorderRadius.circular(size * 0.2)
             : null,
-        border: Border.all(color: AppTheme.surfaceContainerHighest),
       ),
       clipBehavior: Clip.antiAlias,
       child: Image.asset(
@@ -57,6 +56,8 @@ class PoliredLogo extends StatelessWidget {
           style: AppTheme.displayLarge.copyWith(
             color: AppTheme.primary,
             fontSize: size * 0.38,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
           ),
         ),
       ],

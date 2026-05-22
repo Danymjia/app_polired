@@ -669,6 +669,15 @@ Se aplicaron mejoras para centralizar y endurecer el manejo de imágenes remotas
   - Opcional: migrar `SafeNetworkImage` a `cached_network_image` para caching y placeholders más avanzados.
   - Revisar pantallas restantes si detectas imágenes directas residuales.
 
+- **Optimización de subida de imágenes (Frontend)**:
+  - `EditProfileScreen`, `CompleteProfileScreen` y `AddPostScreen` ahora procesan imágenes con `ImagePicker` usando `imageQuality`, `maxWidth` y `maxHeight` para reducir el peso inicial.
+  - Se agregó compresión secundaria en `lib/utils/image_compression.dart` con `flutter_image_compress` para asegurar tamaños menores sin cambiar el contrato multipart/form-data existente.
+  - La interfaz muestra estados de proceso (`Preparando imagen...`, `Comprimiendo imagen...`, `Subiendo...`) y bloquea envíos mientras se procesa la imagen.
+  - No se realizaron cambios en los endpoints ni en la forma de envío multipart: la comunicación con el backend permanece compatible.
+
+- **Validación completada**:
+  - Ejecutado `flutter analyze` en `app_polired` sin errores.
+
 > Nota: según tu preferencia guardada, actualizaré `polired/informe_tecnico_polired.md` cada vez que solicites "actualizar la documentación". Si quieres que documente otras modificaciones (logs de commits, pruebas ejecutadas, o capturas), dímelo y lo añado.
 
 ---
@@ -1127,3 +1136,34 @@ El backend maneja publicaciones en la colección `Publicacion` (Noticias y Comun
 ---
 _Documento actualizado progresivamente con cada fase del desarrollo._
 
+---
+
+## 25. Optimizaciones de Navegación, Caché y Mejoras en Publicaciones (Polired V2.7.0 - 21 de mayo de 2026)
+
+### 25.1 Navegación Persistente y UX de "Stories" (Home)
+* **Persistencia de Red Seleccionada**: El Home ahora mantiene en memoria la red seleccionada (`_selectedNetwork`) a pesar de hacer *Pull-to-refresh* o volver de otras pantallas, mitigando el reseteo involuntario del feed.
+* **Separación de Redes y Sugerencias**: En `NetworkProvider`, las redes comunitarias a las que el usuario está unido se agrupan al inicio del carrusel, seguidas consistentemente por una lista de sugerencias. Las sugerencias ya no desaparecen por completo cuando el usuario se une a una red.
+* **Auto-selección tras Unirse**: Se introdujo el concepto de `pendingAutoSelectNetworkId`. Al regresar al Home después de explorar y unirse a una comunidad sugerida, la app la auto-selecciona en el carrusel y carga inmediatamente su feed.
+* **Selección Aleatoria Inicial Estabilizada**: Si no hay ninguna red seleccionada al abrir la aplicación, el algoritmo escoge aleatoriamente una (`Random().nextInt()`) para mostrar su contenido como feed inicial, pero sin aplicar mezclas (shuffle) destructivas sobre el orden visual del UI.
+
+### 25.2 Sistema de Scroll Independiente y Caché en Explorar
+* **Reemplazo de CustomScrollView Global por IndexedStack**: La sección "Explorar" sufría de pérdida de posición de scroll y reseteo nativo de delegados al compartir un único `ScrollView`. Se refactorizó la vista (`explore_screen.dart`) empleando un `IndexedStack` y separando los feeds en múltiples `ExploreFeedList` con `AutomaticKeepAliveClientMixin`.
+* **Caché en `GlobalFeedProvider` con `CategoryState`**: Se modificó `GlobalFeedProvider` para gestionar un mapa de estados `Map<String, CategoryState>`. Esto permite que "Noticias", "Marketplace" y "Cursos" almacenen sus colecciones de posts y paginación de forma 100% aislada. Al rotar pestañas, la retención de datos y visualización de lista es instantánea y evita realizar peticiones HTTP innecesarias.
+* **Implementación de Scroll-to-Top Global y Local**: 
+  - Al hacer tap por segunda vez en la pestaña actualmente visible del `BottomNavigationBar` (Home o Explorar), se invoca al método `scrollToTop` a través de llaves globales (`GlobalKey`), retornando al tope de la lista.
+  - Lo mismo ocurre al presionar por segunda vez la pastilla activa dentro del menú superior de Explorar.
+
+### 25.3 Rediseño y Paridad Visual en Componentes de Publicación
+* **Unificación de Detalles de Post**: La vista detallada de la publicación (`post_detail_screen.dart`) ha unificado su interfaz reusando de forma nativa la misma arquitectura que `PostCard`. Esto garantiza paridad pixel-perfect (proporciones, diseño tipográfico y espaciados) respecto a los feeds estándar y soporta paneles nativos de comentarios (`BottomSheet`).
+* **Experiencia de Creación Especializada**: 
+  - **Categoría Imagen**: El selector de galería se posicionó de inmediato en primer lugar con una vista previa renderizada tal cual como saldrá publicada.
+  - **Categorías Monetizadas**: El campo dinámico "Precio" fue refinado visualmente e incluido obligatoriamente en publicaciones de Cursos/Ventas.
+* **Categoría Gratuita y Etiqueta Visual**: En publicaciones de tipo "Curso" se agregó un toggle interactivo de *"Es Gratis"*, el cual desactiva el input monetario y asume internamente `$0.00`. Tanto `PostCard` como vistas detalladas interceptan este monto y lo reemplazan estéticamente por un _badge_ oscuro indicando la palabra **"Gratis"**.
+* **Refinamiento del Carrusel de Imágenes**: Los indicadores de *paginación de puntos* (dots) del slider multi-imagen pasaron de flotar encima de la foto a situarse formalmente por debajo, teñidos de color azul institucional oscuro. Así mismo, se ancló un **contador numérico dinámico** estilo burbuja superpuesto en la esquina superior derecha (`2/3`).
+
+### 25.4 Resolución de Conflictos de Build en Android (Namespace)
+* **Error `Namespace not specified`**: El paquete obsoleto `flutter_image_compress` v1.1.3 ocasionaba roturas severas al momento de ensamblar el Gradle en las versiones modernas de Android Plugin (`AGP`).
+* **Actualización en Core**: Se elevó la dependencia en `pubspec.yaml` a la versión moderna `>=2.1.0`. Esta acción inyecta exitosamente las llaves de namespace válidas en el manifiesto interno sin requerir refactorización profunda en el contrato de compresión multipart.
+
+---
+_Documento actualizado progresivamente con cada fase del desarrollo._

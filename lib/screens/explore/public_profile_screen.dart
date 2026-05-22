@@ -130,18 +130,27 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
                     ),
                   ),
                   centerTitle: true,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
+                      onPressed: () {}, // Only UI for now
+                    ),
+                  ],
                 ),
                 if (info != null)
                   SliverToBoxAdapter(
                     child: PublicProfileHeader(profile: info),
                   ),
+                SliverToBoxAdapter(
+                  child: Divider(height: 1, thickness: 1, color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
+                ),
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _SliverTabBarDelegate(
                     TabBar(
                       controller: _tabController,
-                      indicatorColor: AppTheme.primary,
-                      labelColor: AppTheme.primary,
+                      indicatorColor: Colors.black,
+                      labelColor: Colors.black,
                       unselectedLabelColor: AppTheme.onSurfaceVariant,
                       labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
                       unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),

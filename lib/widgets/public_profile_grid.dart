@@ -45,12 +45,12 @@ class PublicProfileGrid extends StatelessWidget {
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.all(2.0),
+      padding: EdgeInsets.zero,
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
+          mainAxisSpacing: 0,
+          crossAxisSpacing: 0,
           childAspectRatio: 1.0,
         ),
         delegate: SliverChildBuilderDelegate(
@@ -101,8 +101,12 @@ class _GridCell extends StatelessWidget {
 
     return InkWell(
       onTap: () => context.push('/post/${post.id}'),
-      child: Stack(
-        fit: StackFit.expand,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black, width: 0.5),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
         children: [
           if (post.hasImage && post.mediaUrls.isNotEmpty)
             SafeNetworkImage(
@@ -171,6 +175,7 @@ class _GridCell extends StatelessWidget {
               ),
             ),
         ],
+      ),
       ),
     );
   }

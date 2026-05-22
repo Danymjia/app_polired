@@ -253,8 +253,13 @@ class PostModel {
 
   String get priceLabel {
     if (precio == null) return '';
-    if (precio is num) return '\$${precio.toString()}';
-    return precio.toString();
+    if (precio is num) {
+      if (precio == 0 || precio == 0.0) return 'Gratis';
+      return '\$${precio.toString()}';
+    }
+    final pStr = precio.toString();
+    if (pStr == '0' || pStr == '0.0' || pStr == '0.00') return 'Gratis';
+    return pStr;
   }
 
   bool get liked => likedByMe;

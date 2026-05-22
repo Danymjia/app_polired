@@ -15,95 +15,68 @@ class PublicProfileHeader extends StatelessWidget {
     final initials = profile.nombre.isNotEmpty ? profile.nombre[0].toUpperCase() : '';
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircularNetworkAvatar(
-                imageUrl: profile.fotoPerfil,
-                initials: initials,
-                size: 72,
-                backgroundColor: AppTheme.surfaceContainerHighest,
-                initialsStyle: GoogleFonts.inter(
-                  color: AppTheme.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 24,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.5), width: 1),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: CircularNetworkAvatar(
+                  imageUrl: profile.fotoPerfil,
+                  initials: initials,
+                  size: 77,
+                  backgroundColor: AppTheme.surfaceContainerHighest,
+                  initialsStyle: GoogleFonts.inter(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 28,
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 28),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text(
-                      profile.nombreCompleto,
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '@${profile.username}',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    _buildStatItem('Publicaciones', profile.publicacionesCount),
+                    _buildStatItem('Redes', profile.redesCount),
                   ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: AppTheme.onSurfaceVariant,
-                  size: 24,
-                ),
-                onPressed: null,
-                tooltip: 'Chat deshabilitado',
               ),
             ],
           ),
           const SizedBox(height: 16),
+          Text(
+            profile.nombreCompleto,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.onSurface,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
           if (profile.biografia != null && profile.biografia!.trim().isNotEmpty) ...[
             Text(
               profile.biografia!,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: AppTheme.onSurfaceVariant,
+                color: AppTheme.onSurface,
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 16),
           ],
-          Row(
-            children: [
-              _buildStatItem('Publicaciones', profile.publicacionesCount),
-              const SizedBox(width: 24),
-              _buildStatItem('Redes', profile.redesCount),
-            ],
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           if (profile.redes.isNotEmpty) ...[
-            Text(
-              'Redes comunitarias',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 8),
             SizedBox(
               height: 32,
               child: ListView.builder(
@@ -119,13 +92,13 @@ class PublicProfileHeader extends StatelessWidget {
                         net.nombre,
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                           color: AppTheme.onSurface,
                         ),
                       ),
                       backgroundColor: AppTheme.surfaceContainerLow,
-                      side: BorderSide(color: AppTheme.outlineVariant.withValues(alpha: 0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      side: const BorderSide(color: Colors.transparent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                     ),
                   );
@@ -140,13 +113,13 @@ class PublicProfileHeader extends StatelessWidget {
 
   Widget _buildStatItem(String label, int value) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           '$value',
           style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
             color: AppTheme.onSurface,
           ),
         ),
@@ -154,9 +127,9 @@ class PublicProfileHeader extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.onSurfaceVariant,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppTheme.onSurface,
           ),
         ),
       ],

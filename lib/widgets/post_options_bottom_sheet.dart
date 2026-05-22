@@ -4,6 +4,12 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
 import '../providers/post_store_provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/post_service.dart';
+import '../providers/global_feed_provider.dart';
+import '../providers/community_feed_provider.dart';
+import '../providers/my_profile_feed_provider.dart';
+import '../providers/network_profile_provider.dart';
 import 'report_post_bottom_sheet.dart';
 
 class PostOptionsBottomSheet extends StatelessWidget {
@@ -17,6 +23,9 @@ class PostOptionsBottomSheet extends StatelessWidget {
     final isSaved = context.select<PostStoreProvider, bool>(
       (store) => store.getPost(post.id)?.saved ?? post.saved,
     );
+
+    final currentUserId = context.read<AuthProvider>().user?.id;
+    final isAuthor = currentUserId != null && currentUserId == post.authorId;
 
     return Container(
       padding: EdgeInsets.fromLTRB(0, 12, 0, MediaQuery.of(context).viewInsets.bottom > 0 ? 16 : 32),
@@ -104,8 +113,141 @@ class PostOptionsBottomSheet extends StatelessWidget {
               ),
             ),
           ),
+
+          // Eliminar Publicación (solo autor)
+          if (isAuthor)
+            InkWell(
+              onTap: () {
+                Navigator.pop(context); // Cierra bottom sheet
+                _confirmDelete(context);
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: AppTheme.surfaceContainerHigh,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Eliminar publicación',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.error,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          '¿Eliminar publicación?',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            color: AppTheme.onSurface,
+          ),
+        ),
+        content: Text(
+          'Esta acción no se puede deshacer.',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppTheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancelar',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _executeOptimisticDelete(context);
+            },
+            child: Text(
+              'Eliminar',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeOptimisticDelete(BuildContext context) async {
+    final store = context.read<PostStoreProvider>();
+    final globalFeed = context.read<GlobalFeedProvider>();
+    final commFeed = context.read<CommunityFeedProvider>();
+    final myProfileFeed = context.read<MyProfileFeedProvider>();
+    final netProfileFeed = context.read<NetworkProfileProvider>();
+
+    // 1. Guardar estado original para posible rollback
+    final originalPost = store.getPost(post.id) ?? post;
+    
+    // Guardamos los índices para reinsertar si falla
+    final gIdx = globalFeed.removePostId(post.id);
+    final cIdx = commFeed.removePostId(post.id);
+    final pIdx = myProfileFeed.removePostId(post.id);
+    final nIdx = netProfileFeed.removePostId(post.id);
+
+    // 2. Optimistic Delete (remover del store)
+    store.removePost(post.id);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Publicación eliminada'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // 3. Petición real
+    final apiService = context.read<PostService>();
+    final isArticle = post.isArticle;
+
+    final result = await apiService.deletePost(post.id, isArticle: isArticle);
+
+    // 4. Rollback en caso de fallo
+    if (!result.success) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppTheme.error,
+            content: Text(result.message ?? 'Error al eliminar publicación'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Re-insertar en sus lugares originales
+      store.addPost(originalPost);
+      if (gIdx != -1) globalFeed.insertPostId(gIdx, post.id);
+      if (cIdx != -1) commFeed.insertPostId(cIdx, post.id);
+      if (pIdx != -1) myProfileFeed.insertPostId(pIdx, post.id);
+      if (nIdx != -1) netProfileFeed.insertPostId(nIdx, post.id);
+    }
   }
 }

@@ -399,13 +399,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: Divider(height: 1, thickness: 1, color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
+              ),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _SliverTabBarDelegate(
                   TabBar(
                     controller: _tabController,
-                    indicatorColor: AppTheme.primary,
-                    labelColor: AppTheme.primary,
+                    indicatorColor: Colors.black,
+                    labelColor: Colors.black,
                     unselectedLabelColor: AppTheme.onSurfaceVariant,
                     labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
                     unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),

@@ -14,20 +14,11 @@ class UserSearchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final initials = user.nombre.isNotEmpty ? user.nombre[0].toUpperCase() : '';
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.outlineVariant.withValues(alpha: 0.5),
-          width: 1,
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: () => context.push('/explore/public-profile/${user.id}'),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         child: Row(
           children: [
             CircularNetworkAvatar(
@@ -73,11 +64,11 @@ class UserSearchTile extends StatelessWidget {
             IconButton(
               icon: Icon(
                 Icons.chat_bubble_outline_rounded,
-                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: AppTheme.primary,
                 size: 22,
               ),
-              onPressed: null, // Disabled per user requirements
-              tooltip: 'Chat no disponible',
+              onPressed: () {},
+              tooltip: 'Mensaje',
             ),
           ],
         ),

@@ -40,7 +40,9 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
         final posts = result.data!;
         if (mounted) {
           // Ingest into central post store to unify state
-          context.read<PostStoreProvider>().addPosts(posts);
+          if (posts.isNotEmpty) {
+            context.read<PostStoreProvider>().addBatchPosts(posts);
+          }
           setState(() {
             _postIds = posts.map((p) => p.id).toList();
             _isLoading = false;

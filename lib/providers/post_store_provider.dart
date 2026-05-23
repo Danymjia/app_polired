@@ -1,296 +1,217 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
-import '../services/post_service.dart';
+import '../models/events/post_event.dart';
+import '../models/feed_context.dart';
 
-/// Store global normalizado de publicaciones.
-///
-/// Todos los feeds (Home, Explore) almacenan únicamente [List<String>] de IDs.
-/// Los [PostModel] reales viven aquí, en `_postsById`.
-///
-/// Garantiza:
-///   - O(1) lookups por ID
-///   - Sincronización global: un like en ExploreScreen se refleja en HomeScreen
-///   - Optimistic updates con rollback automático
-///   - Rerenders selectivos via context.select
+/// PostStoreProvider (Snapshot-Safe CQRS Store)
+/// 
+/// Responsabilidades estrictas:
+/// - State Management (almacena PostModel)
+/// - Idempotencia global (Única fuente de verdad de eventos procesados)
+/// - Indexación O(1) de listas por contexto
+/// 
+/// NULA lógica de negocio o de red. Solo guarda estado y orquesta caché.
 class PostStoreProvider extends ChangeNotifier {
-  final PostService _postService;
-
-  PostStoreProvider(this._postService);
-
   // ─── Estado normalizado ────────────────────────────────────────────────────
   final Map<String, PostModel> _postsById = {};
+  final Map<FeedContext, Set<String>> _contextIndex = {};
   
-  /// IDs de posts con operaciones optimistas en vuelo.
-  final Set<String> _pendingOptimistic = {};
-
-  /// Sets de hidratación social global (fuente de verdad absoluta en la app)
   final Set<String> _likedPostIds = {};
   final Set<String> _savedPostIds = {};
   bool _isSocialStateInitialized = false;
 
+  // ─── Event Stream (UI Events) ──────────────────────────────────────────────
+  final _uiEventController = StreamController<UIEvent>.broadcast();
+  Stream<UIEvent> get uiEvents => _uiEventController.stream;
+
+  // ─── Versionamiento Dual ───────────────────────────────────────────────────
+  int _globalVersion = 0; // Cambia con CUALQUIER mutación
+  final Map<FeedContext, int> _contextVersion = {};
+  
+  // ─── Idempotencia ──────────────────────────────────────────────────────────
+  final Map<FeedContext, Set<String>> _processedEvents = {};
+  final Map<FeedContext, int> _lastSequenceNumber = {};
+
+  int get globalVersion => _globalVersion;
   bool get isSocialStateInitialized => _isSocialStateInitialized;
 
-  // ─── Getters ───────────────────────────────────────────────────────────────
+  // ─── Getters Crudos ────────────────────────────────────────────────────────
   PostModel? getPost(String id) => _postsById[id];
-
   Map<String, PostModel> get postsById => Map.unmodifiable(_postsById);
-
   Set<String> get likedPostIds => Set.unmodifiable(_likedPostIds);
   Set<String> get savedPostIds => Set.unmodifiable(_savedPostIds);
 
-  // ─── Hidratación Inicial Global ──────────────────────────────────────────
-  Future<void> initializeSocialState() async {
-    try {
-      bool loadedLikes = false;
-      bool loadedSaves = false;
-
-      // 1. Cargar publicaciones gustadas
-      final likesResult = await _postService.fetchLikedPosts(page: 1, limit: 1000);
-      if (likesResult.success && likesResult.data != null) {
-        _likedPostIds.clear();
-        for (final post in likesResult.data!) {
-          _likedPostIds.add(post.id);
-        }
-        loadedLikes = true;
-      }
-
-      // 2. Cargar publicaciones guardadas
-      final savedResult = await _postService.fetchSavedPosts();
-      if (savedResult.success && savedResult.data != null) {
-        _savedPostIds.clear();
-        for (final post in savedResult.data!) {
-          _savedPostIds.add(post.id);
-        }
-        loadedSaves = true;
-      }
-
-      if (loadedLikes && loadedSaves) {
-        _isSocialStateInitialized = true;
-      }
-
-      // Sincronizar posts cargados actualmente en memoria
-      _postsById.forEach((id, post) {
-        final isLiked = _likedPostIds.contains(id);
-        final isSaved = _savedPostIds.contains(id);
-        if (post.likedByMe != isLiked || post.savedByMe != isSaved) {
-          int finalLikesCount = post.likesCount;
-          if (isLiked && !post.likedByMe) {
-            finalLikesCount += 1;
-          } else if (!isLiked && post.likedByMe) {
-            finalLikesCount = (post.likesCount - 1).clamp(0, double.infinity).toInt();
-          }
-
-          _postsById[id] = post.copyWith(
-            likedByMe: isLiked,
-            savedByMe: isSaved,
-            likesCount: finalLikesCount,
-          );
-        }
-      });
-
-      notifyListeners();
-    } catch (e) {
-      debugPrint('PostStoreProvider.initializeSocialState: Error: $e');
-    }
+  /// Índice de IDs por contexto. O(1).
+  Set<String> getContextIndex(FeedContext context) {
+    return _contextIndex[context] ?? const {};
   }
 
-  // ─── Lógica de Sincronización Social ───────────────────────────────────────
-  PostModel syncSocialState(PostModel incoming, PostModel existing) {
-    final String id = incoming.id;
-
-    // Si hay una operación optimista en vuelo localmente, ignoramos el estado del backend
-    if (_pendingOptimistic.contains(id)) {
-      return existing.copyWith(
-        commentsCount: incoming.commentsCount,
-      );
-    }
-
-    // Siempre confiamos en cualquier "true" que mande el backend e hidratamos nuestro set local
-    if (incoming.likedByMe) {
-      _likedPostIds.add(id);
-    }
-    if (incoming.savedByMe) {
-      _savedPostIds.add(id);
-    }
-
-    final isLiked = _likedPostIds.contains(id);
-    final isSaved = _savedPostIds.contains(id);
-
-    int finalLikesCount = incoming.likesCount;
-    // Si localmente está como gustado, pero el backend (feed genérico) reporta que no,
-    // ajustamos sumando 1 para evitar saltos.
-    if (isLiked && !incoming.likedByMe) {
-      if (existing.likesCount > incoming.likesCount) {
-        finalLikesCount = existing.likesCount;
-      } else {
-        finalLikesCount = incoming.likesCount + 1;
-      }
-    } else if (!isLiked && incoming.likedByMe) {
-      // Backend dice true pero ya desmarcamos localmente.
-      finalLikesCount = (incoming.likesCount - 1).clamp(0, double.infinity).toInt();
-    }
-
-    return incoming.copyWith(
-      likedByMe: isLiked,
-      savedByMe: isSaved,
-      likesCount: finalLikesCount,
-    );
+  /// Retorna los contextos a los que pertenece un post
+  List<FeedContext> getContextsForPost(String postId) {
+    return _contextIndex.entries
+        .where((e) => e.value.contains(postId))
+        .map((e) => e.key)
+        .toList();
   }
 
-  // ─── Ingesta de posts ──────────────────────────────────────────────────────
+  /// Fingerprint = string único por contexto. O(1) en lectura.
+  String getFingerprint(FeedContext context) {
+    final v = _contextVersion[context] ?? 0;
+    return '${context.name}-$v';
+  }
+
+  /// O(1) — Solo incrementa el contador del contexto afectado
+  void _bumpVersion(FeedContext context) {
+    _globalVersion++;
+    _contextVersion[context] = (_contextVersion[context] ?? 0) + 1;
+  }
+
+  int nextSequenceNumber(FeedContext context) {
+    return (_lastSequenceNumber[context] ?? -1) + 1;
+  }
+
+  // ─── Hidratación Social Base ───────────────────────────────────────────────
+  void setSocialHydration(List<String> likedIds, List<String> savedIds) {
+    _likedPostIds.clear();
+    _savedPostIds.clear();
+    _likedPostIds.addAll(likedIds);
+    _savedPostIds.addAll(savedIds);
+    _isSocialStateInitialized = true;
+    _globalVersion++;
+    notifyListeners();
+  }
+
+  // ─── Limpieza (Logout) ─────────────────────────────────────────────────────
+  void clear() {
+    _postsById.clear();
+    _contextIndex.clear();
+    _likedPostIds.clear();
+    _savedPostIds.clear();
+    _contextVersion.clear();
+    _processedEvents.clear();
+    _lastSequenceNumber.clear();
+    _isSocialStateInitialized = false;
+    _globalVersion++;
+    notifyListeners();
+  }
+
+  // ─── Aplicadores de Eventos (State) ────────────────────────────────────────
   
-  /// Combina posts y los inserta de forma incremental en el store normalizado.
-  List<PostModel> mergePosts(List<PostModel> posts) {
-    bool changed = false;
-    final List<PostModel> mergedList = [];
-    for (final post in posts) {
-      if (post.id.isEmpty) continue;
+  /// Retorna false si el evento debe ignorarse.
+  bool _shouldProcess(StateEvent event) {
+    final context = event.context;
+    final processed = _processedEvents[context] ??= {};
+    final lastSeq = _lastSequenceNumber[context] ?? -1;
 
-      if (post.likedByMe) _likedPostIds.add(post.id);
-      if (post.savedByMe) _savedPostIds.add(post.id);
+    // Rechazar duplicado por eventId
+    if (processed.contains(event.eventId)) return false;
+    
+    // Rechazar evento fuera de orden (stale)
+    if (event.sequenceNumber <= lastSeq) return false;
 
-      final existing = _postsById[post.id];
-      if (existing == null) {
-        final synced = syncSocialState(post, post);
-        _postsById[post.id] = synced;
-        mergedList.add(synced);
-        changed = true;
-      } else {
-        final synced = syncSocialState(post, existing);
-        if (existing != synced) {
-          _postsById[post.id] = synced;
-          changed = true;
-        }
-        mergedList.add(synced);
-      }
-    }
-    if (changed) notifyListeners();
-    return mergedList;
+    processed.add(event.eventId);
+    _lastSequenceNumber[context] = event.sequenceNumber;
+    return true;
   }
 
-  void addPosts(List<PostModel> posts) {
-    mergePosts(posts);
+  void applyPostCreated(PostCreated event) {
+    if (!_shouldProcess(event)) return;
+    
+    final post = event.post;
+    _postsById[post.id] = post;
+    
+    // Añadir al inicio del Set para que aparezca arriba en el feed
+    final currentSet = _contextIndex[event.context] ?? <String>{};
+    _contextIndex[event.context] = <String>{post.id, ...currentSet};
+    
+    _bumpVersion(event.context);
+    notifyListeners();
   }
 
-  /// Inserta o actualiza un único post.
-  void upsertPost(PostModel post) {
-    if (post.id.isEmpty) return;
+  void applyPostDeleted(PostDeleted event) {
+    if (!_shouldProcess(event)) return;
+    
+    _postsById.remove(event.postId);
+    _contextIndex[event.context]?.remove(event.postId);
+    _likedPostIds.remove(event.postId);
+    _savedPostIds.remove(event.postId);
+    _bumpVersion(event.context);
+    notifyListeners();
+  }
 
-    if (post.likedByMe) _likedPostIds.add(post.id);
-    if (post.savedByMe) _savedPostIds.add(post.id);
-
-    final existing = _postsById[post.id];
-    if (existing == null) {
-      _postsById[post.id] = syncSocialState(post, post);
+  void applyPostUpdated(PostUpdated event) {
+    if (!_shouldProcess(event)) return;
+    
+    if (_postsById.containsKey(event.post.id)) {
+      _postsById[event.post.id] = event.post;
+      _bumpVersion(event.context); // Fingerprint cambia aunque el índice no
       notifyListeners();
-    } else {
-      final synced = syncSocialState(post, existing);
-      if (existing != synced) {
-        _postsById[post.id] = synced;
+    }
+  }
+
+  void applyStateEvent(StateEvent event) {
+    if (event is PostCreated) {
+      applyPostCreated(event);
+    } else if (event is PostDeleted) {
+      applyPostDeleted(event);
+    } else if (event is PostUpdated) {
+      applyPostUpdated(event);
+    }
+  }
+
+  // ─── Emisión de UI Events ──────────────────────────────────────────────────
+  void emitUIEvent(UIEvent event) {
+    _uiEventController.add(event);
+    if (event is PostInteractionUpdated) {
+      final post = _postsById[event.postId];
+      if (post != null) {
+        _postsById[event.postId] = post.copyWith(
+          likedByMe: event.liked,
+          likesCount: event.likeCount,
+          savedByMe: event.saved,
+          commentsCount: event.commentCount,
+        );
+        if (event.liked) {
+          _likedPostIds.add(event.postId);
+        } else {
+          _likedPostIds.remove(event.postId);
+        }
+        if (event.saved) {
+          _savedPostIds.add(event.postId);
+        } else {
+          _savedPostIds.remove(event.postId);
+        }
+        _globalVersion++;
+        
+        // Find which contexts this post belongs to, and bump them
+        for (final context in _contextIndex.keys) {
+          if (_contextIndex[context]?.contains(event.postId) ?? false) {
+             _contextVersion[context] = (_contextVersion[context] ?? 0) + 1;
+          }
+        }
         notifyListeners();
       }
     }
   }
 
-  void addPost(PostModel post) {
-    upsertPost(post);
-  }
-
-  // ─── Remover post (Optimistic Delete) ──────────────────────────────────────
-  void removePost(String id) {
-    _postsById.remove(id);
-    _likedPostIds.remove(id);
-    _savedPostIds.remove(id);
-    _pendingOptimistic.remove(id);
-    notifyListeners();
-  }
-
-  // ─── Reemplazar ID de post (Optimistic Create) ───────────────────────────
-  void replacePost(String oldId, PostModel newPost) {
-    final wasLiked = _likedPostIds.remove(oldId);
-    final wasSaved = _savedPostIds.remove(oldId);
-    _postsById.remove(oldId);
-    _pendingOptimistic.remove(oldId);
-
-    // Mantenemos flags previas temporalmente o confiamos en las de newPost
-    if (wasLiked) _likedPostIds.add(newPost.id);
-    if (wasSaved) _savedPostIds.add(newPost.id);
-
-    _postsById[newPost.id] = newPost.copyWith(
-      likedByMe: wasLiked || newPost.likedByMe,
-      savedByMe: wasSaved || newPost.savedByMe,
-    );
-    notifyListeners();
-  }
-
-  // ─── Toggle Like (con optimistic update y rollback) ────────────────────────
-  Future<void> toggleLike(String postId) async {
-    final post = _postsById[postId];
-    if (post == null) return;
-
-    _pendingOptimistic.add(postId);
-
-    final wasLiked = _likedPostIds.contains(postId);
-    if (wasLiked) {
-      _likedPostIds.remove(postId);
-      _postsById[postId] = post.copyWith(
-        likedByMe: false,
-        likesCount: (post.likesCount - 1).clamp(0, double.infinity).toInt(),
-      );
-    } else {
-      _likedPostIds.add(postId);
-      _postsById[postId] = post.copyWith(
-        likedByMe: true,
-        likesCount: post.likesCount + 1,
-      );
-    }
-    notifyListeners();
-
-    final success = await _postService.toggleLike(postId, wasLiked);
-
-    _pendingOptimistic.remove(postId);
-
-    if (!success) {
-      // Rollback
-      if (wasLiked) {
-        _likedPostIds.add(postId);
-      } else {
-        _likedPostIds.remove(postId);
+  // ─── Ingesta Batch ─────────────────────────────────────────────────────────
+  void addBatchPosts(List<PostModel> posts, {FeedContext? context}) {
+    bool changed = false;
+    for (final post in posts) {
+      if (post.id.isEmpty) continue;
+      _postsById[post.id] = post;
+      
+      if (context != null) {
+        (_contextIndex[context] ??= {}).add(post.id);
       }
-      _postsById[postId] = post;
-      notifyListeners();
+      changed = true;
     }
-  }
-
-  // ─── Toggle Save (con optimistic update y rollback) ────────────────────────
-  Future<void> toggleSave(String postId) async {
-    final post = _postsById[postId];
-    if (post == null) return;
-
-    _pendingOptimistic.add(postId);
-
-    final wasSaved = _savedPostIds.contains(postId);
-    if (wasSaved) {
-      _savedPostIds.remove(postId);
-      _postsById[postId] = post.copyWith(savedByMe: false);
-    } else {
-      _savedPostIds.add(postId);
-      _postsById[postId] = post.copyWith(savedByMe: true);
-    }
-    notifyListeners();
-
-    final success = await _postService.toggleSave(postId, wasSaved);
-
-    _pendingOptimistic.remove(postId);
-
-    if (!success) {
-      // Rollback
-      if (wasSaved) {
-        _savedPostIds.add(postId);
-      } else {
-        _savedPostIds.remove(postId);
+    if (changed) {
+      _globalVersion++;
+      if (context != null) {
+        _contextVersion[context] = (_contextVersion[context] ?? 0) + 1;
       }
-      _postsById[postId] = post;
       notifyListeners();
     }
   }
@@ -300,38 +221,44 @@ class PostStoreProvider extends ChangeNotifier {
     final post = _postsById[postId];
     if (post == null) return;
     _postsById[postId] = post.copyWith(commentsCount: post.commentsCount + 1);
-    notifyListeners();
-  }
-
-  // ─── Actualizar commentsCount desde backend ────────────────────────────────
-  void updateCommentsCount(String postId, int count) {
-    final post = _postsById[postId];
-    if (post == null) return;
-    _postsById[postId] = post.copyWith(commentsCount: count);
-    notifyListeners();
-  }
-
-  // ─── Evicción de Cache (Poda) ──────────────────────────────────────────────
-  void pruneCache(List<List<String>> activeFeedIds) {
-    final activeIds = activeFeedIds.expand((ids) => ids).toSet();
-    // Protegemos me gusta y guardados locales
-    activeIds.addAll(_likedPostIds);
-    activeIds.addAll(_savedPostIds);
-
-    final originalLength = _postsById.length;
-    _postsById.removeWhere((id, post) => !activeIds.contains(id));
-    if (_postsById.length != originalLength) {
-      notifyListeners();
+    _globalVersion++;
+    for (final context in _contextIndex.keys) {
+      if (_contextIndex[context]?.contains(postId) ?? false) {
+         _contextVersion[context] = (_contextVersion[context] ?? 0) + 1;
+      }
     }
+    notifyListeners();
   }
 
-  // ─── Limpiar store ─────────────────────────────────────────────────────────
-  void clearStore() {
-    _postsById.clear();
-    _likedPostIds.clear();
-    _savedPostIds.clear();
-    _pendingOptimistic.clear();
-    _isSocialStateInitialized = false;
+  // Compatibilidad antigua (proyección obsoleta, se mantendrá hasta que
+  // los providers cambien a FeedSelectors para no romper el build)
+  int get feedVersionHome => _contextVersion[FeedContext.home()] ?? 0;
+  int get feedVersionGlobal => _contextVersion[FeedContext.exploreGlobal()] ?? 0;
+  
+  void incrementFeedVersionHome() {
+    _bumpVersion(FeedContext.home());
     notifyListeners();
+  }
+
+  void incrementFeedVersionGlobal() {
+    _bumpVersion(FeedContext.exploreGlobal());
+    notifyListeners();
+  }
+  
+  int getNetworkFeedVersion(String networkId) => _contextVersion[FeedContext.home()] ?? 0;
+  
+  void incrementFeedVersionNetwork(String networkId) {
+    _bumpVersion(FeedContext.home());
+    notifyListeners();
+  }
+
+  List<PostModel> resolvePosts(List<String> ids, int version) {
+    return ids.map((id) => _postsById[id]).whereType<PostModel>().toList();
+  }
+
+  @override
+  void dispose() {
+    _uiEventController.close();
+    super.dispose();
   }
 }

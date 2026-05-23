@@ -4,12 +4,9 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
 import '../providers/post_store_provider.dart';
+import '../services/command_bus.dart';
+import '../models/commands/feed_command.dart';
 import '../providers/auth_provider.dart';
-import '../services/post_service.dart';
-import '../providers/global_feed_provider.dart';
-import '../providers/community_feed_provider.dart';
-import '../providers/my_profile_feed_provider.dart';
-import '../providers/network_profile_provider.dart';
 import 'report_post_bottom_sheet.dart';
 
 class PostOptionsBottomSheet extends StatelessWidget {
@@ -50,75 +47,76 @@ class PostOptionsBottomSheet extends StatelessWidget {
           const SizedBox(height: 16), // mb-4
 
           // Reportar
-          InkWell(
-            onTap: () {
-              Navigator.pop(context);
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => ReportPostBottomSheet(postId: post.id),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16), // py-4
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: AppTheme.surfaceContainerHigh, // border-neutral-100
-                    width: 1,
+          if (!isAuthor)
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ReportPostBottomSheet(postId: post.id),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16), // py-4
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppTheme.surfaceContainerHigh, // border-neutral-100
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Reportar',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14, // text-sm
+                    fontWeight: FontWeight.w600, // font-semibold
+                    color: AppTheme.error, // text-error
                   ),
                 ),
               ),
-              child: Text(
-                'Reportar',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 14, // text-sm
-                  fontWeight: FontWeight.w600, // font-semibold
-                  color: AppTheme.error, // text-error
-                ),
-              ),
             ),
-          ),
 
           // Guardar / Quitar de Guardados
-          InkWell(
-            onTap: () {
-              context.read<PostStoreProvider>().toggleSave(post.id);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isSaved
-                        ? 'Publicación eliminada de guardados'
-                        : 'Publicación guardada con éxito',
+          if (!isAuthor)
+            InkWell(
+              onTap: () {
+                context.read<CommandBus>().dispatch(ToggleSaveCommand(postId: post.id));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isSaved
+                          ? 'Publicación eliminada de guardados'
+                          : 'Publicación guardada con éxito',
+                    ),
+                    duration: const Duration(seconds: 2),
                   ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16), // py-4
-              child: Text(
-                isSaved ? 'Eliminar de guardados' : 'Guardar',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 14, // text-sm
-                  fontWeight: FontWeight.w500, // font-medium
-                  color: AppTheme.onSurface, // text-on-surface
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16), // py-4
+                child: Text(
+                  isSaved ? 'Eliminar de guardados' : 'Guardar',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14, // text-sm
+                    fontWeight: FontWeight.w500, // font-medium
+                    color: AppTheme.onSurface, // text-on-surface
+                  ),
                 ),
               ),
             ),
-          ),
 
           // Eliminar Publicación (solo autor)
           if (isAuthor)
             InkWell(
               onTap: () {
-                Navigator.pop(context); // Cierra bottom sheet
                 _confirmDelete(context);
               },
               child: Container(
@@ -182,8 +180,25 @@ class PostOptionsBottomSheet extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx);
-              _executeOptimisticDelete(context);
+              final commandBus = context.read<CommandBus>();
+              final messenger = ScaffoldMessenger.of(context);
+              final authProvider = context.read<AuthProvider>();
+              
+              Navigator.pop(ctx); // Cierra el dialog
+              Navigator.pop(context); // Cierra el bottom sheet
+
+              commandBus.dispatch(DeletePostCommand(postId: post.id)).then((result) {
+                if (result.success) {
+                  authProvider.decrementPublicacionesCount();
+                }
+                messenger.showSnackBar(
+                  SnackBar(
+                    backgroundColor: result.success ? AppTheme.primary : AppTheme.error,
+                    content: Text(result.success ? 'Publicación eliminada' : (result.error ?? 'Error al eliminar')),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              });
             },
             child: Text(
               'Eliminar',
@@ -196,58 +211,5 @@ class PostOptionsBottomSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _executeOptimisticDelete(BuildContext context) async {
-    final store = context.read<PostStoreProvider>();
-    final globalFeed = context.read<GlobalFeedProvider>();
-    final commFeed = context.read<CommunityFeedProvider>();
-    final myProfileFeed = context.read<MyProfileFeedProvider>();
-    final netProfileFeed = context.read<NetworkProfileProvider>();
-
-    // 1. Guardar estado original para posible rollback
-    final originalPost = store.getPost(post.id) ?? post;
-    
-    // Guardamos los índices para reinsertar si falla
-    final gIdx = globalFeed.removePostId(post.id);
-    final cIdx = commFeed.removePostId(post.id);
-    final pIdx = myProfileFeed.removePostId(post.id);
-    final nIdx = netProfileFeed.removePostId(post.id);
-
-    // 2. Optimistic Delete (remover del store)
-    store.removePost(post.id);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Publicación eliminada'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // 3. Petición real
-    final apiService = context.read<PostService>();
-    final isArticle = post.isArticle;
-
-    final result = await apiService.deletePost(post.id, isArticle: isArticle);
-
-    // 4. Rollback en caso de fallo
-    if (!result.success) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppTheme.error,
-            content: Text(result.message ?? 'Error al eliminar publicación'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-
-      // Re-insertar en sus lugares originales
-      store.addPost(originalPost);
-      if (gIdx != -1) globalFeed.insertPostId(gIdx, post.id);
-      if (cIdx != -1) commFeed.insertPostId(cIdx, post.id);
-      if (pIdx != -1) myProfileFeed.insertPostId(pIdx, post.id);
-      if (nIdx != -1) netProfileFeed.insertPostId(nIdx, post.id);
-    }
   }
 }

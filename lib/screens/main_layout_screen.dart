@@ -5,6 +5,12 @@ import 'explore/explore_screen.dart';
 import 'home/home_screen.dart';
 import 'messages/messages_screen.dart';
 import 'post/add_post_screen.dart';
+import 'dart:async';
+import 'package:provider/provider.dart';
+import '../../models/events/post_event.dart';
+import '../../services/navigation_bus.dart';
+import '../../models/feed_context.dart';
+import '../../providers/network_provider.dart';
 import 'profile/profile_screen.dart';
 
 /// Pantalla contenedor principal que gestiona la navegación por pestañas (Bottom Navigation).
@@ -30,6 +36,43 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     const MessagesScreen(),
     const ProfileScreen(),
   ];
+
+  StreamSubscription? _navigationSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bus = context.read<NavigationBus>();
+      _navigationSubscription = bus.stream.listen((event) {
+        if (event is FocusPostEvent && mounted) {
+          int targetIndex = _currentIndex;
+          if (event.context.type == ContextType.home) {
+            targetIndex = 0;
+            final communityId = event.context.communityId;
+            if (communityId != null) {
+              context.read<NetworkProvider>().selectNetworkById(communityId);
+            }
+          } else if (event.context.type == ContextType.exploreTab || event.context.type == ContextType.exploreGlobal) {
+            targetIndex = 1;
+          } else if (event.context.type == ContextType.profile) {
+            targetIndex = 4;
+          }
+          if (targetIndex != _currentIndex) {
+            setState(() {
+              _currentIndex = targetIndex;
+            });
+          }
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _navigationSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

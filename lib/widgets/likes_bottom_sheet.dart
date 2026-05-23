@@ -59,7 +59,7 @@ class _LikesBottomSheetState extends State<LikesBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.5,
       decoration: const BoxDecoration(
         color: AppTheme.surfaceContainerLowest,
         borderRadius: BorderRadius.vertical(top: Radius.circular(40)),

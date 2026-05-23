@@ -228,4 +228,23 @@ class AuthService {
     _api.setToken(null);
     await StorageService.clear();
   }
+
+  /// Backend: PATCH /api/estudiante/actualizarpassword/:id
+  Future<AuthResult> actualizarPassword(String id, String currentPassword, String newPassword) async {
+    try {
+      final result = await _api.patch(
+        '${AppConstants.actualizarPasswordEndpoint}/$id',
+        {
+          'passwordactual': currentPassword,
+          'passwordnuevo': newPassword,
+        },
+      );
+      if (result.success) {
+        return AuthResult(success: true, message: result.data?['msg'] ?? 'Contraseña actualizada');
+      }
+      return AuthResult(success: false, message: result.message);
+    } catch (e) {
+      return AuthResult(success: false, message: 'Error de conexión');
+    }
+  }
 }

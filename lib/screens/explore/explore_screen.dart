@@ -3,12 +3,17 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/global_feed_provider.dart';
 import '../../providers/post_store_provider.dart';
+import '../../providers/feed_provider.dart';
+import '../../models/feed_context.dart';
 import '../../models/post_model.dart';
+import '../../models/events/post_event.dart';
+import '../../services/navigation_service.dart';
+import '../../services/navigation_bus.dart';
 import 'widgets/explore_empty_state.dart';
 import 'widgets/explore_error_state.dart';
 import 'widgets/explore_header.dart';
 import 'widgets/explore_loading.dart';
-import '../../widgets/post_card.dart';
+import '../../widgets/global_post_card.dart';
 import 'widgets/explore_tabs.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -31,7 +36,29 @@ class ExploreScreenState extends State<ExploreScreen> {
     super.initState();
     for (int i = 0; i < _tabs.length; i++) {
       _scrollControllers[i] = ScrollController();
+      NavigationService.instance.register(
+        FeedContext.exploreTab(categoryId: _tabs[i].toLowerCase()),
+        _scrollControllers[i]!,
+      );
     }
+    NavigationService.instance.register(FeedContext.exploreGlobal(), _scrollControllers[0]!);
+
+    final bus = context.read<NavigationBus>();
+    bus.stream.listen((event) {
+      if (event is FocusPostEvent && mounted) {
+        if (event.context.type == ContextType.exploreTab) {
+          final targetCategory = event.context.categoryId?.toLowerCase() ?? '';
+          final targetIndex = _tabs.indexWhere((t) {
+            String tabName = t.toLowerCase();
+            if (tabName == 'marketplace') tabName = 'venta';
+            return tabName == targetCategory;
+          });
+          if (targetIndex != -1 && targetIndex != _selectedTab) {
+            _onTabSelected(targetIndex);
+          }
+        }
+      }
+    });
   }
 
   @override
@@ -51,6 +78,10 @@ class ExploreScreenState extends State<ExploreScreen> {
 
   @override
   void dispose() {
+    for (int i = 0; i < _tabs.length; i++) {
+      NavigationService.instance.unregister(FeedContext.exploreTab(categoryId: _tabs[i].toLowerCase()));
+    }
+    NavigationService.instance.unregister(FeedContext.exploreGlobal());
     for (final controller in _scrollControllers.values) {
       controller.dispose();
     }
@@ -160,37 +191,10 @@ class _ExploreFeedListState extends State<ExploreFeedList>
   Widget build(BuildContext context) {
     super.build(context);
     final provider = context.watch<GlobalFeedProvider>();
-    // IMPORTANTE: Este builder se reconstruye cuando provider notifica.
-    // Para evitar que un tab invisible recargue sus items con los del tab activo,
-    // debemos acceder a la lista a través del mapa de estados, o simplemente
-    // sabemos que el provider ahora devuelve datos consistentes por estado.
-    // PERO GlobalFeedProvider.postIds devuelve el del selectedCategory actual!
-    // Necesitamos acceder al estado específico de esta categoría.
-    // Como añadimos un getter currentState, podemos exponer uno que reciba categoría:
-    // ... pero espera, para no modificar más el provider, sabemos que si no es el activo,
-    // simplemente no debe renderizar vacíos, o debe usar sus datos cacheados.
-    // Vamos a acceder a los datos de esta categoría usando un pequeño truco o 
-    // lo mejor es acceder a _states en el Provider si es posible.
-    // Vamos a usar un Selector para escuchar solo cuando la categoría activa es esta,
-    // O mejor, modificar el provider para permitir leer un CategoryState específico.
-    // Como el plan anterior lo requería, asumimos que provider maneja bien su estado interno
-    // y si necesitamos leer uno específico lo hacemos localmente en el IndexedStack o 
-    // modificamos el provider rápidamente. 
-    // Por ahora, asumamos que si renderizamos, necesitamos la data actual de *esta* categoría.
-    // Lo más seguro es solicitar los postIds directos a _states.
-    // Pero si no está expuesto, podemos leerlo con provider.postIds (que es el activo)
-    // OJO: Si es IndexedStack, los 3 tabs corren el build() cuando notifyListeners() sucede.
     return _buildListContent(provider);
   }
 
   Widget _buildListContent(GlobalFeedProvider provider) {
-    // Si la categoría actual en el provider NO es esta, significa que
-    // el usuario está viendo otra pestaña. Mantendremos la UI existente usando el cache
-    // visual que ya hizo Flutter, o mostramos el contenido previo.
-    // PERO el provider solo expone `postIds` del activo. 
-    // Así que necesitamos cambiar el global_feed_provider para exponer postIds por categoría!
-    // Para no romper la compilación ahora, voy a suponer que provider tiene un getCategoryState(cat).
-    // Si no lo tiene, lo agregaré a global_feed_provider.
     return RefreshIndicator(
       color: AppTheme.primary,
       onRefresh: () async {
@@ -212,8 +216,6 @@ class _ExploreFeedListState extends State<ExploreFeedList>
               ),
             ),
           ),
-          // Aquí debería leer los posts. Como el provider necesita un update para exponer la data, 
-          // usaremos un widget wrapper o usaremos el getter (ver sig. reemplazo).
           _CategoryFeedBuilder(category: widget.category.toLowerCase()),
           SliverToBoxAdapter(child: const SizedBox(height: 32)),
         ],
@@ -222,60 +224,38 @@ class _ExploreFeedListState extends State<ExploreFeedList>
   }
 }
 
-// Widget auxiliar para leer directamente del mapa del Provider.
 class _CategoryFeedBuilder extends StatelessWidget {
   final String category;
   const _CategoryFeedBuilder({required this.category});
 
   @override
   Widget build(BuildContext context) {
-    // Watch provider
     final provider = context.watch<GlobalFeedProvider>();
     
-    // Necesitamos acceder al estado de esta categoría. 
-    // Como no expusimos getCategoryState explícitamente, lo haremos leyendo el current si coincide,
-    // o asumiendo que GlobalFeedProvider lo va a exponer en el siguiente paso.
-    // Para ser seguros, asumiremos que expondremos `CategoryState getCategoryState(String category)` en GlobalFeedProvider.
-    // Pero como Dart no tiene reflection fácil sin ensuciar, editaremos global_feed_provider.dart enseguida.
-    // Llamaremos a `provider.getCategoryState(category)` (lo agregaré en la siguiente llamada a tools).
-    // ignore: avoid_dynamic_calls
-    final dynamic state = (provider as dynamic).getCategoryState(category);
-    
+    final CategoryState state = provider.getCategoryState(category);
+    final posts = FeedProvider.watchFeed(context, FeedContext.exploreTab(categoryId: category));
+
     final bool isLoadingInitial = state.isLoadingInitial;
     final bool isLoadingMore = state.isLoadingMore;
     final bool hasMore = state.hasMore;
     final String? errorMessage = state.errorMessage;
-    final List<String> postIds = state.postIds;
 
-    if (isLoadingInitial && postIds.isEmpty) {
+    if (isLoadingInitial && posts.isEmpty) {
       return const ExploreLoading();
-    } else if (errorMessage != null && postIds.isEmpty) {
+    } else if (errorMessage != null && posts.isEmpty) {
       return SliverFillRemaining(
         child: ExploreErrorState(
           message: errorMessage,
           onRetry: () => provider.loadInitial(category: category),
         ),
       );
-    } else if (postIds.isEmpty) {
+    } else if (posts.isEmpty) {
       return const SliverFillRemaining(child: ExploreEmptyState());
     }
 
     return SliverMainAxisGroup(
       slivers: [
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final String postId = postIds[index];
-            return Builder(
-              builder: (context) {
-                final post = context.select<PostStoreProvider, PostModel?>(
-                  (store) => store.getPost(postId)
-                );
-                if (post == null) return const SizedBox.shrink();
-                return PostCard(post: post);
-              },
-            );
-          }, childCount: postIds.length),
-        ),
+        _GlobalFeedBatchList(posts: posts),
         if (isLoadingMore)
           SliverToBoxAdapter(
             child: Padding(
@@ -296,7 +276,7 @@ class _CategoryFeedBuilder extends StatelessWidget {
               ),
             ),
           ),
-        if (!hasMore && postIds.isNotEmpty)
+        if (!hasMore && posts.isNotEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -311,6 +291,27 @@ class _CategoryFeedBuilder extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _GlobalFeedBatchList extends StatelessWidget {
+  final List<PostModel> posts;
+  const _GlobalFeedBatchList({required this.posts});
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final post = posts[index];
+          return GlobalPostCard(
+            key: ValueKey(post.id),
+            post: post,
+          );
+        },
+        childCount: posts.length,
+      ),
     );
   }
 }

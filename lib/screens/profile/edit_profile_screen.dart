@@ -6,6 +6,7 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/image_compression.dart';
 import '../../widgets/safe_network_image.dart';
+import 'update_password_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -244,7 +245,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   children: [
                     _buildInputField('Nombre', _nombreController),
+                    const SizedBox(height: 16),
                     _buildInputField('Apellido', _apellidoController),
+                    const SizedBox(height: 16),
                     _buildInputField(
                       'Nombre de usuario',
                       _usernameController,
@@ -259,8 +262,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 16),
                     _buildTextAreaField('Descripción', _bioController),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+              
+              // Actualizar contraseña button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UpdatePasswordScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.surfaceContainerLow,
+                      foregroundColor: AppTheme.primaryText,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: AppTheme.outlineVariant.withValues(alpha: 0.5)),
+                      ),
+                    ),
+                    child: const Text(
+                      'Actualizar contraseña',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
@@ -306,34 +347,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     TextEditingController controller, {
     String? Function(String?)? validator,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE4E2E1), // ios-input-border equivalente
-            width: 0.5,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.outline,
+            fontWeight: FontWeight.w500,
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppTheme.outline,
-              fontWeight: FontWeight.w500,
-            ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8),
           ),
-          const SizedBox(height: 4),
-          TextFormField(
+          child: TextFormField(
             controller: controller,
             validator:
                 validator ??
                 (value) => value!.trim().isEmpty ? 'Requerido' : null,
-            style: const TextStyle(fontSize: 16, color: AppTheme.onBackground),
+            style: const TextStyle(fontSize: 15, color: AppTheme.onSurface),
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.zero,
@@ -344,32 +381,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               disabledBorder: InputBorder.none,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildTextAreaField(String label, TextEditingController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE4E2E1), width: 0.5),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppTheme.outline,
-              fontWeight: FontWeight.w500,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.outline,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 4),
-          TextFormField(
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextFormField(
             controller: controller,
             maxLines: 3,
             maxLength: 150,
@@ -379,8 +415,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               return null;
             },
             style: const TextStyle(
-              fontSize: 16,
-              color: AppTheme.onBackground,
+              fontSize: 15,
+              color: AppTheme.onSurface,
               height: 1.4,
             ),
             decoration: const InputDecoration(
@@ -395,8 +431,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               disabledBorder: InputBorder.none,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

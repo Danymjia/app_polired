@@ -69,7 +69,7 @@ class _LikedPostsScreenState extends State<LikedPostsScreen> {
         final posts = result.data!;
         if (mounted) {
           // Ingest into central post store to unify state
-          context.read<PostStoreProvider>().addPosts(posts);
+          context.read<PostStoreProvider>().addBatchPosts(posts);
           
           final newIds = posts.map((p) => p.id).toList();
           setState(() {

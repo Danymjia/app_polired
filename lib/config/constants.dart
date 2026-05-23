@@ -13,6 +13,7 @@ class AppConstants {
   static const String perfilEndpoint = '/perfil-estudiante';
   static const String perfilUsernameEndpoint = '/perfil/username';
   static const String completarPerfilEndpoint = '/completar/perfil';
+  static const String actualizarPasswordEndpoint = '/estudiante/actualizarpassword';
 
   // ─── Redes endpoints ────────────────────────────────────────────────────────
   static const String redesListarEndpoint = '/redes/listar';

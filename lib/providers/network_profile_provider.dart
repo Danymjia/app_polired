@@ -46,7 +46,7 @@ class NetworkProfileProvider extends ChangeNotifier {
       final items = data['items'];
       if (items is List) {
         final newPosts = items.map((j) => PostModel.fromJson(j as Map<String, dynamic>)).toList();
-        _postStore.mergePosts(newPosts);
+        _postStore.addBatchPosts(newPosts);
         _postIds = newPosts.map((p) => p.id).toList();
       }
       
@@ -82,7 +82,7 @@ class NetworkProfileProvider extends ChangeNotifier {
       
       if (items is List) {
         final newPosts = items.map((j) => PostModel.fromJson(j as Map<String, dynamic>)).toList();
-        _postStore.mergePosts(newPosts);
+        _postStore.addBatchPosts(newPosts);
         
         final filteredIds = newPosts.map((p) => p.id).where((id) => !_postIds.contains(id)).toList();
         if (filteredIds.isNotEmpty) {

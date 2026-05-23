@@ -45,58 +45,40 @@ class PostService {
     return _parseItems(result);
   }
 
-  // ─── Feed de Artículos Globales (Marketplace/Cursos) ──────────────────────
-  /// GET /publicaciones/articulos/global?page=&limit=
+  // ─── Feed de Artículos Globales (Marketplace/Cursos) ──────────────────────────────────────────
+  /// GET /publicaciones/articulos/global?page=&limit=&categoria=
+  /// El backend filtra por categoría en servidor (no más filtrado cliente).
   Future<ApiResult<List<PostModel>>> fetchArticlesFeed({
     int page = 1,
     int limit = 20,
     String? categoria,
   }) async {
-    final result = await _api.get(
-      '/publicaciones/articulos/global?page=$page&limit=$limit',
-    );
-    if (result.success && result.data is Map) {
-      final data = result.data as Map<String, dynamic>;
-      final rawList = data['items'];
-      if (rawList is List) {
-        final posts = rawList
-            .whereType<Map<String, dynamic>>()
-            .map((j) => PostModel.fromJson(j))
-            .where((post) {
-              if (categoria == null || categoria.isEmpty) return true;
-              return post.categoria == categoria.toLowerCase();
-            })
-            .toList();
-        return ApiResult.ok(posts);
-      }
+    String url = '/publicaciones/articulos/global?page=$page&limit=$limit';
+    if (categoria != null && categoria.isNotEmpty) {
+      url += '&categoria=${Uri.encodeComponent(categoria.toLowerCase())}';
     }
-    return ApiResult.error(result.message ?? 'Error al cargar artículos');
+    final result = await _api.get(url);
+    return _parseItems(result);
   }
 
-  // ─── Feed por Red ─────────────────────────────────────────────────────────
-  /// GET /publicaciones/red/:redId
-  Future<ApiResult<List<PostModel>>> fetchFeedByNetwork(String redId) async {
+  // ─── Feed por Red (paginado) ────────────────────────────────────────────────────────────────────────────
+  /// GET /publicaciones/red/:redId?page=&limit=
+  /// Ahora paginado – el backend devuelve { items: [...], total: N }
+  Future<ApiResult<List<PostModel>>> fetchFeedByNetwork(
+    String redId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
     final result = await _api.get(
-      '${AppConstants.publicacionesPorRedEndpoint}/$redId',
+      '${AppConstants.publicacionesPorRedEndpoint}/$redId?page=$page&limit=$limit',
     );
-
-    if (result.success && result.data is Map) {
-      final data = result.data as Map<String, dynamic>;
-      final rawList = data['publicaciones'];
-      if (rawList is List) {
-        final posts = rawList
-            .whereType<Map<String, dynamic>>()
-            .map((j) => PostModel.fromJson(j))
-            .toList();
-        return ApiResult.ok(posts);
-      }
-    }
-    return ApiResult.error(result.message ?? 'Error al cargar publicaciones');
+    return _parseItems(result);
   }
 
   // ─── Crear Publicación Simple ─────────────────────────────────────────────
   /// POST /estudiantes/publicaciones
   Future<ApiResult<dynamic>> createPost({
+    required String feedContext,
     String? titulo,
     required String contenido,
     required String categoria,
@@ -106,6 +88,7 @@ class PostService {
   }) async {
     if (imageFiles != null && imageFiles.isNotEmpty) {
       final fields = <String, String>{
+        'feedContext': feedContext,
         'contenido': contenido,
         'categoria': categoria,
         'tipoContenido': 'imagen',
@@ -120,6 +103,7 @@ class PostService {
     }
 
     final body = <String, dynamic>{
+      'feedContext': feedContext,
       'contenido': contenido,
       'categoria': categoria,
       'tipoContenido': (mediaUrls != null && mediaUrls.isNotEmpty) ? 'imagen' : 'texto',
@@ -135,6 +119,7 @@ class PostService {
   // ─── Crear Artículo ───────────────────────────────────────────────────────
   /// POST /publicaciones/articulos
   Future<ApiResult<dynamic>> createArticle({
+    required String feedContext,
     String? titulo,
     required String descripcion,
     required dynamic precio,
@@ -146,6 +131,7 @@ class PostService {
   }) async {
     if (imageFiles != null && imageFiles.isNotEmpty) {
       final fields = <String, String>{
+        'feedContext': feedContext,
         'descripcion': descripcion,
         'precio': precio.toString(),
         'categoria': categoria,
@@ -161,6 +147,7 @@ class PostService {
     }
 
     final body = <String, dynamic>{
+      'feedContext': feedContext,
       'descripcion': descripcion,
       'precio': precio,
       'categoria': categoria,

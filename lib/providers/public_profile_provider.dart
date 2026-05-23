@@ -108,7 +108,7 @@ class PublicProfileProvider extends ChangeNotifier {
         _hasMoreFeed = result.data!['hasMore'] as bool;
 
         // Ingest into global PostStoreProvider
-        _postStore.mergePosts(posts);
+        _postStore.addBatchPosts(posts);
 
         _currentPostIds = posts.map((p) => p.id).toList();
         _updateCache(uid);
@@ -137,7 +137,7 @@ class PublicProfileProvider extends ChangeNotifier {
         _hasMoreFeed = result.data!['hasMore'] as bool;
 
         // Ingest into global PostStoreProvider
-        _postStore.mergePosts(posts);
+        _postStore.addBatchPosts(posts);
 
         _currentPostIds.addAll(posts.map((p) => p.id));
         _updateCache(uid);

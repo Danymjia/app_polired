@@ -40,6 +40,11 @@ class PostDetailScreen extends StatelessWidget {
           );
 
           if (post == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            });
             return const Center(
               child: CircularProgressIndicator(color: AppTheme.primary),
             );

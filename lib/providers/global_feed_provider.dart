@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../models/feed_context.dart';
 import '../services/api_service.dart';
 import '../services/post_service.dart';
 import 'post_store_provider.dart';
@@ -71,11 +72,15 @@ class GlobalFeedProvider extends ChangeNotifier {
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
-      _postStore.mergePosts(newPosts);
+      final context = category.isEmpty 
+          ? FeedContext.exploreGlobal() 
+          : FeedContext.exploreTab(categoryId: category);
+      _postStore.addBatchPosts(newPosts, context: context);
       
       state.postIds.clear();
       state.postIds.addAll(_removeDuplicatePosts(newPosts.map((p) => p.id).toList(), state));
       state.hasMore = newPosts.length >= _defaultLimit;
+      _postStore.incrementFeedVersionGlobal();
     } else {
       state.errorMessage = result.message ?? 'Error al cargar el feed';
       state.postIds.clear();
@@ -114,7 +119,10 @@ class GlobalFeedProvider extends ChangeNotifier {
 
     if (result.success && result.data != null) {
       final newPosts = result.data!;
-      _postStore.mergePosts(newPosts);
+      final context = _selectedCategory.isEmpty 
+          ? FeedContext.exploreGlobal() 
+          : FeedContext.exploreTab(categoryId: _selectedCategory);
+      _postStore.addBatchPosts(newPosts, context: context);
 
       final filteredIds = _removeDuplicatePosts(newPosts.map((p) => p.id).toList(), state);
       if (filteredIds.isNotEmpty) {
@@ -125,6 +133,7 @@ class GlobalFeedProvider extends ChangeNotifier {
       }
       if (newPosts.isNotEmpty) {
         state.currentPage = nextPage;
+        _postStore.incrementFeedVersionGlobal();
       }
     } else {
       state.errorMessage =

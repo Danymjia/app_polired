@@ -52,7 +52,7 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         // El login guarda un `usuario` reducido (sin biografía). Refrescar desde el servidor
         // para que biografía y demás campos coincidan siempre con la base de datos.
-        await _syncProfileFromServer();
+        await syncProfileFromServer();
       } catch (_) {
         await _clearSession();
         notifyListeners();
@@ -64,7 +64,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// GET /perfil-estudiante → actualiza [_user] y almacenamiento local si la petición tiene éxito.
-  Future<void> _syncProfileFromServer() async {
+  Future<void> syncProfileFromServer() async {
     final refresh = await _authService.refreshUserFromPerfil();
     if (refresh.success && refresh.data != null) {
       _user = UserModel.fromJson(refresh.data!);
@@ -89,7 +89,7 @@ class AuthProvider extends ChangeNotifier {
           _socketService.connect(token);
         }
         notifyListeners();
-        await _syncProfileFromServer();
+        await syncProfileFromServer();
         return true;
       }
     }
@@ -136,7 +136,7 @@ class AuthProvider extends ChangeNotifier {
       if (userData != null) {
         _user = UserModel.fromJson(userData);
       }
-      await _syncProfileFromServer();
+      await syncProfileFromServer();
       notifyListeners();
       return true;
     }
@@ -144,6 +144,42 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = result.message;
     notifyListeners();
     return false;
+  }
+
+  void incrementPublicacionesCount() {
+    if (_user != null) {
+      _user = UserModel(
+        id: _user!.id,
+        nombre: _user!.nombre,
+        apellido: _user!.apellido,
+        email: _user!.email,
+        roles: _user!.roles,
+        username: _user!.username,
+        fotoPerfil: _user!.fotoPerfil,
+        biografia: _user!.biografia,
+        perfilCompleto: _user!.perfilCompleto,
+        publicacionesCount: _user!.publicacionesCount + 1,
+      );
+      notifyListeners();
+    }
+  }
+
+  void decrementPublicacionesCount() {
+    if (_user != null) {
+      _user = UserModel(
+        id: _user!.id,
+        nombre: _user!.nombre,
+        apellido: _user!.apellido,
+        email: _user!.email,
+        roles: _user!.roles,
+        username: _user!.username,
+        fotoPerfil: _user!.fotoPerfil,
+        biografia: _user!.biografia,
+        perfilCompleto: _user!.perfilCompleto,
+        publicacionesCount: (_user!.publicacionesCount > 0) ? _user!.publicacionesCount - 1 : 0,
+      );
+      notifyListeners();
+    }
   }
 
   /// Actualiza nombre, apellido, biografía y username (este último si cambió).
@@ -198,6 +234,12 @@ class AuthProvider extends ChangeNotifier {
   // ─── Recuperar contraseña ─────────────────────────────────────────────────
   Future<AuthResult> forgotPassword(String email) async {
     return await _authService.forgotPassword(email);
+  }
+
+  // ─── Actualizar contraseña ────────────────────────────────────────────────
+  Future<AuthResult> actualizarPassword(String currentPassword, String newPassword) async {
+    if (_user == null) return AuthResult(success: false, message: 'No hay usuario autenticado');
+    return await _authService.actualizarPassword(_user!.id, currentPassword, newPassword);
   }
 
   // ─── Logout ───────────────────────────────────────────────────────────────

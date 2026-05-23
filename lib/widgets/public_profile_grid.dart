@@ -7,20 +7,25 @@ import '../models/post_model.dart';
 import '../providers/post_store_provider.dart';
 import 'safe_network_image.dart';
 
+/// A **Sliver** widget that renders a grid of posts.
+/// Must be placed directly inside a [CustomScrollView]'s [slivers] list.
 class PublicProfileGrid extends StatelessWidget {
   final List<String> postIds;
-  final ScrollController scrollController;
   final bool isFetchingMore;
+
+  // Legacy param kept so existing call-sites don't break; ignored internally.
+  final ScrollController? scrollController;
 
   const PublicProfileGrid({
     super.key,
     required this.postIds,
-    required this.scrollController,
     required this.isFetchingMore,
+    this.scrollController, // kept for back-compat, not used
   });
 
   @override
   Widget build(BuildContext context) {
+    // Empty state — must be a Sliver
     if (postIds.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -44,32 +49,35 @@ class PublicProfileGrid extends StatelessWidget {
       );
     }
 
-    return SliverPadding(
-      padding: EdgeInsets.zero,
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 0,
-          crossAxisSpacing: 0,
-          childAspectRatio: 1.0,
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 1,
+            crossAxisSpacing: 1,
+            childAspectRatio: 0.7,
+          ),
+          itemCount: postIds.length,
+          itemBuilder: (context, index) => _GridCell(postId: postIds[index]),
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (index >= postIds.length) {
-              return const Center(
+        if (isFetchingMore)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primary,
+                    strokeWidth: 2,
+                  ),
                 ),
-              );
-            }
-            final postId = postIds[index];
-            return _GridCell(postId: postId);
-          },
-          childCount: postIds.length + (isFetchingMore ? 3 : 0),
-        ),
-      ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -81,7 +89,6 @@ class _GridCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Select only this specific post to avoid re-rendering the whole grid
     final post = context.select<PostStoreProvider, PostModel?>(
       (store) => store.getPost(postId),
     );
@@ -102,80 +109,84 @@ class _GridCell extends StatelessWidget {
     return InkWell(
       onTap: () => context.push('/post/${post.id}'),
       child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.black, width: 0.5),
+        clipBehavior: Clip.hardEdge,
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
         ),
         child: Stack(
           fit: StackFit.expand,
-        children: [
-          if (post.hasImage && post.mediaUrls.isNotEmpty)
-            SafeNetworkImage(
-              url: post.mediaUrls.first,
-              fit: BoxFit.cover,
-            )
-          else
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primary.withValues(alpha: 0.05),
-                    AppTheme.primary.withValues(alpha: 0.15),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          children: [
+            if (post.hasImage && post.mediaUrls.isNotEmpty)
+              Transform.scale(
+                scale: 1.15,
+                child: SafeNetworkImage(
+                  url: post.mediaUrls.first,
+                  fit: BoxFit.cover,
                 ),
-              ),
-              child: Center(
-                child: Text(
-                  post.titulo.isNotEmpty ? post.titulo : post.displayContent,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primary,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          if (post.isArticle)
-            Positioned(
-              top: 6,
-              right: 6,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: AppTheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.shopping_bag_rounded,
-                  color: Colors.white,
-                  size: 12,
-                ),
-              ),
-            ),
-          if (post.mediaUrls.length > 1 && !post.isArticle)
-            Positioned(
-              top: 6,
-              right: 6,
-              child: Container(
-                padding: const EdgeInsets.all(4),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primary.withValues(alpha: 0.05),
+                      AppTheme.primary.withValues(alpha: 0.15),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.copy_rounded,
-                  color: Colors.white,
-                  size: 12,
+                child: Center(
+                  child: Text(
+                    post.titulo.isNotEmpty ? post.titulo : post.displayContent,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
+            if (post.isArticle)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.shopping_bag_rounded,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ),
+              ),
+            if (post.mediaUrls.length > 1 && !post.isArticle)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.copy_rounded,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

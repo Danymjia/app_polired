@@ -7,12 +7,14 @@ import 'providers/auth_provider.dart';
 import 'providers/global_feed_provider.dart';
 import 'providers/messages_inbox_provider.dart';
 import 'providers/network_provider.dart';
-import 'providers/community_feed_provider.dart';
 import 'providers/explore_networks_provider.dart';
 import 'providers/network_profile_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/post_store_provider.dart';
 import 'providers/explore_users_provider.dart';
+import 'services/read_model_cache_service.dart';
+import 'services/navigation_bus.dart';
+import 'services/navigation_service.dart';
 import 'providers/public_profile_provider.dart';
 import 'providers/my_profile_feed_provider.dart';
 import 'repositories/conversations_repository.dart';
@@ -25,6 +27,8 @@ import 'services/socket_service.dart';
 import 'services/storage_service.dart';
 import 'services/explore_user_service.dart';
 import 'services/public_profile_service.dart';
+import 'services/command_bus.dart';
+import 'services/handlers/post_command_handlers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +59,20 @@ Future<void> main() async {
   final exploreUserService = ExploreUserService(apiService);
   final publicProfileService = PublicProfileService(apiService);
 
+  // ─── Inicialización de CQRS Core ──────────────────────────────────────────
+  final postStoreProvider = PostStoreProvider();
+  final commandBus = CommandBus();
+  final navigationBus = NavigationBus();
+  
+  NavigationService.instance.init(navigationBus);
+  
+  // Registro de Handlers
+  commandBus.registerHandler(CreatePostCommandHandler(postService, postStoreProvider, navigationBus));
+  commandBus.registerHandler(ToggleLikeCommandHandler(postService, postStoreProvider));
+  commandBus.registerHandler(ToggleSaveCommandHandler(postService, postStoreProvider));
+  commandBus.registerHandler(DeletePostCommandHandler(postService, postStoreProvider));
+  commandBus.registerHandler(InitializeSocialStateCommandHandler(postService, postStoreProvider));
+
   runApp(
     MultiProvider(
       providers: [
@@ -64,6 +82,12 @@ Future<void> main() async {
         Provider<NetworkService>.value(value: networkService),
         Provider<ExploreUserService>.value(value: exploreUserService),
         Provider<PublicProfileService>.value(value: publicProfileService),
+        Provider<CommandBus>.value(value: commandBus),
+        Provider<NavigationBus>.value(value: navigationBus),
+        Provider<ReadModelCacheService>(
+          create: (_) => ReadModelCacheService(),
+          dispose: (_, service) => service.disposeAll(),
+        ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
             authService: authService,
@@ -77,8 +101,14 @@ Future<void> main() async {
           create: (_) => ExploreUsersProvider(exploreUserService),
         ),
         // PostStoreProvider must be declared BEFORE any ProxyProvider that depends on it
-        ChangeNotifierProvider(
-          create: (_) => PostStoreProvider(postService),
+        ChangeNotifierProxyProvider<AuthProvider, PostStoreProvider>(
+          create: (_) => postStoreProvider,
+          update: (_, auth, store) {
+            if (!auth.isAuthenticated) {
+              store?.clear();
+            }
+            return store!;
+          },
         ),
         ChangeNotifierProxyProvider<PostStoreProvider, NetworkProvider>(
           create: (context) => NetworkProvider(networkService, postService, context.read<PostStoreProvider>()),
@@ -87,10 +117,6 @@ Future<void> main() async {
         ChangeNotifierProxyProvider<PostStoreProvider, NetworkProfileProvider>(
           create: (context) => NetworkProfileProvider(networkService, context.read<PostStoreProvider>()),
           update: (_, store, previous) => previous ?? NetworkProfileProvider(networkService, store),
-        ),
-        ChangeNotifierProxyProvider<PostStoreProvider, CommunityFeedProvider>(
-          create: (context) => CommunityFeedProvider(postService, context.read<PostStoreProvider>()),
-          update: (_, store, previous) => previous ?? CommunityFeedProvider(postService, store),
         ),
         ChangeNotifierProxyProvider<PostStoreProvider, GlobalFeedProvider>(
           create: (context) => GlobalFeedProvider(postService, context.read<PostStoreProvider>()),

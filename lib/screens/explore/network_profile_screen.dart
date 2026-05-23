@@ -243,8 +243,11 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                                   child: ClipRect(
                                     child: Align(
                                       alignment: Alignment.topCenter,
-                                      heightFactor: 0.8,
-                                      child: PostCard(post: post),
+                                      child: OverflowBox(
+                                        maxHeight: double.infinity,
+                                        alignment: Alignment.topCenter,
+                                        child: PostCard(post: post),
+                                      ),
                                     ),
                                   ),
                                 ),

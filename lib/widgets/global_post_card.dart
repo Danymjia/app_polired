@@ -8,40 +8,67 @@ import '../../models/commands/feed_command.dart';
 import 'safe_network_image.dart';
 import 'post_image_carousel.dart';
 import 'comment_tree_sheet.dart';
+
+import '../services/navigation_service.dart';
 import 'likes_bottom_sheet.dart';
 import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
 
-class PostCard extends StatelessWidget {
+/// PostCard para el contexto global (Explorar).
+///
+/// REGLAS:
+///   - Muestra price labels para artículos (marketplace/cursos).
+///   - Muestra categoría como badge visual.
+///   - Diseño editorial / discovery.
+///   - NUNCA usado en Home.
+class GlobalPostCard extends StatefulWidget {
   final PostModel post;
 
-  const PostCard({super.key, required this.post});
+  const GlobalPostCard({super.key, required this.post});
+
+  @override
+  State<GlobalPostCard> createState() => _GlobalPostCardState();
+}
+
+class _GlobalPostCardState extends State<GlobalPostCard> {
+  PostModel get post => widget.post;
+  final GlobalKey _cardKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    NavigationService.instance.registerPostKey(post.id, _cardKey);
+  }
+
+  @override
+  void dispose() {
+    NavigationService.instance.unregisterPostKey(post.id);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (post.hasImage) {
-      return _buildImagePost(context);
-    } else {
-      return _buildTextPost(context);
-    }
+    return Container(
+      key: _cardKey,
+      child: post.hasImage ? _buildImagePost(context) : _buildTextPost(context),
+    );
   }
 
-  Widget _buildSubtitle() {
-    String subtitle = '';
-    if (post.networkName.isNotEmpty) {
-      subtitle = post.networkName;
-    } else if (post.categoria.isNotEmpty) {
-      String cat = post.categoria;
-      if (cat.toLowerCase() == 'venta') subtitle = 'Ventas';
-      else if (cat.toLowerCase() == 'cursos') subtitle = 'Cursos';
-      else if (cat.toLowerCase() == 'noticias') subtitle = 'Noticias';
-      else subtitle = cat[0].toUpperCase() + cat.substring(1).toLowerCase();
+  Widget _buildCategoryText() {
+    final cat = post.categoria;
+    if (cat.isEmpty) return const SizedBox.shrink();
+    
+    // Convert to capitalized display string
+    String displayCat = cat;
+    if (cat.toLowerCase() == 'venta') displayCat = 'Ventas';
+    else if (cat.toLowerCase() == 'cursos') displayCat = 'Cursos';
+    else if (cat.toLowerCase() == 'noticias') displayCat = 'Noticias';
+    else {
+      displayCat = cat[0].toUpperCase() + cat.substring(1).toLowerCase();
     }
 
-    if (subtitle.isEmpty) return const SizedBox.shrink();
-
     return Text(
-      subtitle,
+      displayCat,
       style: GoogleFonts.inter(
         fontSize: 11,
         color: AppTheme.primary.withValues(alpha: 0.85),
@@ -58,14 +85,8 @@ class PostCard extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppTheme.surfaceContainerLowest,
         border: Border(
-          bottom: BorderSide(
-            color: AppTheme.surfaceContainerHighest,
-            width: 1,
-          ),
-          top: BorderSide(
-            color: AppTheme.surfaceContainerHighest,
-            width: 1,
-          ),
+          bottom: BorderSide(color: AppTheme.surfaceContainerHighest, width: 1),
+          top: BorderSide(color: AppTheme.surfaceContainerHighest, width: 1),
         ),
       ),
       child: Column(
@@ -95,19 +116,17 @@ class PostCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      _buildSubtitle(),
+                      _buildCategoryText(),
                     ],
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => PostOptionsBottomSheet(post: post),
-                    );
-                  },
+                  onTap: () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => PostOptionsBottomSheet(post: post),
+                  ),
                   child: const Icon(
                     Icons.more_horiz,
                     color: AppTheme.onSurfaceVariant,
@@ -117,17 +136,21 @@ class PostCard extends StatelessWidget {
               ],
             ),
           ),
-          
-          // ── Imagen ────────────────────────────────────────────────────────
+
+          // ── Imagen con Price Badge ─────────────────────────────────────────
           Stack(
             children: [
               PostImageCarousel(mediaUrls: post.mediaUrls),
+              // Price badge SOLO en GlobalPostCard
               if (post.isArticle && post.priceLabel.isNotEmpty)
                 Positioned(
                   bottom: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(20),
@@ -145,17 +168,17 @@ class PostCard extends StatelessWidget {
             ],
           ),
 
-          // ── Acciones ────────────────────────────────────────────────────────
+          // ── Acciones ──────────────────────────────────────────────────────
           _buildActions(context),
 
-          // ── Contenido ───────────────────────────────────────────────────────
+          // ── Contenido ─────────────────────────────────────────────────────
           if (post.displayContent.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
               child: _PostContentImage(post: post),
             ),
 
-          // ── Tiempo ──────────────────────────────────────────────────────────
+          // ── Tiempo ────────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
             child: Text(
@@ -178,10 +201,7 @@ class PostCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.surfaceContainerHighest,
-          width: 1,
-        ),
+        border: Border.all(color: AppTheme.surfaceContainerHighest, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,26 +229,29 @@ class PostCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    _buildSubtitle(),
-                    Text(
-                      post.timeAgo,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
+                    Row(
+                      children: [
+                        _buildCategoryText(),
+                        const SizedBox(width: 6),
+                        Text(
+                          post.timeAgo,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => PostOptionsBottomSheet(post: post),
-                  );
-                },
+                onTap: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => PostOptionsBottomSheet(post: post),
+                ),
                 child: const Icon(
                   Icons.more_horiz,
                   color: AppTheme.onSurfaceVariant,
@@ -239,8 +262,9 @@ class PostCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Título y Precio ──────────────────────────────────────────────────
-          if (post.titulo.isNotEmpty || (post.isArticle && post.priceLabel.isNotEmpty))
+          // ── Título + Price Label (SOLO en GlobalPostCard) ─────────────────
+          if (post.titulo.isNotEmpty ||
+              (post.isArticle && post.priceLabel.isNotEmpty))
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
@@ -257,11 +281,17 @@ class PostCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (post.titulo.isNotEmpty && post.isArticle && post.priceLabel.isNotEmpty)
+                  if (post.titulo.isNotEmpty &&
+                      post.isArticle &&
+                      post.priceLabel.isNotEmpty)
                     const SizedBox(width: 8),
+                  // Price badge en texto
                   if (post.isArticle && post.priceLabel.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(20),
@@ -279,13 +309,12 @@ class PostCard extends StatelessWidget {
               ),
             ),
 
-          // ── Contenido ───────────────────────────────────────────────────────
-          if (post.displayContent.isNotEmpty)
-            _PostContentText(post: post),
+          // ── Contenido ─────────────────────────────────────────────────────
+          if (post.displayContent.isNotEmpty) _PostContentText(post: post),
 
           const SizedBox(height: 12),
 
-          // ── Acciones ────────────────────────────────────────────────────────
+          // ── Acciones ──────────────────────────────────────────────────────
           _buildActions(context, padding: EdgeInsets.zero),
         ],
       ),
@@ -297,31 +326,34 @@ class PostCard extends StatelessWidget {
     final isAuthor = currentUserId != null && currentUserId == post.authorId;
 
     return Padding(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding:
+          padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.read<CommandBus>().dispatch(ToggleLikeCommand(postId: post.id)),
+            onTap: () => context.read<CommandBus>().dispatch(
+              ToggleLikeCommand(postId: post.id),
+            ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 post.liked ? Icons.favorite : Icons.favorite_border,
                 key: ValueKey(post.liked),
-                color: post.liked ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                color: post.liked
+                    ? AppTheme.primary
+                    : AppTheme.onSurfaceVariant,
                 size: 26,
               ),
             ),
           ),
           const SizedBox(width: 6),
           GestureDetector(
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => LikesBottomSheet(postId: post.id),
-              );
-            },
+            onTap: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => LikesBottomSheet(postId: post.id),
+            ),
             child: Text(
               '${post.likesCount}',
               style: GoogleFonts.inter(
@@ -333,14 +365,12 @@ class PostCard extends StatelessWidget {
           ),
           const SizedBox(width: 20),
           GestureDetector(
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => CommentTreeSheet(postId: post.id),
-              );
-            },
+            onTap: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => CommentTreeSheet(postId: post.id),
+            ),
             child: Row(
               children: [
                 const Icon(
@@ -363,13 +393,17 @@ class PostCard extends StatelessWidget {
           const Spacer(),
           if (!isAuthor)
             GestureDetector(
-              onTap: () => context.read<CommandBus>().dispatch(ToggleSaveCommand(postId: post.id)),
+              onTap: () => context.read<CommandBus>().dispatch(
+                ToggleSaveCommand(postId: post.id),
+              ),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: Icon(
                   post.saved ? Icons.bookmark : Icons.bookmark_border,
                   key: ValueKey(post.saved),
-                  color: post.saved ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                  color: post.saved
+                      ? AppTheme.primary
+                      : AppTheme.onSurfaceVariant,
                   size: 26,
                 ),
               ),
@@ -380,11 +414,11 @@ class PostCard extends StatelessWidget {
   }
 }
 
-// ─── Avatar del autor ─────────────────────────────────────────────────────────
+// ─── Widgets internos reutilizables ───────────────────────────────────────────
+
 class _AuthorAvatar extends StatelessWidget {
   final String? imageUrl;
   final String name;
-
   const _AuthorAvatar({required this.imageUrl, required this.name});
 
   @override
@@ -403,7 +437,6 @@ class _AuthorAvatar extends StatelessWidget {
   }
 }
 
-// ─── Contenido Textual (Imagen) ───────────────────────────────────────────────
 class _PostContentImage extends StatefulWidget {
   final PostModel post;
   const _PostContentImage({required this.post});
@@ -419,7 +452,6 @@ class _PostContentImageState extends State<_PostContentImage> {
   Widget build(BuildContext context) {
     final text = widget.post.displayContent;
     if (text.isEmpty) return const SizedBox.shrink();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -461,7 +493,6 @@ class _PostContentImageState extends State<_PostContentImage> {
   }
 }
 
-// ─── Contenido Textual (Solo Texto) ───────────────────────────────────────────
 class _PostContentText extends StatefulWidget {
   final PostModel post;
   const _PostContentText({required this.post});
@@ -477,7 +508,6 @@ class _PostContentTextState extends State<_PostContentText> {
   Widget build(BuildContext context) {
     final text = widget.post.displayContent;
     if (text.isEmpty) return const SizedBox.shrink();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

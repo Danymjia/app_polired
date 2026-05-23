@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import '../settings/notifications_screen.dart';
+import '../../services/read_model_cache_service.dart';
 import '../settings/help_screen.dart';
 import '../settings/support_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/privacy_screen.dart';
 import '../settings/request_network_screen.dart';
+import '../settings/notifications_screen.dart';
 import 'saved_posts_screen.dart';
 import 'liked_posts_screen.dart';
 
@@ -150,6 +151,7 @@ class SettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: InkWell(
                 onTap: () async {
+                  context.read<ReadModelCacheService>().disposeAll();
                   await context.read<AuthProvider>().logout();
                   if (context.mounted) {
                     context.go('/login');

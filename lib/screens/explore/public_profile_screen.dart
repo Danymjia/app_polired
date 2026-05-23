@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/public_profile_provider.dart';
 import '../../providers/post_store_provider.dart';
+import '../../services/read_model_cache_service.dart';
+import '../../models/feed_context.dart';
 import '../../widgets/public_profile_header.dart';
 import '../../widgets/public_profile_grid.dart';
 
@@ -20,12 +22,16 @@ class PublicProfileScreen extends StatefulWidget {
 class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
+  // Saved in initState to avoid calling context.read() inside dispose().
+  late ReadModelCacheService _cacheService;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _scrollController.addListener(_onScroll);
+    // Save reference now while context is still active.
+    _cacheService = context.read<ReadModelCacheService>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<PublicProfileProvider>();
@@ -37,6 +43,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
 
   @override
   void dispose() {
+    // Use the pre-saved reference — context.read() is unsafe in dispose().
+    _cacheService.evict(FeedContext.profile(userId: widget.userId));
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _tabController.dispose();

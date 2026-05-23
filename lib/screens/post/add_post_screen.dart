@@ -4,20 +4,17 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../config/theme.dart';
+import '../../services/command_bus.dart';
+import '../../models/commands/feed_command.dart';
 import '../../utils/image_compression.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../providers/network_provider.dart';
-import '../../providers/global_feed_provider.dart';
-import '../../providers/community_feed_provider.dart';
+import '../../models/feed_context.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/post_service.dart';
 import '../../services/api_service.dart';
 import '../../models/network_story_model.dart';
 import '../../widgets/post_image_carousel.dart';
-import '../../providers/post_store_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/my_profile_feed_provider.dart';
-import '../../providers/network_profile_provider.dart';
-import '../../models/post_model.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -30,7 +27,11 @@ class _AddPostScreenState extends State<AddPostScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String? _postType; // 'imagen' | 'texto'
-  String _category = 'Comunidad'; // 'Comunidad', 'Noticias', 'Venta', 'Cursos'
+  String _category = 'Comunidad'; // tipo de contenido (describe QUÉ es)
+
+  // ─── FeedContext EXPLÍCITO: decisor de destino (NO derivado de category) ──
+  // El usuario selecciona explícitamente: Home (Mi red) o Global (Explorar)
+  FeedContext _feedContext = FeedContext.home();
 
   NetworkStoryModel? _selectedNetwork;
 
@@ -99,12 +100,9 @@ class _AddPostScreenState extends State<AddPostScreen> {
   bool _isLoading = false;
   bool _isPreparingImages = false;
 
-  late PostService _postService;
-
   @override
   void initState() {
     super.initState();
-    _postService = PostService(context.read<ApiService>());
 
     // Auto-select first joined network if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -144,147 +142,56 @@ class _AddPostScreenState extends State<AddPostScreen> {
       final title = _postType == 'texto' ? _titleController.text.trim() : '';
       final content = _descriptionController.text.trim();
       final categoryValue = _category.toLowerCase();
-      final comunidadId = categoryValue == 'comunidad' ? _selectedNetwork?.id : null;
+      final feedContext = _feedContext;
+      final comunidadId = feedContext == FeedContext.home() ? _selectedNetwork?.id : null;
 
-      if (categoryValue == 'comunidad' && comunidadId == null) {
+      if (feedContext == FeedContext.home() && comunidadId == null) {
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+          setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Selecciona una red comunitaria'),
-            ),
+            const SnackBar(content: Text('Selecciona una red comunitaria')),
           );
         }
         return;
       }
 
-      // --- Optimistic UI Update (solo para texto puro para evitar fallos de imagen) ---
-      String? tempId;
-      final store = context.read<PostStoreProvider>();
-      final globalFeed = context.read<GlobalFeedProvider>();
-      final commFeed = context.read<CommunityFeedProvider>();
-      final myProfileFeed = context.read<MyProfileFeedProvider>();
-      final netProfileFeed = context.read<NetworkProfileProvider>();
+      final commandBus = context.read<CommandBus>();
+      final command = CreatePostCommand(
+        feedContext: feedContext,
+        category: categoryValue,
+        content: content,
+        postType: _postType ?? 'texto',
+        title: title,
+        networkId: comunidadId,
+        networkName: _selectedNetwork?.name,
+        imageFiles: _selectedImages.isNotEmpty ? _selectedImages : null,
+        price: _isFree ? 0.0 : (double.tryParse(_priceController.text.trim()) ?? 0.0),
+      );
 
-      if (_selectedImages.isEmpty) {
-        tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-        final currentUser = context.read<AuthProvider>().user;
-        
-        final tempPost = PostModel(
-          id: tempId,
-          networkId: comunidadId ?? '',
-          networkName: _selectedNetwork?.name ?? '',
-          authorId: currentUser?.id ?? '',
-          authorUsername: currentUser?.username ?? 'Usuario',
-          authorFullName: '${currentUser?.nombre ?? ''} ${currentUser?.apellido ?? ''}'.trim(),
-          authorImageUrl: currentUser?.fotoPerfil,
-          titulo: title,
-          contenido: content,
-          tipoContenido: 'texto',
-          categoria: categoryValue,
-          mediaUrls: const [],
-          precio: _isFree ? 0 : (double.tryParse(_priceController.text.trim()) ?? 0.0),
-          likesCount: 0,
-          commentsCount: 0,
-          timestamp: DateTime.now(),
-        );
+      final result = await commandBus.dispatch(command);
 
-        // Inserción optimista
-        store.addPost(tempPost);
-        myProfileFeed.prependPostId(tempId);
-        if (categoryValue == 'comunidad') {
-          commFeed.prependPostId(tempId);
-          if (comunidadId != null) {
-            netProfileFeed.prependPostId(tempId);
-          }
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        if (result.success) {
+          // Ya no hacemos refresh manually: la arquitectura CQRS inyecta 
+          // el post optimista globalmente. Refrescar aquí destruiría el estado 
+          // optimista si el backend aún no ha indexado.
+          
+          context.read<AuthProvider>().incrementPublicacionesCount();
+          Navigator.pop(context);
         } else {
-          globalFeed.prependPostId(tempId, category: categoryValue);
-        }
-
-        // Salir inmediatamente si es optimista
-        if (mounted) Navigator.pop(context);
-      }
-
-      // Petición real al backend
-      final result = (categoryValue == 'venta' || categoryValue == 'cursos')
-          ? await _postService.createArticle(
-              titulo: title,
-              descripcion: content,
-              precio: _isFree ? 0.0 : (double.tryParse(_priceController.text.trim()) ?? 0.0),
-              categoria: categoryValue,
-              comunidadId: comunidadId,
-              imageFiles: _postType == 'imagen' ? _selectedImages : null,
-            )
-          : await _postService.createPost(
-              titulo: title,
-              contenido: content,
-              categoria: categoryValue,
-              comunidadId: comunidadId,
-              imageFiles: _postType == 'imagen' ? _selectedImages : null,
-            );
-
-      if (result.success) {
-        // Reemplazo del ID optimista por el real
-        if (tempId != null && result.data != null) {
-          final realData = result.data is Map<String, dynamic> ? result.data as Map<String, dynamic> : {};
-          final publicacionRaw = realData['publicacion'] ?? realData['articulo'] ?? realData;
-          if (publicacionRaw is Map<String, dynamic>) {
-            try {
-              final realPost = PostModel.fromJson(publicacionRaw);
-              store.replacePost(tempId, realPost);
-              globalFeed.replacePostId(tempId, realPost.id);
-              commFeed.replacePostId(tempId, realPost.id);
-              myProfileFeed.replacePostId(tempId, realPost.id);
-              netProfileFeed.replacePostId(tempId, realPost.id);
-            } catch (e) {
-              debugPrint('Error parseando post real: $e');
-            }
-          }
-        } else if (tempId == null) {
-           // Si no fue optimista (con imagen), salir ahora y refrescar feed
-           if (mounted) {
-             try {
-               if (categoryValue == 'comunidad') {
-                 commFeed.refreshFeed();
-               } else {
-                 globalFeed.refreshFeed();
-               }
-             } catch (_) {}
-             ScaffoldMessenger.of(context).showSnackBar(
-               const SnackBar(content: Text('Publicación creada con éxito')),
-             );
-             Navigator.pop(context);
-           }
-        }
-      } else {
-        // Rollback
-        if (tempId != null) {
-          store.removePost(tempId);
-          globalFeed.removePostId(tempId);
-          commFeed.removePostId(tempId);
-          myProfileFeed.removePostId(tempId);
-          netProfileFeed.removePostId(tempId);
-        }
-
-        if (mounted) {
-          final errorMessage = result.statusCode == 401
-              ? 'No autorizado. Verifica tu sesión e intenta de nuevo.'
-              : result.message ?? 'Error al publicar';
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.error ?? 'Error al publicar')),
+          );
         }
       }
     } catch (e) {
-      // Rollback en caso de excepción severa
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error inesperado: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error inesperado: $e')),
+        );
       }
     }
   }
@@ -336,21 +243,32 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // ─── SELECTOR DE DESTINO (FeedContext explícito) ──
+                        // ❌ PROHIBIDO: derivar destino desde category
+                        // ✅ El usuario elige explícitamente dónde publicar
+                        _buildSectionLabel('DESTINO DE PUBLICACIÓN'),
+                        const SizedBox(height: 12),
+                        _buildDestinationSelector(),
+                        const SizedBox(height: 24),
+
                         _buildSectionLabel('CATEGORÍA'),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            'Comunidad',
-                            'Noticias',
-                            'Venta',
-                            'Cursos',
-                          ].map((cat) => _buildCategoryChip(cat)).toList(),
+                            if (_feedContext == FeedContext.home())
+                              _buildCategoryChip('Comunidad')
+                            else ...[
+                              _buildCategoryChip('Noticias'),
+                              _buildCategoryChip('Venta'),
+                              _buildCategoryChip('Cursos'),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 24),
 
-                        if (_category == 'Comunidad') ...[
+                        if (_feedContext == FeedContext.home()) ...[
                           _buildSectionLabel('SELECCIONAR RED'),
                           const SizedBox(height: 12),
                           _buildNetworkSelector(networks),
@@ -755,6 +673,111 @@ class _AddPostScreenState extends State<AddPostScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // ─── Selector de destino (FeedContext) ──────────────────────────────────
+  Widget _buildDestinationSelector() {
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _feedContext = FeedContext.home();
+              _category = 'Comunidad';
+            }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                color: _feedContext == FeedContext.home()
+                    ? AppTheme.primary
+                    : AppTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _feedContext == FeedContext.home()
+                      ? AppTheme.primary
+                      : AppTheme.outlineVariant,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.group_outlined,
+                    size: 18,
+                    color: _feedContext == FeedContext.home()
+                        ? Colors.white
+                        : AppTheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Mi Red (Home)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _feedContext == FeedContext.home()
+                            ? Colors.white
+                            : AppTheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _feedContext = FeedContext.exploreGlobal();
+              _category = 'Noticias';
+            }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                color: _feedContext == FeedContext.exploreGlobal()
+                    ? AppTheme.primary
+                    : AppTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _feedContext == FeedContext.exploreGlobal()
+                      ? AppTheme.primary
+                      : AppTheme.outlineVariant,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.public_outlined,
+                    size: 18,
+                    color: _feedContext == FeedContext.exploreGlobal()
+                        ? Colors.white
+                        : AppTheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Red Global',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _feedContext == FeedContext.exploreGlobal()
+                            ? Colors.white
+                            : AppTheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -124,7 +124,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               type: BottomNavigationBarType.fixed,
               showSelectedLabels: false,
               showUnselectedLabels: false,
-              selectedItemColor: AppTheme.primaryText,
+              selectedItemColor: const Color(0xFF1E3A8A), // Azul oscuro
               unselectedItemColor: AppTheme.onSurfaceVariant,
               items: const [
                 BottomNavigationBarItem(

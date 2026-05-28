@@ -27,6 +27,23 @@ class GlobalFeedProvider extends ChangeNotifier {
     'cursos': CategoryState(),
   };
 
+  bool _hasLoadedOnce = false;
+  bool get hasLoadedOnce => _hasLoadedOnce;
+
+  void setLoadedOnce() => _hasLoadedOnce = true;
+  void resetLoadedOnce() => _hasLoadedOnce = false;
+
+  void clear() {
+    for (final state in _states.values) {
+      state.postIds.clear();
+      state.currentPage = 1;
+      state.hasMore = true;
+      state.errorMessage = null;
+    }
+    _hasLoadedOnce = false;
+    notifyListeners();
+  }
+
   String _selectedCategory = 'noticias';
 
   CategoryState get currentState => _states[_selectedCategory] ?? _states['noticias']!;

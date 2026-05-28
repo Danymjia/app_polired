@@ -30,7 +30,7 @@ class MyProfileFeedProvider extends ChangeNotifier {
     _hasMoreFeed = true;
     notifyListeners();
 
-    final result = await _publicProfileService.getPublicProfileFeed(myUserId, page: _feedPage, limit: 6);
+    final result = await _publicProfileService.getPublicProfileFeed(myUserId, page: _feedPage, limit: 15);
     if (result.success && result.data != null) {
       final posts = result.data!['items'] as List<PostModel>;
       _hasMoreFeed = result.data!['hasMore'] as bool;
@@ -51,7 +51,7 @@ class MyProfileFeedProvider extends ChangeNotifier {
     notifyListeners();
 
     _feedPage++;
-    final result = await _publicProfileService.getPublicProfileFeed(myUserId, page: _feedPage, limit: 6);
+    final result = await _publicProfileService.getPublicProfileFeed(myUserId, page: _feedPage, limit: 15);
     if (result.success && result.data != null) {
       final posts = result.data!['items'] as List<PostModel>;
       _hasMoreFeed = result.data!['hasMore'] as bool;

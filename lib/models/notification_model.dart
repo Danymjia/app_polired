@@ -9,15 +9,32 @@
 /// }
 ///
 /// Tipos soportados: 'like' | 'comentario' | 'respuesta_comentario' | 'mensaje'
+class EmisorSnap {
+  final String nombre;
+  final String apellido;
+  final String username;
+  final String? fotoPerfil;
+
+  EmisorSnap.fromJson(Map<String, dynamic> json)
+      : nombre = json['nombre'] ?? '',
+        apellido = json['apellido'] ?? '',
+        username = json['username'] ?? '',
+        fotoPerfil = json['fotoPerfil'];
+
+  String get nombreCompleto => '$nombre $apellido'.trim();
+}
 class NotificationModel {
   final String id;
   final String usuarioId;
   final String? emisorId;
+  final EmisorSnap? emisorSnap;
+  final List<EmisorSnap> emisores;
+  final int totalEmisores;
   final String tipo;
   final String? publicacionId;
   final String? comentarioId;
   final String? conversacionId;
-  final String? mensaje;
+  final String? mensajeTexto;
   final bool leida;
   final DateTime createdAt;
 
@@ -25,11 +42,14 @@ class NotificationModel {
     required this.id,
     required this.usuarioId,
     this.emisorId,
+    this.emisorSnap,
+    this.emisores = const [],
+    this.totalEmisores = 1,
     required this.tipo,
     this.publicacionId,
     this.comentarioId,
     this.conversacionId,
-    this.mensaje,
+    this.mensajeTexto,
     required this.leida,
     required this.createdAt,
   });
@@ -51,6 +71,14 @@ class NotificationModel {
       emisorId: json['emisorId'] is String
           ? json['emisorId'] as String?
           : (json['emisorId']?['_id'] as String?),
+      emisorSnap: json['emisorSnap'] != null
+          ? EmisorSnap.fromJson(json['emisorSnap'])
+          : (json['emisorId'] is Map<String, dynamic> ? EmisorSnap.fromJson(json['emisorId']) : null),
+      emisores: (json['emisores'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((e) => EmisorSnap.fromJson(e))
+          .toList(),
+      totalEmisores: (json['totalEmisores'] as num?)?.toInt() ?? 1,
       tipo: (json['tipo'] as String?) ?? 'mensaje',
       publicacionId: json['publicacionId'] is String
           ? json['publicacionId'] as String?
@@ -61,7 +89,7 @@ class NotificationModel {
       conversacionId: json['conversacionId'] is String
           ? json['conversacionId'] as String?
           : (json['conversacionId']?['_id'] as String?),
-      mensaje: json['mensaje'] as String?,
+      mensajeTexto: json['mensaje'],
       leida: (json['leida'] as bool?) ?? false,
       createdAt: ts,
     );
@@ -96,6 +124,27 @@ class NotificationModel {
         return 'Mensaje';
       default:
         return 'Notificación';
+    }
+  }
+
+  String get textoResumido {
+    final primerNombre = emisorSnap?.nombre ?? (emisores.isNotEmpty ? emisores.first.nombre : 'Alguien');
+    switch (tipo) {
+      case 'like':
+        if (totalEmisores <= 1) return '$primerNombre le dio like a tu publicación';
+        if (totalEmisores == 2) {
+          final segundo = emisores.length > 1 ? emisores[1].nombre : 'alguien más';
+          return '$primerNombre y $segundo le dieron like a tu publicación';
+        }
+        return '$primerNombre y ${totalEmisores - 1} más le dieron like a tu publicación';
+      case 'comentario':
+        return '$primerNombre comentó tu publicación';
+      case 'respuesta_comentario':
+        return '$primerNombre respondió a tu comentario';
+      case 'mensaje':
+        return mensajeTexto ?? 'Nueva notificación del sistema';
+      default:
+        return 'Nueva notificación';
     }
   }
 

@@ -13,6 +13,7 @@ import '../services/navigation_service.dart';
 import 'likes_bottom_sheet.dart';
 import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
+import '../providers/post_store_provider.dart';
 
 /// PostCard para el contexto global (Explorar).
 ///
@@ -31,39 +32,45 @@ class GlobalPostCard extends StatefulWidget {
 }
 
 class _GlobalPostCardState extends State<GlobalPostCard> {
-  PostModel get post => widget.post;
   final GlobalKey _cardKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    NavigationService.instance.registerPostKey(post.id, _cardKey);
+    NavigationService.instance.registerPostKey(widget.post.id, _cardKey);
   }
 
   @override
   void dispose() {
-    NavigationService.instance.unregisterPostKey(post.id);
+    NavigationService.instance.unregisterPostKey(widget.post.id);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentPost = context.select<PostStoreProvider, PostModel>(
+      (s) => s.getPost(widget.post.id) ?? widget.post,
+    );
+
     return Container(
       key: _cardKey,
-      child: post.hasImage ? _buildImagePost(context) : _buildTextPost(context),
+      child: currentPost.hasImage ? _buildImagePost(context, currentPost) : _buildTextPost(context, currentPost),
     );
   }
 
-  Widget _buildCategoryText() {
+  Widget _buildCategoryText(PostModel post) {
     final cat = post.categoria;
     if (cat.isEmpty) return const SizedBox.shrink();
     
     // Convert to capitalized display string
     String displayCat = cat;
-    if (cat.toLowerCase() == 'venta') displayCat = 'Ventas';
-    else if (cat.toLowerCase() == 'cursos') displayCat = 'Cursos';
-    else if (cat.toLowerCase() == 'noticias') displayCat = 'Noticias';
-    else {
+    if (cat.toLowerCase() == 'venta') {
+      displayCat = 'Ventas';
+    } else if (cat.toLowerCase() == 'cursos') {
+      displayCat = 'Cursos';
+    } else if (cat.toLowerCase() == 'noticias') {
+      displayCat = 'Noticias';
+    } else {
       displayCat = cat[0].toUpperCase() + cat.substring(1).toLowerCase();
     }
 
@@ -79,7 +86,7 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
     );
   }
 
-  Widget _buildImagePost(BuildContext context) {
+  Widget _buildImagePost(BuildContext context, PostModel post) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(
@@ -116,7 +123,7 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      _buildCategoryText(),
+                      _buildCategoryText(post),
                     ],
                   ),
                 ),
@@ -169,7 +176,7 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
           ),
 
           // ── Acciones ──────────────────────────────────────────────────────
-          _buildActions(context),
+          _buildActions(context, post),
 
           // ── Contenido ─────────────────────────────────────────────────────
           if (post.displayContent.isNotEmpty)
@@ -194,7 +201,7 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
     );
   }
 
-  Widget _buildTextPost(BuildContext context) {
+  Widget _buildTextPost(BuildContext context, PostModel post) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       padding: const EdgeInsets.all(16),
@@ -231,7 +238,7 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
                     ),
                     Row(
                       children: [
-                        _buildCategoryText(),
+                        _buildCategoryText(post),
                         const SizedBox(width: 6),
                         Text(
                           post.timeAgo,
@@ -315,13 +322,13 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
           const SizedBox(height: 12),
 
           // ── Acciones ──────────────────────────────────────────────────────
-          _buildActions(context, padding: EdgeInsets.zero),
+          _buildActions(context, post, padding: EdgeInsets.zero),
         ],
       ),
     );
   }
 
-  Widget _buildActions(BuildContext context, {EdgeInsetsGeometry? padding}) {
+  Widget _buildActions(BuildContext context, PostModel post, {EdgeInsetsGeometry? padding}) {
     final currentUserId = context.read<AuthProvider>().user?.id;
     final isAuthor = currentUserId != null && currentUserId == post.authorId;
 

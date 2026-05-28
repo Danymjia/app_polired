@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'config/routes.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
@@ -9,6 +10,7 @@ import 'providers/messages_inbox_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/explore_networks_provider.dart';
 import 'providers/network_profile_provider.dart';
+import 'providers/map_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/post_store_provider.dart';
 import 'providers/explore_users_provider.dart';
@@ -29,9 +31,16 @@ import 'services/explore_user_service.dart';
 import 'services/public_profile_service.dart';
 import 'services/command_bus.dart';
 import 'services/handlers/post_command_handlers.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
+  // Inicializar Mapbox globalmente para evitar pantalla negra en v2.x+
+  MapboxOptions.setAccessToken(dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '');
 
   // Inicializar almacenamiento local
   await StorageService.init();
@@ -58,6 +67,7 @@ Future<void> main() async {
   final notificationService = NotificationService(apiService);
   final exploreUserService = ExploreUserService(apiService);
   final publicProfileService = PublicProfileService(apiService);
+  final conversationsRepository = ConversationsRepository(apiService);
 
   // ─── Inicialización de CQRS Core ──────────────────────────────────────────
   final postStoreProvider = PostStoreProvider();
@@ -82,6 +92,7 @@ Future<void> main() async {
         Provider<NetworkService>.value(value: networkService),
         Provider<ExploreUserService>.value(value: exploreUserService),
         Provider<PublicProfileService>.value(value: publicProfileService),
+        Provider<ConversationsRepository>.value(value: conversationsRepository),
         Provider<CommandBus>.value(value: commandBus),
         Provider<NavigationBus>.value(value: navigationBus),
         Provider<ReadModelCacheService>(
@@ -100,6 +111,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => ExploreUsersProvider(exploreUserService),
         ),
+        ChangeNotifierProvider(create: (_) => MapProvider()),
         // PostStoreProvider must be declared BEFORE any ProxyProvider that depends on it
         ChangeNotifierProxyProvider<AuthProvider, PostStoreProvider>(
           create: (_) => postStoreProvider,
@@ -110,17 +122,40 @@ Future<void> main() async {
             return store!;
           },
         ),
-        ChangeNotifierProxyProvider<PostStoreProvider, NetworkProvider>(
+        ChangeNotifierProxyProvider2<AuthProvider, PostStoreProvider, NetworkProvider>(
           create: (context) => NetworkProvider(networkService, postService, context.read<PostStoreProvider>()),
-          update: (_, store, previous) => previous ?? NetworkProvider(networkService, postService, store),
+          update: (_, auth, store, previous) {
+            final provider = previous ?? NetworkProvider(networkService, postService, store);
+            if (auth.isAuthenticated && auth.user != null) {
+              if (!provider.hasLoadedOnce) {
+                provider.setLoadedOnce();
+                provider.loadStudentNetworks();
+                provider.fetchRedesDelEstudiante();
+              }
+            } else {
+              provider.clear();
+            }
+            return provider;
+          },
         ),
         ChangeNotifierProxyProvider<PostStoreProvider, NetworkProfileProvider>(
           create: (context) => NetworkProfileProvider(networkService, context.read<PostStoreProvider>()),
           update: (_, store, previous) => previous ?? NetworkProfileProvider(networkService, store),
         ),
-        ChangeNotifierProxyProvider<PostStoreProvider, GlobalFeedProvider>(
+        ChangeNotifierProxyProvider2<AuthProvider, PostStoreProvider, GlobalFeedProvider>(
           create: (context) => GlobalFeedProvider(postService, context.read<PostStoreProvider>()),
-          update: (_, store, previous) => previous ?? GlobalFeedProvider(postService, store),
+          update: (_, auth, store, previous) {
+            final provider = previous ?? GlobalFeedProvider(postService, store);
+            if (auth.isAuthenticated && auth.user != null) {
+              if (!provider.hasLoadedOnce) {
+                provider.setLoadedOnce();
+                provider.loadInitial();
+              }
+            } else {
+              provider.clear();
+            }
+            return provider;
+          },
         ),
         ChangeNotifierProxyProvider<PostStoreProvider, PublicProfileProvider>(
           create: (context) => PublicProfileProvider(publicProfileService, context.read<PostStoreProvider>()),
@@ -130,19 +165,24 @@ Future<void> main() async {
           create: (context) => MyProfileFeedProvider(publicProfileService, context.read<PostStoreProvider>()),
           update: (_, store, previous) => previous ?? MyProfileFeedProvider(publicProfileService, store),
         ),
-        ChangeNotifierProvider(
-          create: (_) => NotificationProvider(notificationService),
+        ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
+          create: (context) => NotificationProvider(notificationService, context.read<SocketService>()),
+          update: (context, auth, previous) {
+            final provider = previous ?? NotificationProvider(notificationService, context.read<SocketService>());
+            provider.onAuthChanged(auth.user);
+            return provider;
+          },
         ),
         ChangeNotifierProxyProvider<AuthProvider, MessagesInboxProvider>(
           create: (context) => MessagesInboxProvider(
-            conversationsRepository: ConversationsRepository(context.read<ApiService>()),
+            conversationsRepository: context.read<ConversationsRepository>(),
             networkService: context.read<NetworkService>(),
             socketService: context.read<SocketService>(),
           ),
           update: (context, auth, previous) {
             final inbox = previous ??
                 MessagesInboxProvider(
-                  conversationsRepository: ConversationsRepository(context.read<ApiService>()),
+                  conversationsRepository: context.read<ConversationsRepository>(),
                   networkService: context.read<NetworkService>(),
                   socketService: context.read<SocketService>(),
                 );

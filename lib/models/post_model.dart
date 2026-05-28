@@ -127,18 +127,18 @@ class PostModel {
       authorId = autor;
     }
 
-    final comunidad = json['comunidadId'] ?? json['redComunitaria'];
+    final comunidad = json['comunidadId'] ?? json['redComunitaria'] ?? json['comunidad'];
     String networkId = '';
     String networkName = '';
     if (comunidad is Map<String, dynamic>) {
-      networkId = (comunidad['_id'] as String?) ?? '';
-      networkName = (comunidad['nombre'] as String?) ?? '';
+      networkId = (comunidad['_id']?.toString()) ?? '';
+      networkName = (comunidad['nombre']?.toString()) ?? '';
     } else if (comunidad is String) {
       networkId = comunidad;
     }
 
     final rawTimestamp =
-        json['timestamp'] ?? json['createdAt'] ?? json['creadoEn'];
+        json['timestamp'] ?? json['createdAt'] ?? json['creadoEn'] ?? json['fechaCreacion'];
     DateTime timestamp = DateTime.now();
     if (rawTimestamp != null) {
       try {
@@ -171,19 +171,34 @@ class PostModel {
       authorUsername: authorUsername,
       authorFullName: authorFullName,
       authorImageUrl: authorImageUrl,
-      titulo: (json['titulo'] as String?) ?? '',
+      titulo: (json['titulo']?.toString()) ?? '',
       contenido: contenido,
       descripcion: descripcion,
       tipoContenido: tipoContenido,
       categoria: categoria,
       mediaUrls: mediaUrls,
       precio: precio,
-      likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
-      commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
+      likesCount: _parseInt(json['likesCount'] ?? json['likes'] ?? 0),
+      commentsCount: _parseInt(json['commentsCount'] ?? json['comentarios'] ?? 0),
       timestamp: timestamp,
-      likedByMe: json['likedByMe'] ?? json['isLiked'] ?? false,
-      savedByMe: json['savedByMe'] ?? json['isSaved'] ?? false,
+      likedByMe: _parseBool(json['likedByMe'] ?? json['isLiked'] ?? false),
+      savedByMe: _parseBool(json['savedByMe'] ?? json['isSaved'] ?? false),
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    if (value is num) return value > 0;
+    return false;
   }
 
   static List<String> _extractMediaUrls(dynamic raw) {

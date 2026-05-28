@@ -10,6 +10,7 @@ import '../../models/suggested_network_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/messages_inbox_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/socket_service.dart';
 
 /// Pantalla principal de mensajes: header, buscador (solo UI), historias de redes,
@@ -71,8 +72,6 @@ class MessagesScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: _SuggestionsSection(
                 items: inbox.suggestionVisible,
-                onDismiss: inbox.dismissSuggestion,
-                onFollow: inbox.followSuggestion,
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 96)),
@@ -265,10 +264,22 @@ class _NetworkStoriesRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         children: [
           if (currentUser != null) _UserStoryChip(user: currentUser),
+          if (networks.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, top: 20),
+              child: Text(
+                'Aún no te has unido a ninguna red.',
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF71717A)),
+              ),
+            ),
           ...networks.map(
             (n) => Padding(
               padding: const EdgeInsets.only(left: 20),
-              child: _NetworkStoryChip(network: n),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(32),
+                onTap: () => context.push('/explore/networks/${n.id}'),
+                child: _NetworkStoryChip(network: n),
+              ),
             ),
           ),
         ],
@@ -294,9 +305,8 @@ class _UserStoryChip extends StatelessWidget {
         Container(
           width: 64,
           height: 64,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.primaryText, width: 1),
           ),
           padding: const EdgeInsets.all(2),
           child: ClipOval(
@@ -340,9 +350,8 @@ class _NetworkStoryChip extends StatelessWidget {
         Container(
           width: 64,
           height: 64,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFE4E4E7)),
           ),
           padding: const EdgeInsets.all(2),
           child: ClipOval(
@@ -416,10 +425,13 @@ class _ConversationTile extends StatelessWidget {
     final peer = conversation.peer;
     final name = peer?.displayName ?? 'Usuario';
     final url = peer?.fotoPerfil;
-    final last = conversation.ultimoMensaje?.contenido;
-    final preview = (last != null && last.trim().isNotEmpty)
-        ? last
-        : 'Sin mensajes aún';
+    final lastMsg = conversation.ultimoMensaje;
+    String preview = 'Sin mensajes aún';
+    if (lastMsg != null && (lastMsg.contenido?.trim().isNotEmpty ?? false)) {
+      final isFromMe = lastMsg.autorId == currentUserId;
+      final prefix = isFromMe ? 'Tú: ' : '';
+      preview = '$prefix${lastMsg.contenido}';
+    }
     final time = formatConversationTime(conversation.ultimaActividad);
 
     return Material(
@@ -429,6 +441,14 @@ class _ConversationTile extends StatelessWidget {
         onTap: () {
           context.read<MessagesInboxProvider>().markConversationPreviewSeen(
             conversation.id,
+          );
+          context.push(
+            '/chat/${conversation.id}',
+            extra: {
+              'contactId': peer?.id,
+              'contactName': peer?.displayName,
+              'contactAvatar': peer?.fotoPerfil,
+            },
           );
         },
         child: Padding(
@@ -663,13 +683,9 @@ class _InboxErrorState extends StatelessWidget {
 class _SuggestionsSection extends StatelessWidget {
   const _SuggestionsSection({
     required this.items,
-    required this.onDismiss,
-    required this.onFollow,
   });
 
   final List<SuggestedNetworkModel> items;
-  final void Function(String id) onDismiss;
-  final Future<bool> Function(String id) onFollow;
 
   @override
   Widget build(BuildContext context) {
@@ -691,8 +707,6 @@ class _SuggestionsSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
           child: _SuggestionRow(
             model: e,
-            onDismiss: () => onDismiss(e.id),
-            onFollow: () => onFollow(e.id),
           ),
         );
       }).toList(),
@@ -700,115 +714,64 @@ class _SuggestionsSection extends StatelessWidget {
   }
 }
 
-class _SuggestionRow extends StatefulWidget {
+class _SuggestionRow extends StatelessWidget {
   const _SuggestionRow({
     required this.model,
-    required this.onDismiss,
-    required this.onFollow,
   });
 
   final SuggestedNetworkModel model;
-  final VoidCallback onDismiss;
-  final Future<bool> Function() onFollow;
-
-  @override
-  State<_SuggestionRow> createState() => _SuggestionRowState();
-}
-
-class _SuggestionRowState extends State<_SuggestionRow> {
-  bool _busy = false;
 
   @override
   Widget build(BuildContext context) {
-    final desc = widget.model.descripcion.trim();
+    final desc = model.descripcion.trim();
     final short = desc.length > 80 ? '${desc.substring(0, 80)}…' : desc;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: const Color(0xFFF4F4F5),
-          child: Text(
-            widget.model.acronym,
-            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.model.nombre,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => context.push('/explore/networks/${model.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color(0xFFF4F4F5),
+              child: Text(
+                model.acronym,
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
               ),
-              if (short.isNotEmpty)
-                Text(
-                  short,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: const Color(0xFF71717A),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        TextButton(
-          onPressed: _busy
-              ? null
-              : () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  setState(() => _busy = true);
-                  final ok = await widget.onFollow();
-                  if (!mounted) return;
-                  setState(() => _busy = false);
-                  if (!ok) {
-                    messenger.showSnackBar(
-                      const SnackBar(content: Text('No se pudo seguir la red')),
-                    );
-                  }
-                },
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: AppTheme.primaryText,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
             ),
-          ),
-          child: _busy
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    model.nombre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                )
-              : Text(
-                  'Seguir',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                  if (short.isNotEmpty)
+                    Text(
+                      short,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: const Color(0xFF71717A),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          icon: const Icon(Icons.close, size: 20, color: Color(0xFFA1A1AA)),
-          onPressed: widget.onDismiss,
-        ),
-      ],
+      ),
     );
   }
 }

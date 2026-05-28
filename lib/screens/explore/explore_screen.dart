@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/global_feed_provider.dart';
-import '../../providers/post_store_provider.dart';
 import '../../providers/feed_provider.dart';
 import '../../models/feed_context.dart';
 import '../../models/post_model.dart';
@@ -66,13 +65,6 @@ class ExploreScreenState extends State<ExploreScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.read<GlobalFeedProvider>().loadInitial(
-            category: _tabs[_selectedTab].toLowerCase(),
-          );
-        }
-      });
     }
   }
 
@@ -316,28 +308,4 @@ class _GlobalFeedBatchList extends StatelessWidget {
   }
 }
 
-class _ExploreHeaderDelegate extends SliverPersistentHeaderDelegate {
-  @override
-  double get minExtent {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    return kToolbarHeight + view.padding.top / view.devicePixelRatio;
-  }
 
-  @override
-  double get maxExtent {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    return kToolbarHeight + view.padding.top / view.devicePixelRatio;
-  }
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return const ExploreHeader();
-  }
-
-  @override
-  bool shouldRebuild(covariant _ExploreHeaderDelegate oldDelegate) => false;
-}

@@ -2,6 +2,23 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            credentials {
+                username = "mapbox"
+                password = run {
+                    val localProps = java.util.Properties()
+                    val localPropsFile = rootProject.file("local.properties")
+                    if (localPropsFile.exists()) {
+                        localPropsFile.inputStream().use { localProps.load(it) }
+                    }
+                    localProps.getProperty("MAPBOX_DOWNLOADS_TOKEN") ?: ""
+                }
+            }
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+        }
     }
 }
 

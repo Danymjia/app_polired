@@ -8,11 +8,11 @@ import '../../models/commands/feed_command.dart';
 import 'safe_network_image.dart';
 import 'post_image_carousel.dart';
 import 'comment_tree_sheet.dart';
-import '../providers/post_store_provider.dart';
 import '../services/navigation_service.dart';
 import 'likes_bottom_sheet.dart';
 import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
+import '../providers/post_store_provider.dart';
 
 /// PostCard para el contexto comunitario (Home).
 ///
@@ -31,30 +31,32 @@ class CommunityPostCard extends StatefulWidget {
 }
 
 class _CommunityPostCardState extends State<CommunityPostCard> {
-  PostModel get post => widget.post;
   final GlobalKey _cardKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    NavigationService.instance.registerPostKey(post.id, _cardKey);
+    NavigationService.instance.registerPostKey(widget.post.id, _cardKey);
   }
 
   @override
   void dispose() {
-    NavigationService.instance.unregisterPostKey(post.id);
+    NavigationService.instance.unregisterPostKey(widget.post.id);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentPost = context.select<PostStoreProvider, PostModel>(
+      (s) => s.getPost(widget.post.id) ?? widget.post,
+    );
     return Container(
       key: _cardKey,
-      child: post.hasImage ? _buildImagePost(context) : _buildTextPost(context),
+      child: currentPost.hasImage ? _buildImagePost(context, currentPost) : _buildTextPost(context, currentPost),
     );
   }
 
-  Widget _buildImagePost(BuildContext context) {
+  Widget _buildImagePost(BuildContext context, PostModel post) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(
@@ -121,7 +123,7 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
           PostImageCarousel(mediaUrls: post.mediaUrls),
 
           // ── Acciones ──────────────────────────────────────────────────────
-          _buildActions(context),
+          _buildActions(context, post),
 
           // ── Contenido ─────────────────────────────────────────────────────
           if (post.displayContent.isNotEmpty)
@@ -144,7 +146,7 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
     );
   }
 
-  Widget _buildTextPost(BuildContext context) {
+  Widget _buildTextPost(BuildContext context, PostModel post) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       padding: const EdgeInsets.all(16),
@@ -229,13 +231,13 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
           const SizedBox(height: 12),
 
           // ── Acciones ──────────────────────────────────────────────────────
-          _buildActions(context, padding: EdgeInsets.zero),
+          _buildActions(context, post, padding: EdgeInsets.zero),
         ],
       ),
     );
   }
 
-  Widget _buildActions(BuildContext context, {EdgeInsetsGeometry? padding}) {
+  Widget _buildActions(BuildContext context, PostModel post, {EdgeInsetsGeometry? padding}) {
     final currentUserId = context.read<AuthProvider>().user?.id;
     final isAuthor = currentUserId != null && currentUserId == post.authorId;
 

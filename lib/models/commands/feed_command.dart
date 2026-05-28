@@ -52,10 +52,12 @@ class CommandResult {
   final bool success;
   final String? error;
   final StateEvent? rollbackEvent;
+  final dynamic data;
 
   CommandResult({
     required this.success,
     this.error,
     this.rollbackEvent,
+    this.data,
   });
 }

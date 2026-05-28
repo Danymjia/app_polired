@@ -12,6 +12,8 @@ import '../screens/explore/explore_networks_screen.dart';
 import '../screens/explore/network_profile_screen.dart';
 import '../screens/explore/public_profile_screen.dart';
 import '../screens/post/post_detail_screen.dart';
+import '../screens/messages/chat_screen.dart';
+import '../screens/map/map_screen.dart';
 
 /// Configuración centralizada de navegación con go_router.
 final GoRouter appRouter = GoRouter(
@@ -71,6 +73,22 @@ final GoRouter appRouter = GoRouter(
       builder: (ctx, state) => PostDetailScreen(
         postId: state.pathParameters['id']!,
       ),
+    ),
+    GoRoute(
+      path: '/map',
+      builder: (ctx, state) => const MapScreen(),
+    ),
+    GoRoute(
+      path: '/chat/:id',
+      builder: (ctx, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ChatScreen(
+          conversationId: state.pathParameters['id']!,
+          contactId: extra['contactId'] as String? ?? '',
+          contactName: extra['contactName'] as String? ?? 'Usuario',
+          contactAvatar: extra['contactAvatar'] as String?,
+        );
+      },
     ),
   ],
 );

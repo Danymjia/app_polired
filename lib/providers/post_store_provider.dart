@@ -200,7 +200,10 @@ class PostStoreProvider extends ChangeNotifier {
     bool changed = false;
     for (final post in posts) {
       if (post.id.isEmpty) continue;
-      _postsById[post.id] = post;
+      _postsById[post.id] = post.copyWith(
+        likedByMe: _likedPostIds.contains(post.id) || post.likedByMe,
+        savedByMe: _savedPostIds.contains(post.id) || post.savedByMe,
+      );
       
       if (context != null) {
         (_contextIndex[context] ??= {}).add(post.id);

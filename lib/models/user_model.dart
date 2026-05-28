@@ -39,10 +39,16 @@ class UserModel {
       roles: (json['roles'] as List<dynamic>?)?.cast<String>() ?? ['estudiante'],
       username: json['username'] as String?,
       fotoPerfil: json['fotoPerfil'] as String?,
-      biografia: json['biografia'] as String?,
+      biografia: (json['biografia'] as String?) ?? (json['descripcion'] as String?),
       perfilCompleto: json['perfilCompleto'] as bool? ?? false,
-      publicacionesCount: (json['publicacionesCount'] as num?)?.toInt() ?? 0,
+      publicacionesCount: _parseInt(json['publicacionesCount'] ?? json['publicaciones'] ?? 0),
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   Map<String, dynamic> toJson() => {

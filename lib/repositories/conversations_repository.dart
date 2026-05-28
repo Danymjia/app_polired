@@ -1,4 +1,3 @@
-import '../config/constants.dart';
 import '../models/conversation_model.dart';
 import '../services/api_service.dart';
 
@@ -8,9 +7,9 @@ class ConversationsRepository {
 
   ConversationsRepository(this._api);
 
-  /// GET /mensajes/conversaciones → { conversaciones: [...] }
+  /// GET /conversaciones → { conversaciones: [...] }
   Future<ApiResult<List<ConversationModel>>> fetchConversations() async {
-    final result = await _api.get(AppConstants.mensajesConversacionesEndpoint);
+    final result = await _api.get('/conversaciones');
     if (!result.success) {
       return ApiResult.error(result.message ?? 'Error al cargar conversaciones', statusCode: result.statusCode);
     }
@@ -28,5 +27,26 @@ class ConversationsRepository {
         .where((c) => c.id.isNotEmpty)
         .toList();
     return ApiResult.ok(list, statusCode: result.statusCode);
+  }
+
+  /// GET /entre/:otherId → { conversacion: { _id: ... }, mensajes: [...] }
+  Future<ApiResult<String>> getOrCreateConversation(String contactId) async {
+    final result = await _api.get('/entre/$contactId');
+    if (!result.success) {
+      return ApiResult.error(result.message ?? 'Error al iniciar conversación', statusCode: result.statusCode);
+    }
+    
+    final data = result.data;
+    if (data is! Map) {
+      return ApiResult.error('Respuesta inválida del servidor');
+    }
+    
+    final conversacion = data['conversacion'];
+    if (conversacion is! Map || conversacion['_id'] == null) {
+      return ApiResult.error('Respuesta inválida del servidor: _id no encontrado');
+    }
+    
+    final id = conversacion['_id'].toString();
+    return ApiResult.ok(id, statusCode: result.statusCode);
   }
 }

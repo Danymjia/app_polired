@@ -21,7 +21,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
 
@@ -49,7 +50,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       final user = context.read<AuthProvider>().user;
       if (user != null) {
         context.read<MyProfileFeedProvider>().fetchMoreFeed(user.id);
@@ -162,8 +164,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       body: RefreshIndicator(
         onRefresh: () async {
           if (user != null) {
+            final authProv = context.read<AuthProvider>();
             final myFeed = context.read<MyProfileFeedProvider>();
             final netProv = context.read<NetworkProvider>();
+            await authProv.syncProfileFromServer();
             await myFeed.fetchInitialFeed(user.id);
             await netProv.fetchRedesDelEstudiante();
           }
@@ -179,7 +183,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 scrolledUnderElevation: 0,
                 pinned: true,
                 leading: IconButton(
-                  icon: const Icon(Icons.add, color: AppTheme.primaryText, size: 26),
+                  icon: const Icon(
+                    Icons.add,
+                    color: AppTheme.primaryText,
+                    size: 26,
+                  ),
                   tooltip: 'Nueva publicación',
                   onPressed: () {
                     Navigator.push(
@@ -191,7 +199,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 title: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.lock_outline, size: 14, color: AppTheme.primaryText),
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 14,
+                      color: AppTheme.primaryText,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       user?.username ?? 'Perfil',
@@ -206,11 +218,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 centerTitle: true,
                 actions: [
                   IconButton(
-                    icon: const Icon(Icons.more_horiz, color: AppTheme.primaryText, size: 26),
+                    icon: const Icon(
+                      Icons.more_horiz,
+                      color: AppTheme.primaryText,
+                      size: 26,
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsScreen(),
+                        ),
                       );
                     },
                   ),
@@ -245,13 +263,25 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     _buildStat(
-                                      user?.publicacionesCount.toString() ?? '0',
+                                      (user?.publicacionesCount != null &&
+                                              user!.publicacionesCount > 0)
+                                          ? user.publicacionesCount.toString()
+                                          : (allIds.isNotEmpty
+                                                ? allIds.length.toString()
+                                                : '0'),
                                       'Publicaciones',
                                     ),
                                     const SizedBox(width: 28),
-                                    _buildStat(
-                                      redesCount?.toString() ?? '0',
-                                      'Redes',
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (redesList.isNotEmpty) {
+                                          _showNetworksModal(context, redesList);
+                                        }
+                                      },
+                                      child: _buildStat(
+                                        redesCount?.toString() ?? '0',
+                                        'Redes',
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -262,7 +292,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       ),
 
                       // Bio
-                      if (bioDescripcion != null && bioDescripcion.isNotEmpty) ...[
+                      if (bioDescripcion != null &&
+                          bioDescripcion.isNotEmpty) ...[
                         const SizedBox(height: 14),
                         Text(
                           bioDescripcion,
@@ -270,55 +301,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             fontSize: 14,
                             height: 1.45,
                             color: AppTheme.primaryText,
-                          ),
-                        ),
-                      ],
-
-                      // Networks list (horizontal scroll, only name)
-                      if (redesList.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          'Redes comunitarias',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.onSurfaceVariant,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 36,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: redesList.length,
-                            itemBuilder: (context, index) {
-                              final net = redesList[index];
-                              final netId = net['_id'] ?? '';
-                              final netNombre = net['nombre'] ?? '';
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: ActionChip(
-                                  onPressed: () {
-                                    if (netId.isNotEmpty) {
-                                      context.push('/explore/networks/$netId');
-                                    }
-                                  },
-                                  label: Text(
-                                    netNombre,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.onSurface,
-                                    ),
-                                  ),
-                                  backgroundColor: AppTheme.surfaceContainerLow,
-                                  side: BorderSide(color: AppTheme.outlineVariant.withValues(alpha: 0.5)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                ),
-                              );
-                            },
                           ),
                         ),
                       ],
@@ -368,7 +350,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   onPressed: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Gestión de red: próximamente'),
+                                        content: Text(
+                                          'Gestión de red: próximamente',
+                                        ),
                                         duration: Duration(seconds: 2),
                                       ),
                                     );
@@ -383,7 +367,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                     padding: EdgeInsets.zero,
                                   ),
                                   child: Text(
-                                    'Gestionar red',
+                                    'Mi Red',
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -400,7 +384,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 ),
               ),
               SliverToBoxAdapter(
-                child: Divider(height: 1, thickness: 1, color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                ),
               ),
               SliverPersistentHeader(
                 pinned: true,
@@ -410,8 +398,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     indicatorColor: Colors.black,
                     labelColor: Colors.black,
                     unselectedLabelColor: AppTheme.onSurfaceVariant,
-                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-                    unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                    labelStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                    unselectedLabelStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                     tabs: const [
                       Tab(
                         icon: Icon(Icons.grid_on_rounded, size: 20),
@@ -428,59 +422,221 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ];
           },
           body: myProfileFeedProvider.isLoadingFeed && allIds.isEmpty
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppTheme.primary),
+                )
               : myProfileFeedProvider.feedError != null && allIds.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            myProfileFeedProvider.feedError ?? 'Error al cargar feed',
-                            style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (user != null) {
-                                myProfileFeedProvider.fetchInitialFeed(user.id);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-                            child: const Text('Reintentar'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        CustomScrollView(
-                          key: const PageStorageKey('my-publications-scroll'),
-                          slivers: [
-                            PublicProfileGrid(
-                              postIds: publicationIds,
-                              scrollController: _scrollController,
-                              isFetchingMore: myProfileFeedProvider.isLoadingMoreFeed,
-                            ),
-                          ],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        myProfileFeedProvider.feedError ??
+                            'Error al cargar feed',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.error,
+                          fontSize: 14,
                         ),
-                        CustomScrollView(
-                          key: const PageStorageKey('my-articles-scroll'),
-                          slivers: [
-                            PublicProfileGrid(
-                              postIds: articleIds,
-                              scrollController: _scrollController,
-                              isFetchingMore: myProfileFeedProvider.isLoadingMoreFeed,
-                            ),
-                          ],
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (user != null) {
+                            myProfileFeedProvider.fetchInitialFeed(user.id);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                        ),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
+                )
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    CustomScrollView(
+                      key: const PageStorageKey('my-publications-scroll'),
+                      slivers: [
+                        PublicProfileGrid(
+                          postIds: publicationIds,
+                          scrollController: _scrollController,
+                          isFetchingMore:
+                              myProfileFeedProvider.isLoadingMoreFeed,
                         ),
                       ],
                     ),
+                    CustomScrollView(
+                      key: const PageStorageKey('my-articles-scroll'),
+                      slivers: [
+                        PublicProfileGrid(
+                          postIds: articleIds,
+                          scrollController: _scrollController,
+                          isFetchingMore:
+                              myProfileFeedProvider.isLoadingMoreFeed,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
         ),
       ),
     );
   }
+  // ── Modal de Redes Unidas ────────────────────────────────────────────────
+  void _showNetworksModal(BuildContext context, List<dynamic> initialRedes) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext modalContext) {
+        return Container(
+          height: MediaQuery.of(modalContext).size.height * 0.5,
+          decoration: const BoxDecoration(
+            color: AppTheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+          ),
+          child: Column(
+            children: [
+              // Modal Header
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 0),
+                child: Column(
+                  children: [
+                    // Handle Bar
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(bottom: 16),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: AppTheme.surfaceContainer,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Redes a las que perteneces',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                          color: AppTheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Consumer<NetworkProvider>(
+                  builder: (context, networkProvider, child) {
+                    final redesList = networkProvider.redes;
+                    if (redesList.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.group_outlined, size: 48, color: AppTheme.outline),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Aún no hay redes',
+                              style: GoogleFonts.inter(
+                                color: AppTheme.onSurfaceVariant,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 32),
+                      itemCount: redesList.length,
+                      itemBuilder: (context, index) {
+                        final net = redesList[index];
+                        final netId = net['_id'] ?? '';
+                        final netNombre = net['nombre'] ?? 'Red';
+                        final netDesc = net['descripcion'] ?? '';
+                        final netFoto = net['fotoPerfil'];
+
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pop(modalContext);
+                              if (netId.isNotEmpty) {
+                                context.push('/explore/networks/$netId');
+                              }
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              child: Row(
+                                children: [
+                                  CircularNetworkAvatar(
+                                    imageUrl: netFoto,
+                                    initials: netNombre.isNotEmpty ? netNombre[0].toUpperCase() : 'R',
+                                    size: 48,
+                                    backgroundColor: AppTheme.surfaceContainerLow,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          netNombre,
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            letterSpacing: -0.5,
+                                            color: AppTheme.primary,
+                                          ),
+                                        ),
+                                        if (netDesc.isNotEmpty)
+                                          Text(
+                                            netDesc,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppTheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
+
 
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
@@ -494,11 +650,12 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppTheme.surfaceContainerLowest,
-      child: tabBar,
-    );
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: AppTheme.surfaceContainerLowest, child: tabBar);
   }
 
   @override

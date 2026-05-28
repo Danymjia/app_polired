@@ -7,6 +7,7 @@ import '../../providers/public_profile_provider.dart';
 import '../../providers/post_store_provider.dart';
 import '../../services/read_model_cache_service.dart';
 import '../../models/feed_context.dart';
+import '../../repositories/conversations_repository.dart';
 import '../../widgets/public_profile_header.dart';
 import '../../widgets/public_profile_grid.dart';
 
@@ -24,6 +25,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
   late TabController _tabController;
   // Saved in initState to avoid calling context.read() inside dispose().
   late ReadModelCacheService _cacheService;
+  bool _isLoadingChat = false;
 
   @override
   void initState() {
@@ -139,10 +141,46 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
                   ),
                   centerTitle: true,
                   actions: [
-                    IconButton(
-                      icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
-                      onPressed: () {}, // Only UI for now
-                    ),
+                    _isLoadingChat
+                        ? const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
+                            onPressed: () async {
+                              if (_isLoadingChat) return;
+                              setState(() => _isLoadingChat = true);
+
+                              final repo = context.read<ConversationsRepository>();
+                              final result = await repo.getOrCreateConversation(widget.userId);
+
+                              if (!mounted || !context.mounted) return;
+                              setState(() => _isLoadingChat = false);
+
+                              if (result.success && result.data != null) {
+                                context.push(
+                                  '/chat/${result.data}',
+                                  extra: {
+                                    'contactId': widget.userId,
+                                    'contactName': info?.nombreCompleto ?? 'Usuario',
+                                    'contactAvatar': info?.fotoPerfil,
+                                  },
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(result.message ?? 'Error al iniciar conversación')),
+                                );
+                              }
+                            },
+                          ),
                   ],
                 ),
                 if (info != null)

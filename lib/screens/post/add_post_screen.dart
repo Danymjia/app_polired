@@ -11,10 +11,9 @@ import '../../widgets/safe_network_image.dart';
 import '../../providers/network_provider.dart';
 import '../../models/feed_context.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/post_service.dart';
-import '../../services/api_service.dart';
 import '../../models/network_story_model.dart';
 import '../../widgets/post_image_carousel.dart';
+import '../../providers/my_profile_feed_provider.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -178,6 +177,9 @@ class _AddPostScreenState extends State<AddPostScreen> {
           // el post optimista globalmente. Refrescar aquí destruiría el estado 
           // optimista si el backend aún no ha indexado.
           
+          if (result.data is String) {
+            context.read<MyProfileFeedProvider>().prependPostId(result.data as String);
+          }
           context.read<AuthProvider>().incrementPublicacionesCount();
           Navigator.pop(context);
         } else {

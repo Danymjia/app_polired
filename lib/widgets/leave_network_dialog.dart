@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -61,29 +60,29 @@ class _LeaveNetworkDialogState extends State<LeaveNetworkDialog> {
             final authProvider = context.read<AuthProvider>();
             final success = await netProvider.abandonarRed(widget.networkId);
             
-            if (mounted) {
-              setState(() => _isLeaving = false);
-              Navigator.pop(context); // Cierra el dialog
-              
-              if (success) {
-                // Sincronizar todo el perfil para reflejar cambios en contadores y lista de redes
-                await authProvider.syncProfileFromServer();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppTheme.primary,
-                    content: Text('Has abandonado la red ${widget.networkName}'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppTheme.error,
-                    content: Text(netProvider.errorMessage ?? 'Error al abandonar la red'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
+            if (!context.mounted) return;
+            setState(() => _isLeaving = false);
+            Navigator.pop(context); // Cierra el dialog
+            
+            if (success) {
+              // Sincronizar todo el perfil para reflejar cambios en contadores y lista de redes
+              await authProvider.syncProfileFromServer();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AppTheme.primary,
+                  content: Text('Has abandonado la red ${widget.networkName}'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AppTheme.error,
+                  content: Text(netProvider.errorMessage ?? 'Error al abandonar la red'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
             }
           },
           child: _isLeaving

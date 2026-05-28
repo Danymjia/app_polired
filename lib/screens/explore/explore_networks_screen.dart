@@ -216,18 +216,12 @@ class _ExploreNetworksScreenState extends State<ExploreNetworksScreen> with Sing
           );
         }
 
-        return GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.8,
-          ),
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: provider.filteredNetworks.length,
           itemBuilder: (context, index) {
             final network = provider.filteredNetworks[index];
-            return _NetworkCard(
+            return _NetworkSearchTile(
               networkId: network.id,
               nombre: network.nombre,
               imageUrl: network.fotoPerfil,
@@ -244,7 +238,7 @@ class _ExploreNetworksScreenState extends State<ExploreNetworksScreen> with Sing
   }
 }
 
-class _NetworkCard extends StatelessWidget {
+class _NetworkSearchTile extends StatelessWidget {
   final String networkId;
   final String nombre;
   final String? imageUrl;
@@ -252,7 +246,7 @@ class _NetworkCard extends StatelessWidget {
   final String acronym;
   final VoidCallback onTap;
 
-  const _NetworkCard({
+  const _NetworkSearchTile({
     required this.networkId,
     required this.nombre,
     required this.imageUrl,
@@ -263,81 +257,60 @@ class _NetworkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.4)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            )
-          ]
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.surfaceContainerHighest,
+            CircularNetworkAvatar(
+              imageUrl: imageUrl,
+              initials: acronym,
+              size: 44,
+              backgroundColor: AppTheme.surfaceContainerHighest,
+              initialsStyle: GoogleFonts.inter(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
               ),
-              clipBehavior: Clip.hardEdge,
-              child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? SafeNetworkImage(url: imageUrl!, fit: BoxFit.cover)
-                  : Center(
-                      child: Text(
-                        acronym,
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.primary,
-                        ),
-                      ),
-                    ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(width: 12),
             Expanded(
-              child: Align(
-                alignment: Alignment.center,
-                child: Text(
-                  nombre,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: AppTheme.onSurface,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nombre,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$miembros miembros',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.primary.withValues(alpha: 0.8),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1D3557),
-                borderRadius: BorderRadius.circular(8),
+            IconButton(
+              icon: Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppTheme.outlineVariant,
+                size: 16,
               ),
-              alignment: Alignment.center,
-              child: Text(
-                'VER MÁS',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  fontSize: 10,
-                ),
-              ),
+              onPressed: onTap,
             ),
           ],
         ),

@@ -7,7 +7,6 @@ import '../../config/theme.dart';
 import '../../providers/network_provider.dart';
 import '../../providers/post_store_provider.dart';
 import '../../services/command_bus.dart';
-import '../../widgets/post_options_bottom_sheet.dart';
 import '../../providers/feed_provider.dart';
 import '../../models/commands/feed_command.dart';
 import '../../models/feed_context.dart';
@@ -16,6 +15,7 @@ import '../../services/navigation_service.dart';
 import '../../widgets/network_avatar.dart';
 import '../../widgets/community_post_card.dart';
 import '../notifications/notifications_screen.dart';
+import '../../providers/notification_provider.dart';
 import '../post/add_post_screen.dart';
 import '../map/map_screen.dart';
 
@@ -135,23 +135,41 @@ class HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => const MapScreen()),
                   ),
                 ),
-                IconButton(
-                  icon: Image.asset(
-                    'assets/images/owl_icon.png',
-                    width: 26,
-                    height: 26,
-                    color: AppTheme.primaryText,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.notifications_outlined,
-                      color: AppTheme.primaryText,
-                      size: 26,
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: Image.asset(
+                        'assets/images/owl_icon.png',
+                        width: 26,
+                        height: 26,
+                        color: AppTheme.primaryText,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.notifications_outlined,
+                          color: AppTheme.primaryText,
+                          size: 26,
+                        ),
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NotificationsScreen()),
+                      ),
                     ),
-                  ),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const NotificationsScreen()),
-                  ),
+                    if (context.watch<NotificationProvider>().unreadCount > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 4),
               ],
@@ -306,8 +324,8 @@ class HomeScreenState extends State<HomeScreen> {
 // ─── Batch Feed List ──────────────────────────────────────────────────────────
 /// Resuelve TODOS los postIds en un único selector para evitar O(n) selects.
 ///
-/// ✅ Regla: UI no resuelve PostModel individualmente en itemBuilder.
-/// ✅ El selector se memoiza — solo rebuild si el mapa del store cambia.
+/// Regla: UI no resuelve PostModel individualmente en itemBuilder.
+/// El selector se memoiza — solo rebuild si el mapa del store cambia.
 class _HomeFeedBatchList extends StatelessWidget {
   final List<PostModel> posts;
   const _HomeFeedBatchList({required this.posts});

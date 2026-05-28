@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 import '../models/conversation_model.dart';
 import '../models/network_story_model.dart';
@@ -38,9 +36,8 @@ class MessagesInboxProvider extends ChangeNotifier {
   List<SuggestedNetworkModel> _suggestionVisible = [];
   final Set<String> _suggestionIdsShownThisSession = {};
   final Set<String> _socketUnreadConversationIds = {};
+  final Set<String> _localSeenConversations = {};
   bool _socketListeners = false;
-
-  final Random _random = Random();
 
   InboxListStatus get listStatus => _listStatus;
   String? get listError => _listError;
@@ -66,7 +63,7 @@ class MessagesInboxProvider extends ChangeNotifier {
 
   Future<void> refresh() async {
     if (_sessionUserId == null) return;
-    await _loadConversations(showLoading: false);
+    await _loadConversations(showLoading: true);
     await _loadMyNetworks();
     notifyListeners();
   }
@@ -120,14 +117,14 @@ class MessagesInboxProvider extends ChangeNotifier {
     if (_socketListeners) return;
     _socketListeners = true;
     void handler(dynamic data) => _handleIncomingMessageMap(data);
-    _socketService.on('mensaje:nuevo', handler);
-    _socketService.on('mensaje:enviado', handler);
+    _socketService.on('nuevo_mensaje', handler);
+    _socketService.on('nuevo_mensaje_local', handler);
   }
 
   void _removeSocketListeners() {
     if (!_socketListeners) return;
-    _socketService.off('mensaje:nuevo');
-    _socketService.off('mensaje:enviado');
+    _socketService.off('nuevo_mensaje');
+    _socketService.off('nuevo_mensaje_local');
     _socketListeners = false;
   }
 
@@ -217,6 +214,7 @@ class MessagesInboxProvider extends ChangeNotifier {
 
   /// Heurística de “no leído” sin API de leídos en el backend.
   bool showUnreadStyle(String conversationId, UltimoMensajeModel? ultimo) {
+    if (_localSeenConversations.contains(conversationId)) return false;
     if (_socketUnreadConversationIds.contains(conversationId)) return true;
     final uid = _sessionUserId;
     if (uid == null || ultimo == null) return false;
@@ -226,12 +224,32 @@ class MessagesInboxProvider extends ChangeNotifier {
   }
 
   void markConversationPreviewSeen(String conversationId) {
+    _localSeenConversations.add(conversationId);
     if (_socketUnreadConversationIds.remove(conversationId)) {
+      notifyListeners();
+    } else {
       notifyListeners();
     }
   }
 
+  void updateConversationPreview(String conversationId, String contenido, String autorId, DateTime createdAt) {
+    if (autorId != _sessionUserId) {
+      _localSeenConversations.remove(conversationId);
+    }
+    
+    final index = _conversations.indexWhere((c) => c.id == conversationId);
+    if (index == -1) return;
+    _conversations[index] = _conversations[index].copyWith(
+      ultimoMensaje: UltimoMensajeModel(contenido: contenido, autorId: autorId, fecha: createdAt),
+      ultimaActividad: createdAt,
+    );
+    final conv = _conversations.removeAt(index);
+    _conversations.insert(0, conv);
+    notifyListeners();
+  }
+
   Future<void> _pickNewSuggestionBatch() async {
+    await _loadMyNetworks();
     final mine = _myNetworks.map((e) => e.id).toSet();
     final allRes = await _networkService.getRedes();
     if (!allRes.success || allRes.data == null) {
@@ -245,15 +263,10 @@ class MessagesInboxProvider extends ChangeNotifier {
       final model = SuggestedNetworkModel.fromApiMap(m);
       if (model.id.isEmpty) continue;
       if (mine.contains(model.id)) continue;
-      if (_suggestionIdsShownThisSession.contains(model.id)) continue;
       pool.add(model);
     }
-    pool.shuffle(_random);
     final take = pool.length < 10 ? pool.length : 10;
     _suggestionVisible = pool.take(take).toList();
-    for (final s in _suggestionVisible) {
-      _suggestionIdsShownThisSession.add(s.id);
-    }
   }
 
   void _clearSession() {

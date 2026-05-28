@@ -63,31 +63,34 @@ class _LoginScreenState extends State<LoginScreen>
     } else {
       final msg = auth.errorMessage ?? 'Error al iniciar sesión';
       final lowerMsg = msg.toLowerCase();
-      
-      if (lowerMsg.contains('activada') || lowerMsg.contains('activa') || lowerMsg.contains('verificar') || lowerMsg.contains('confirma')) {
+
+      if (lowerMsg.contains('activada') ||
+          lowerMsg.contains('activa') ||
+          lowerMsg.contains('verificar') ||
+          lowerMsg.contains('confirma')) {
         AppSnackbar.show(
           context,
-          message: 'Tu cuenta aún no ha sido activada. Revisa tu correo electrónico.',
+          message:
+              'Tu cuenta aún no ha sido activada. Revisa tu correo electrónico.',
           type: SnackbarType.info,
         );
-      } else if (lowerMsg.contains('inexistente') || lowerMsg.contains('no encontrado') || lowerMsg.contains('registrado')) {
+      } else if (lowerMsg.contains('inexistente') ||
+          lowerMsg.contains('no encontrado') ||
+          lowerMsg.contains('registrado')) {
         AppSnackbar.show(
           context,
-          message: 'Usuario inexistente. Verifica tus datos.',
+          message: 'Usuario o contraseña incorrectos. Intenta de nuevo.',
           type: SnackbarType.error,
         );
-      } else if (lowerMsg.contains('incorrecta') || lowerMsg.contains('credenciales')) {
+      } else if (lowerMsg.contains('incorrecta') ||
+          lowerMsg.contains('credenciales')) {
         AppSnackbar.show(
           context,
-          message: 'Contraseña incorrecta. Intenta de nuevo.',
+          message: 'Usuario o contraseña incorrectos. Intenta de nuevo.',
           type: SnackbarType.error,
         );
       } else {
-        AppSnackbar.show(
-          context,
-          message: msg,
-          type: SnackbarType.error,
-        );
+        AppSnackbar.show(context, message: msg, type: SnackbarType.error);
       }
     }
   }
@@ -103,19 +106,6 @@ class _LoginScreenState extends State<LoginScreen>
           opacity: _fadeAnim,
           child: Stack(
             children: [
-              // ── Línea de acento superior (del HTML) ─────────────────────
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: Container(
-                  height: 2,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primary, Color(0xFF7D0009)],
-                    ),
-                  ),
-                ),
-              ),
-
               // ── Contenido scrolleable ────────────────────────────────────
               Center(
                 child: SingleChildScrollView(
@@ -155,7 +145,10 @@ class _LoginScreenState extends State<LoginScreen>
                                   if (v == null || v.trim().isEmpty) {
                                     return 'El correo es obligatorio';
                                   }
-                                  if (v.contains('@') && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
+                                  if (v.contains('@') &&
+                                      !RegExp(
+                                        r'^[^@]+@[^@]+\.[^@]+',
+                                      ).hasMatch(v)) {
                                     return 'Ingresa un correo electrónico válido';
                                   }
                                   return null;

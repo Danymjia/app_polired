@@ -1,4 +1,4 @@
-import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../services/network_service.dart';
 import '../services/post_service.dart';
@@ -26,21 +26,35 @@ class NetworkProvider extends ChangeNotifier {
 
   static const int _defaultLimit = 20;
 
-  NetworkProvider(this._networkService, this._postService, this._postStore) {
-    loadStudentNetworks();
-  }
+  NetworkProvider(this._networkService, this._postService, this._postStore);
 
   // ─── Redes del Estudiante ─────────────────────────────────────────────────
   bool _isLoading = false;
   String? _errorMessage;
   List<dynamic> _redes = [];
+  bool _hasLoadedOnce = false;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   List<dynamic> get redes => _redes;
+  bool get hasLoadedOnce => _hasLoadedOnce;
 
   int? _redesCount;
   int? get redesCount => _redesCount;
+
+  void setLoadedOnce() => _hasLoadedOnce = true;
+  void resetLoadedOnce() => _hasLoadedOnce = false;
+
+  void clear() {
+    _feedByNetwork.clear();
+    _networkStories.clear();
+    _redes.clear();
+    _redesCount = null;
+    _selectedNetwork = null;
+    _feedStatus = FeedStatus.idle;
+    _hasLoadedOnce = false;
+    notifyListeners();
+  }
 
   // ─── Home: Selección de red ───────────────────────────────────────────────
   NetworkStoryModel? _selectedNetwork;
@@ -106,8 +120,7 @@ class NetworkProvider extends ChangeNotifier {
           await selectNetwork(target);
         }
       } else if (_selectedNetwork == null) {
-        final randomIndex = Random().nextInt(joined.length);
-        await selectNetwork(joined[randomIndex]);
+        await selectNetwork(joined.first);
       }
       // Si ya hay red seleccionada, conservar el estado actual.
     }
@@ -298,6 +311,7 @@ class NetworkProvider extends ChangeNotifier {
           return false;
         }
       }
+      pendingAutoSelectNetworkId = ids.last;
       await loadStudentNetworks();
       await fetchRedesDelEstudiante();
       _isLoading = false;

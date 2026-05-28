@@ -11,31 +11,46 @@ import 'comment_tree_sheet.dart';
 import 'likes_bottom_sheet.dart';
 import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
+import '../providers/post_store_provider.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   final PostModel post;
 
   const PostCard({super.key, required this.post});
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> {
+
+  @override
   Widget build(BuildContext context) {
-    if (post.hasImage) {
-      return _buildImagePost(context);
+    final currentPost = context.select<PostStoreProvider, PostModel>(
+      (s) => s.getPost(widget.post.id) ?? widget.post,
+    );
+    if (currentPost.hasImage) {
+      return _buildImagePost(context, currentPost);
     } else {
-      return _buildTextPost(context);
+      return _buildTextPost(context, currentPost);
     }
   }
 
-  Widget _buildSubtitle() {
+  Widget _buildSubtitle(PostModel post) {
     String subtitle = '';
     if (post.networkName.isNotEmpty) {
       subtitle = post.networkName;
     } else if (post.categoria.isNotEmpty) {
       String cat = post.categoria;
-      if (cat.toLowerCase() == 'venta') subtitle = 'Ventas';
-      else if (cat.toLowerCase() == 'cursos') subtitle = 'Cursos';
-      else if (cat.toLowerCase() == 'noticias') subtitle = 'Noticias';
-      else subtitle = cat[0].toUpperCase() + cat.substring(1).toLowerCase();
+      if (cat.toLowerCase() == 'venta') {
+        subtitle = 'Ventas';
+      } else if (cat.toLowerCase() == 'cursos') {
+        subtitle = 'Cursos';
+      } else if (cat.toLowerCase() == 'noticias') {
+        subtitle = 'Noticias';
+      } else {
+        subtitle = cat[0].toUpperCase() + cat.substring(1).toLowerCase();
+      }
     }
 
     if (subtitle.isEmpty) return const SizedBox.shrink();
@@ -52,7 +67,7 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePost(BuildContext context) {
+  Widget _buildImagePost(BuildContext context, PostModel post) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(
@@ -95,7 +110,7 @@ class PostCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      _buildSubtitle(),
+                      _buildSubtitle(post),
                     ],
                   ),
                 ),
@@ -146,7 +161,7 @@ class PostCard extends StatelessWidget {
           ),
 
           // ── Acciones ────────────────────────────────────────────────────────
-          _buildActions(context),
+          _buildActions(context, post),
 
           // ── Contenido ───────────────────────────────────────────────────────
           if (post.displayContent.isNotEmpty)
@@ -171,7 +186,7 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTextPost(BuildContext context) {
+  Widget _buildTextPost(BuildContext context, PostModel post) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       padding: const EdgeInsets.all(16),
@@ -209,7 +224,7 @@ class PostCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    _buildSubtitle(),
+                    _buildSubtitle(post),
                     Text(
                       post.timeAgo,
                       style: GoogleFonts.inter(
@@ -286,13 +301,13 @@ class PostCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // ── Acciones ────────────────────────────────────────────────────────
-          _buildActions(context, padding: EdgeInsets.zero),
+          _buildActions(context, post, padding: EdgeInsets.zero),
         ],
       ),
     );
   }
 
-  Widget _buildActions(BuildContext context, {EdgeInsetsGeometry? padding}) {
+  Widget _buildActions(BuildContext context, PostModel post, {EdgeInsetsGeometry? padding}) {
     final currentUserId = context.read<AuthProvider>().user?.id;
     final isAuthor = currentUserId != null && currentUserId == post.authorId;
 

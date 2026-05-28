@@ -1,9 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
 import '../config/constants.dart';
 
-/// Fases de conexión expuestas a la UI (mensajes, banners, etc.).
 enum SocketConnectionPhase {
   disconnected,
   connecting,
@@ -11,22 +11,22 @@ enum SocketConnectionPhase {
   reconnecting,
 }
 
-/// WebSocket Socket.IO alineado con el handshake JWT del backend.
-///
-/// El servidor valida `handshake.auth.token` o el header `Authorization`.
-/// No se emiten eventos de cliente que el backend no defina.
+/// Servicio Singleton de PusherChannels para tiempo real.
 class SocketService {
-  io.Socket? _socket;
+  static final SocketService _instance = SocketService._internal();
+  factory SocketService() => _instance;
+  SocketService._internal();
+
+  final PusherChannelsFlutter pusher = PusherChannelsFlutter.getInstance();
   String? _token;
-  bool _managerHooks = false;
+  String? _userId;
 
   final ValueNotifier<SocketConnectionPhase> connectionPhase =
       ValueNotifier(SocketConnectionPhase.disconnected);
 
-  io.Socket? get socket => _socket;
+  bool get isConnected => connectionPhase.value == SocketConnectionPhase.connected;
 
-  bool get isConnected =>
-      connectionPhase.value == SocketConnectionPhase.connected;
+  final Map<String, List<Function(dynamic)>> _eventListeners = {};
 
   void _setPhase(SocketConnectionPhase p) {
     if (connectionPhase.value != p) {
@@ -34,109 +34,125 @@ class SocketService {
     }
   }
 
-  void _attachManagerHooks() {
-    final s = _socket;
-    if (s == null || _managerHooks) return;
-    _managerHooks = true;
-    s.io.on('reconnect_attempt', (_) {
-      _setPhase(SocketConnectionPhase.reconnecting);
-    });
-    s.io.on('reconnect', (_) {
-      _setPhase(SocketConnectionPhase.connected);
-    });
-    s.io.on('reconnect_failed', (_) {
-      _setPhase(SocketConnectionPhase.disconnected);
-    });
-  }
+  bool _isPusherConnectedFlag = false;
 
-  void _detachManagerHooks() {
-    final s = _socket;
-    if (s == null || !_managerHooks) return;
-    s.io.off('reconnect_attempt');
-    s.io.off('reconnect');
-    s.io.off('reconnect_failed');
-    _managerHooks = false;
-  }
-
-  /// Conecta usando el JWT del estudiante (mismo token que las peticiones HTTP).
-  void connect(String jwtToken) {
+  Future<void> connect(String jwtToken, String userId) async {
     if (jwtToken.isEmpty) return;
+    if (_token == jwtToken && isConnected) return;
 
-    if (_socket != null && _token == jwtToken && isConnected) {
-      return;
-    }
-
-    disconnectInternal(clearPhase: false);
-
+    await disconnectInternal(clearPhase: false);
     _token = jwtToken;
+    _userId = userId;
     _setPhase(SocketConnectionPhase.connecting);
 
-    _socket = io.io(
-      AppConstants.socketUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .enableReconnection()
-          .setReconnectionAttempts(8)
-          .setReconnectionDelay(1000)
-          .setReconnectionDelayMax(10000)
-          .setAuth({'token': jwtToken})
-          .disableAutoConnect()
-          .build(),
-    );
+    try {
+      await pusher.init(
+        apiKey: "278aa167ddc365cd37a2",
+        cluster: "us2",
+        onConnectionStateChange: _onConnectionStateChange,
+        onError: _onError,
+        onEvent: _onEvent,
+        authEndpoint: "${AppConstants.socketUrl}/api/pusher/auth",
+        authParams: {
+          'headers': {
+            'Authorization': 'Bearer $_token',
+          }
+        },
+      );
 
-    _attachManagerHooks();
-
-    _socket!.onConnect((_) {
+      await pusher.connect();
+      _isPusherConnectedFlag = true;
+      await pusher.subscribe(channelName: "private-user-$_userId");
       _setPhase(SocketConnectionPhase.connected);
-    });
-
-    _socket!.onConnectError((_) {
-      if (connectionPhase.value != SocketConnectionPhase.reconnecting) {
-        _setPhase(SocketConnectionPhase.disconnected);
-      }
-    });
-
-    _socket!.onDisconnect((_) {
-      if (_socket != null && _socket!.connected) return;
-      if (connectionPhase.value != SocketConnectionPhase.reconnecting) {
-        _setPhase(SocketConnectionPhase.disconnected);
-      }
-    });
-
-    _socket!.onError((_) {
-      if (!isConnected && connectionPhase.value != SocketConnectionPhase.reconnecting) {
-        _setPhase(SocketConnectionPhase.disconnected);
-      }
-    });
-
-    _socket!.connect();
-  }
-
-  /// Libera el socket y deja la fase en [disconnected] (p. ej. logout).
-  void disconnect() {
-    disconnectInternal(clearPhase: true);
-  }
-
-  void disconnectInternal({required bool clearPhase}) {
-    _detachManagerHooks();
-    _socket?.disconnect();
-    _socket?.dispose();
-    _socket = null;
-    _token = null;
-    if (clearPhase) {
+    } catch (e) {
+      debugPrint("Pusher connect error: $e");
       _setPhase(SocketConnectionPhase.disconnected);
     }
   }
 
-  void emit(String event, dynamic data) {
-    _socket?.emit(event, data);
+  Future<void> subscribeToConversation(String conversationId) async {
+    if (!isConnected) return;
+    try {
+      await pusher.subscribe(channelName: "presence-chat-$conversationId");
+    } catch (e) {
+      debugPrint("Pusher subscribe error: $e");
+    }
+  }
+
+  Future<void> unsubscribeFromConversation(String conversationId) async {
+    if (!isConnected) return;
+    try {
+      await pusher.unsubscribe(channelName: "presence-chat-$conversationId");
+    } catch (e) {
+      debugPrint("Pusher unsubscribe error: $e");
+    }
+  }
+
+  void _onConnectionStateChange(dynamic currentState, dynamic previousState) {
+    if (currentState == "CONNECTED") {
+      _setPhase(SocketConnectionPhase.connected);
+    } else if (currentState == "CONNECTING") {
+      _setPhase(SocketConnectionPhase.connecting);
+    } else if (currentState == "DISCONNECTED") {
+      _setPhase(SocketConnectionPhase.disconnected);
+    } else if (currentState == "RECONNECTING") {
+      _setPhase(SocketConnectionPhase.reconnecting);
+    }
+  }
+
+  void _onError(String message, int? code, dynamic e) {
+    debugPrint("Pusher error: $message code: $code");
+    if (!isConnected && connectionPhase.value != SocketConnectionPhase.reconnecting) {
+      _setPhase(SocketConnectionPhase.disconnected);
+    }
+  }
+
+  void _onEvent(PusherEvent event) {
+    final eventName = event.eventName;
+    dynamic data = event.data;
+    if (data is String) {
+      try {
+        data = jsonDecode(data);
+      } catch (_) {}
+    }
+
+    final listeners = _eventListeners[eventName];
+    if (listeners != null) {
+      for (final listener in listeners) {
+        listener(data);
+      }
+    }
   }
 
   void on(String event, void Function(dynamic) handler) {
-    _socket?.on(event, handler);
+    if (!_eventListeners.containsKey(event)) {
+      _eventListeners[event] = [];
+    }
+    _eventListeners[event]!.add(handler);
   }
 
   void off(String event) {
-    _socket?.off(event);
+    _eventListeners.remove(event);
+  }
+
+  Future<void> disconnect() async {
+    await disconnectInternal(clearPhase: true);
+  }
+
+  Future<void> disconnectInternal({required bool clearPhase}) async {
+    if (_isPusherConnectedFlag) {
+      try {
+        await pusher.disconnect();
+      } catch (_) {
+      } finally {
+        _isPusherConnectedFlag = false;
+      }
+    }
+    _token = null;
+    _userId = null;
+    _eventListeners.clear();
+    if (clearPhase) {
+      _setPhase(SocketConnectionPhase.disconnected);
+    }
   }
 }

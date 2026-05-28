@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../models/notification_model.dart';
@@ -36,6 +37,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       provider.loadNotifications().then((_) {
         if (mounted) _fadeController.forward();
       });
+      provider.markAllAsRead();
     });
   }
 
@@ -235,25 +237,35 @@ class _GroupHeader extends StatelessWidget {
 class _NotificationTile extends StatelessWidget {
   final NotificationModel notification;
 
-  /// Las notificaciones son puramente informativas.
-  /// No navegan a ningún perfil, publicación ni pantalla independiente.
   const _NotificationTile({required this.notification});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      color: notification.leida
-          ? Colors.transparent
-          : AppTheme.primary.withValues(alpha: 0.06),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Ícono del tipo
-            _TypeIcon(tipo: notification.tipo, leida: notification.leida),
-            const SizedBox(width: 12),
+    return InkWell(
+      onTap: () {
+        context.read<NotificationProvider>().markAsRead(notification.id);
+        if (notification.publicacionId != null) {
+          context.push('/post/${notification.publicacionId}');
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        color: notification.leida
+            ? Colors.transparent
+            : AppTheme.primary.withValues(alpha: 0.06),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (notification.emisorSnap?.fotoPerfil != null)
+                CircleAvatar(
+                  radius: 22,
+                  backgroundImage: NetworkImage(notification.emisorSnap!.fotoPerfil!),
+                )
+              else
+                _TypeIcon(tipo: notification.tipo, leida: notification.leida),
+              const SizedBox(width: 12),
 
             // Contenido
             Expanded(
@@ -299,7 +311,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    notification.mensaje ?? _defaultMessage(notification.tipo),
+                    notification.textoResumido,
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurface,
@@ -313,6 +325,7 @@ class _NotificationTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -330,18 +343,7 @@ class _NotificationTile extends StatelessWidget {
     }
   }
 
-  String _defaultMessage(String tipo) {
-    switch (tipo) {
-      case 'like':
-        return 'Le dieron like a tu publicación';
-      case 'comentario':
-        return 'Comentaron tu publicación';
-      case 'respuesta_comentario':
-        return 'Respondieron a tu comentario';
-      default:
-        return 'Nueva notificación';
-    }
-  }
+
 }
 
 // ─── Ícono del tipo de notificación ─────────────────────────────────────────

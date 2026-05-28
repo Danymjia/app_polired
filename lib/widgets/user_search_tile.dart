@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/public_user_model.dart';
+import '../repositories/conversations_repository.dart';
 import 'safe_network_image.dart';
 
-class UserSearchTile extends StatelessWidget {
+class UserSearchTile extends StatefulWidget {
   final PublicUserModel user;
 
   const UserSearchTile({super.key, required this.user});
 
   @override
+  State<UserSearchTile> createState() => _UserSearchTileState();
+}
+
+class _UserSearchTileState extends State<UserSearchTile> {
+  bool _isLoading = false;
+
+  @override
   Widget build(BuildContext context) {
+    final user = widget.user;
     final initials = user.nombre.isNotEmpty ? user.nombre[0].toUpperCase() : '';
 
     return Padding(
@@ -61,15 +71,48 @@ class UserSearchTile extends StatelessWidget {
                 ],
               ),
             ),
-            IconButton(
-              icon: Icon(
-                Icons.chat_bubble_outline_rounded,
-                color: AppTheme.primary,
-                size: 22,
-              ),
-              onPressed: () {},
-              tooltip: 'Mensaje',
-            ),
+            _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      color: AppTheme.primary,
+                      size: 22,
+                    ),
+                    onPressed: () async {
+                      if (_isLoading) return;
+                      setState(() => _isLoading = true);
+
+                      final repo = context.read<ConversationsRepository>();
+                      final result = await repo.getOrCreateConversation(user.id);
+
+                      if (!mounted || !context.mounted) return;
+                      setState(() => _isLoading = false);
+
+                      if (result.success && result.data != null) {
+                        context.push(
+                          '/chat/${result.data}',
+                          extra: {
+                            'contactId': user.id,
+                            'contactName': user.nombreCompleto,
+                            'contactAvatar': user.fotoPerfil,
+                          },
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(result.message ?? 'Error al iniciar conversación')),
+                        );
+                      }
+                    },
+                    tooltip: 'Mensaje',
+                  ),
           ],
         ),
       ),

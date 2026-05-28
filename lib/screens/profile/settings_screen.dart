@@ -8,7 +8,7 @@ import '../../services/read_model_cache_service.dart';
 import '../settings/help_screen.dart';
 import '../settings/support_screen.dart';
 import '../settings/about_screen.dart';
-import '../settings/privacy_screen.dart';
+import '../settings/legal_document_screen.dart';
 import '../settings/request_network_screen.dart';
 import '../settings/notifications_screen.dart';
 import 'saved_posts_screen.dart';
@@ -88,7 +88,24 @@ class SettingsScreen extends StatelessWidget {
             _buildMenuItem(context, 'Ayuda', Icons.help_outline, screen: const HelpScreen()),
             _buildMenuItem(context, 'Asistencia', Icons.support_agent_outlined, screen: const SupportScreen()),
             _buildMenuItem(context, 'Información', Icons.info_outline, screen: const AboutScreen()),
-            _buildMenuItem(context, 'Políticas de privacidad', Icons.policy_outlined, screen: const PrivacyScreen()),
+            _buildMenuItem(
+              context,
+              'Políticas de privacidad',
+              Icons.privacy_tip_outlined,
+              screen: const LegalDocumentScreen(
+                title: 'Política de Privacidad',
+                assetPath: 'assets/docs/politica_privacidad.md',
+              ),
+            ),
+            _buildMenuItem(
+              context,
+              'Términos y condiciones',
+              Icons.gavel_outlined,
+              screen: const LegalDocumentScreen(
+                title: 'Términos y Condiciones',
+                assetPath: 'assets/docs/terminos_condiciones.md',
+              ),
+            ),
 
             // Featured Action — solo para usuarios SIN rol admin_red
             if (!isAdmin) ...[

@@ -9,6 +9,8 @@ import '../../widgets/polired_logo.dart';
 import '../../widgets/primary_button.dart';
 import '../../utils/app_snackbar.dart';
 import '../../utils/validators.dart';
+import 'package:flutter/gestures.dart';
+import '../settings/legal_document_screen.dart';
 
 /// Register Screen — reinterpretación del HTML de referencia.
 /// Campos: nombre, apellido, correo, contraseña, confirmar contraseña.
@@ -214,37 +216,49 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       height: 1.5,
                                     ),
                                     children: [
-                                      const TextSpan(
-                                          text:
-                                              'Al registrarte, aceptas nuestras '),
+                                      const TextSpan(text: 'Al registrarte, aceptas nuestros '),
                                       TextSpan(
-                                        text: 'Condiciones',
+                                        text: 'Términos y Condiciones',
                                         style: GoogleFonts.inter(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
-                                          color: AppTheme.primaryText
-                                              .withValues(alpha: 0.8),
+                                          color: AppTheme.primaryText.withValues(alpha: 0.8),
+                                          decoration: TextDecoration.underline,
                                         ),
-                                      ),
-                                      const TextSpan(text: ', la '),
-                                      TextSpan(
-                                        text: 'Política de privacidad',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.primaryText
-                                              .withValues(alpha: 0.8),
-                                        ),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => const LegalDocumentScreen(
+                                                  title: 'Términos y Condiciones',
+                                                  assetPath: 'assets/docs/terminos_condiciones.md',
+                                                ),
+                                              ),
+                                            );
+                                          },
                                       ),
                                       const TextSpan(text: ' y la '),
                                       TextSpan(
-                                        text: 'Política de cookies',
+                                        text: 'Política de Privacidad',
                                         style: GoogleFonts.inter(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
-                                          color: AppTheme.primaryText
-                                              .withValues(alpha: 0.8),
+                                          color: AppTheme.primaryText.withValues(alpha: 0.8),
+                                          decoration: TextDecoration.underline,
                                         ),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => const LegalDocumentScreen(
+                                                  title: 'Política de Privacidad',
+                                                  assetPath: 'assets/docs/politica_privacidad.md',
+                                                ),
+                                              ),
+                                            );
+                                          },
                                       ),
                                       const TextSpan(text: '.'),
                                     ],

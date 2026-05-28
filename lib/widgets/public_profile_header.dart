@@ -77,32 +77,42 @@ class PublicProfileHeader extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           if (profile.redes.isNotEmpty) ...[
-            SizedBox(
-              height: 32,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: profile.redes.length,
-                itemBuilder: (context, index) {
-                  final net = profile.redes[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ActionChip(
-                      onPressed: () => context.push('/explore/networks/${net.id}'),
-                      label: Text(
-                        net.nombre,
+            InkWell(
+              onTap: () => _showNetworksModal(context, profile.redes),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'Miembro de: ',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 13,
+                          color: AppTheme.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
-                          color: AppTheme.onSurface,
                         ),
                       ),
-                      backgroundColor: AppTheme.surfaceContainerLow,
-                      side: const BorderSide(color: Colors.transparent),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                    ),
-                  );
-                },
+                      TextSpan(
+                        text: profile.redes[0].nombre,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppTheme.primaryText,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (profile.redes.length > 1)
+                        TextSpan(
+                          text: ' y ${profile.redes.length - 1} más',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppTheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -133,6 +143,119 @@ class PublicProfileHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showNetworksModal(BuildContext context, List<PublicProfileNetworkModel> redesList) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext modalContext) {
+        return Container(
+          height: MediaQuery.of(modalContext).size.height * 0.5,
+          decoration: const BoxDecoration(
+            color: AppTheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 0),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(bottom: 16),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: AppTheme.surfaceContainer,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Redes a las que pertenece',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                          color: AppTheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  itemCount: redesList.length,
+                  itemBuilder: (context, index) {
+                    final net = redesList[index];
+                    final netId = net.id;
+                    final netNombre = net.nombre;
+                    final netFoto = net.fotoPerfil;
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(modalContext);
+                          if (netId.isNotEmpty) {
+                            context.push('/explore/networks/$netId');
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          child: Row(
+                            children: [
+                              CircularNetworkAvatar(
+                                imageUrl: netFoto,
+                                initials: netNombre.isNotEmpty ? netNombre[0].toUpperCase() : 'R',
+                                size: 48,
+                                backgroundColor: AppTheme.surfaceContainerLow,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      netNombre,
+                                      style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        letterSpacing: -0.5,
+                                        color: AppTheme.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

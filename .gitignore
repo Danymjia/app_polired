@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Mapbox secrets
+android/gradle.properties
+ios/.netrc
+
+# Environment variables
+.env
+
+# iOS Configs
+ios/Flutter/Mapbox.xcconfig

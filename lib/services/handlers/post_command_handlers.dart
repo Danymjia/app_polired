@@ -74,7 +74,7 @@ class CreatePostCommandHandler extends CommandHandler<CreatePostCommand> {
             context: targetTab,
           ));
 
-          return CommandResult(success: true);
+          return CommandResult(success: true, data: postModel.id);
         } catch (e) {
           // Fallback if parsing fails
           return CommandResult(success: false, error: 'Error procesando respuesta del servidor');

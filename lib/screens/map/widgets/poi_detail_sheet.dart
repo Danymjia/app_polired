@@ -4,8 +4,26 @@ import '../../../models/poi_model.dart';
 class PoiDetailSheet extends StatelessWidget {
   final PoiModel poi;
   final VoidCallback onClose;
+  final void Function(PoiCategory)? onOpenDirectory;
 
-  const PoiDetailSheet({super.key, required this.poi, required this.onClose});
+  const PoiDetailSheet({
+    super.key, 
+    required this.poi, 
+    required this.onClose,
+    this.onOpenDirectory,
+  });
+
+  IconData _getCategoryIcon(PoiCategory cat) {
+    switch (cat) {
+      case PoiCategory.academic: return Icons.school_rounded;
+      case PoiCategory.services: return Icons.business_center_rounded;
+      case PoiCategory.sports: return Icons.sports_basketball_rounded;
+      case PoiCategory.food: return Icons.restaurant_rounded;
+      case PoiCategory.admin: return Icons.admin_panel_settings_rounded;
+      case PoiCategory.other: 
+        return Icons.place_rounded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,23 +35,38 @@ class PoiDetailSheet extends StatelessWidget {
         offset: Offset(0, 40 * (1 - value)),
         child: Opacity(opacity: value, child: child),
       ),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Indicador de drag
+      child: NotificationListener<DraggableScrollableNotification>(
+        onNotification: (notification) {
+          if (notification.extent <= 0.05) {
+            onClose();
+          }
+          return false;
+        },
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.0,
+          maxChildSize: 0.5,
+          snap: true,
+          snapSizes: const [0.5],
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Indicador de drag
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: 10),
@@ -43,6 +76,39 @@ class PoiDetailSheet extends StatelessWidget {
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
                 ),
+              ),
+            ),
+
+            // Top Bar (Cerrar / Regresar)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      if (onOpenDirectory != null) {
+                        onOpenDirectory!(poi.category);
+                      } else {
+                        onClose();
+                      }
+                    },
+                    icon: const Icon(Icons.arrow_back, size: 18),
+                    label: const Text('Directorio', style: TextStyle(fontWeight: FontWeight.w600)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF1D3557),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close_rounded),
+                    color: Colors.grey.shade600,
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
             ),
 
@@ -106,11 +172,18 @@ class PoiDetailSheet extends StatelessWidget {
                           color: const Color(0xFF1D3557).withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(poi.category.label,
-                            style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1D3557))),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_getCategoryIcon(poi.category), size: 14, color: const Color(0xFF1D3557)),
+                            const SizedBox(width: 4),
+                            Text(poi.category.label,
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1D3557))),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -154,18 +227,11 @@ class PoiDetailSheet extends StatelessWidget {
               ),
             ),
 
-            // Botón cerrar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: onClose,
-                  child: const Text('Cerrar'),
-                ),
+                ],
               ),
             ),
-          ],
+          );
+        },
         ),
       ),
     );

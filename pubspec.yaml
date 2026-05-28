@@ -77,5 +77,6 @@ flutter:
 
   # Assets: logo y recursos de imagen de la app
   assets:
+    - .env
     - assets/images/
     - assets/docs/

@@ -1,0 +1,784 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_01",
+        "name": "Facultad de Ingeniería Civil y Ambiental",
+        "category": "academic",
+        "description": "Forma profesionales en diseño, construcción y gestión de infraestructura civil, con énfasis en sostenibilidad ambiental. Cuenta con laboratorios de hidráulica, estructuras y materiales.",
+        "shortDescription": "Ingeniería Civil y Ambiental · FICA",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Acceso principal desde la entrada de la calle Ladrón de Guevara"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48865588122727,
+          -0.21068168258358355
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_02",
+        "name": "Facultad de Ingeniería Eléctrica y Electrónica",
+        "category": "academic",
+        "description": "Fundada en 1945, forma ingenieros en sistemas eléctricos de potencia, electrónica, telecomunicaciones y control automático. Acceso también por Isabel la Católica y Veintimilla.",
+        "shortDescription": "Ingeniería Eléctrica y Electrónica · FIEE",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Entrada por la calle Isabel la Católica y Veintimilla"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48812586910039,
+          -0.21041609101914105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_03",
+        "name": "Facultad de Ingeniería Mecánica",
+        "category": "academic",
+        "description": "Abierta en 1960, forma profesionales en diseño y análisis de sistemas mecánicos, térmica, manufactura y mecatrónica. Dispone de talleres y laboratorios de termodinámica.",
+        "shortDescription": "Ingeniería Mecánica · FIM",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Sector central del campus, junto a los laboratorios de manufactura"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48858534342442,
+          -0.21019459915798677
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_04",
+        "name": "Facultad de Ingeniería de Sistemas",
+        "category": "academic",
+        "description": "Primera facultad de Ingeniería de Sistemas del país, fundada en 1985. Forma ingenieros en software, redes, inteligencia artificial y ciencias de la computación.",
+        "shortDescription": "Ingeniería de Sistemas · FIS",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Sector norte del campus principal"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48924946652087,
+          -0.21056370982395833
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_05",
+        "name": "Facultad de Ingeniería Química y Agroindustria",
+        "category": "academic",
+        "description": "Fundada en 1947, desarrolla actividades en metalurgia, ciencia de alimentos, biotecnología y ciencias nucleares. Cuenta con laboratorios especializados de análisis químico.",
+        "shortDescription": "Ingeniería Química y Agroindustria · FIQA",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Acceso por la calle Alfredo Mena Caamaño y Andalucía"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48898618236589,
+          -0.21022703694166012
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_06",
+        "name": "Facultad de Ingeniería en Geología y Petróleos",
+        "category": "academic",
+        "description": "Con raíces desde la fundación de la EPN en 1869, forma expertos en exploración geológica, explotación de recursos minerales e hidrocarburos.",
+        "shortDescription": "Geología y Petróleos · FIGP",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Sector sur del campus, cerca de la entrada administrativa"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.4891494134918,
+          -0.21021432055535172
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_07",
+        "name": "Facultad de Ciencias",
+        "category": "academic",
+        "description": "Ofrece formación en Matemáticas, Física, Química y Biología. Es la base científica de todas las ingenierías de la EPN, con investigación en ciencias básicas y aplicadas.",
+        "shortDescription": "Ciencias Básicas · FC",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Sector occidental del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48741548900409,
+          -0.21009301048898976
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_08",
+        "name": "Facultad de Ciencias Administrativas",
+        "category": "academic",
+        "description": "Forma profesionales en Gerencia Empresarial y Sistemas de Gestión Integrados. Enfocada en la gestión organizacional con base técnica y tecnológica.",
+        "shortDescription": "Ciencias Administrativas · FCA",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Sector norte del campus, cerca de la entrada principal"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48687550347418,
+          -0.20900727641550532
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_09",
+        "name": "ESFOT – Escuela de Formación de Tecnólogos",
+        "category": "academic",
+        "description": "Ofrece carreras tecnológicas de corta duración en Electricidad, Electrónica, Automatización y Diseño y Simulación. Formación técnica práctica orientada al sector productivo.",
+        "shortDescription": "Tecnólogos · ESFOT",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Sector central del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.4883848098471,
+          -0.2104847366367295
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_10",
+        "name": "Departamento de Formación Básica (DFB)",
+        "category": "academic",
+        "description": "Imparte las materias de nivelación y formación básica comunes a todas las carreras: Cálculo, Álgebra, Física y Química. Primer contacto académico de los estudiantes nuevos.",
+        "shortDescription": "Formación Básica · DFB",
+        "schedule": "Lun–Vie 07:00–18:00",
+        "howToGet": "Edificio central del campus, planta baja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48955045889485,
+          -0.21075968804575496
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_11",
+        "name": "Edificio de Administración Central",
+        "category": "services",
+        "description": "Alberga el Rectorado, Vicerrectorado, Secretaría General, Dirección Financiera, Recursos Humanos, Planificación y Relaciones Institucionales. Centro administrativo de la universidad.",
+        "shortDescription": "Administración · Rectorado",
+        "schedule": "Lun–Vie 08:00–17:00",
+        "howToGet": "Sureste del campus, acceso por entrada de Ladrón de Guevara y Andalucía"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48960023160443,
+          -0.21055893400172465
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_12",
+        "name": "Biblioteca Central",
+        "category": "services",
+        "description": "Principal repositorio bibliográfico de la EPN. Cuenta con salas de lectura, acceso a bases de datos científicas internacionales, hemeroteca y zona de trabajo grupal.",
+        "shortDescription": "Biblioteca · Recursos Académicos",
+        "schedule": "Lun–Vie 07:30–19:30 · Sáb 08:00–14:00",
+        "howToGet": "Centro del campus, junto al edificio de aulas principales"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48974660601696,
+          -0.21110786768215917
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_13",
+        "name": "Centro de Educación Continua (CEC-EPN)",
+        "category": "services",
+        "description": "Ofrece cursos de capacitación, certificaciones profesionales, idiomas y programas de educación continua para profesionales y público en general.",
+        "shortDescription": "Educación Continua · CEC",
+        "schedule": "Lun–Vie 07:00–17:00 · Sáb 08:00–13:00",
+        "howToGet": "Edificio Aulas y Relación con el Medio Externo, Av. Toledo N23-55"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48951191553557,
+          -0.21120246869826076
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_14",
+        "name": "Cafetería Central",
+        "category": "services",
+        "description": "Principal punto de alimentación del campus. Ofrece menús diarios a precios accesibles para estudiantes, docentes y personal administrativo.",
+        "shortDescription": "Cafetería · Alimentación",
+        "schedule": "Lun–Vie 07:30–17:00",
+        "howToGet": "Planta baja del edificio central, junto a la plaza principal"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48999321620639,
+          -0.21082108828164792
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_15",
+        "name": "Unidad de Idiomas",
+        "category": "services",
+        "description": "Parte del CEC-EPN, ofrece cursos de inglés, francés, alemán y otros idiomas. Indispensable para la acreditación del requisito de idiomas en todas las carreras.",
+        "shortDescription": "Idiomas · CEC-EPN",
+        "schedule": "Lun–Vie 07:00–17:00 · Sáb 08:00–13:00",
+        "howToGet": "Edificio CEC, sector norte del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49069322922377,
+          -0.21156538995637675
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_16",
+        "name": "Bienestar Estudiantil",
+        "category": "services",
+        "description": "Ofrece servicios de orientación psicológica, médica y vocacional para estudiantes. También gestiona becas, ayudas económicas y programas de apoyo académico.",
+        "shortDescription": "Bienestar · Apoyo Estudiantil",
+        "schedule": "Lun–Vie 08:00–17:00",
+        "howToGet": "Edificio administrativo, segundo piso"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.4902401881909,
+          -0.21166307828815434
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_17",
+        "name": "Dirección de Tecnologías de la Información (DTI)",
+        "category": "services",
+        "description": "Gestiona la infraestructura tecnológica de la EPN: red inalámbrica, sistemas institucionales, correo universitario y soporte técnico para toda la comunidad politécnica.",
+        "shortDescription": "TI · Soporte Tecnológico",
+        "schedule": "Lun–Vie 08:00–17:00",
+        "howToGet": "Edificio administrativo, planta baja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49014534848332,
+          -0.21148626097934198
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_18",
+        "name": "Secretaría General",
+        "category": "services",
+        "description": "Gestiona trámites académicos oficiales: matrículas, títulos, certificados, homologaciones y apostillas. Punto de atención para procesos administrativos estudiantiles.",
+        "shortDescription": "Secretaría · Trámites Académicos",
+        "schedule": "Lun–Vie 08:30–16:30",
+        "howToGet": "Edificio de Administración Central, planta baja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49027590290085,
+          -0.21153776031754035
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_19",
+        "name": "Teatro Politécnico",
+        "category": "services",
+        "description": "Espacio cultural multiusos para eventos académicos, conferencias, presentaciones artísticas y actos de graduación. Capacidad para varios cientos de asistentes.",
+        "shortDescription": "Teatro · Eventos Culturales",
+        "schedule": "Según programación de eventos",
+        "howToGet": "Sector central del campus, junto a las canchas deportivas"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48904205545527,
+          -0.2119700004599423
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_20",
+        "name": "Laboratorio de Hidráulica",
+        "category": "academic",
+        "description": "Laboratorio especializado de la Facultad de Ingeniería Civil. Cuenta con canales de flujo, equipos de medición hidráulica y modelos físicos para el estudio del comportamiento del agua.",
+        "shortDescription": "Lab. Hidráulica · FICA",
+        "schedule": "Lun–Vie 08:00–18:00",
+        "howToGet": "Planta baja del edificio de Ingeniería Civil"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.4899090930076,
+          -0.2119832517724518
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_21",
+        "name": "Laboratorio de Redes y Telecomunicaciones",
+        "category": "academic",
+        "description": "Laboratorio de la Facultad de Ingeniería Eléctrica. Equipado con routers, switches, analizadores de espectro y plataformas de simulación para redes de comunicación.",
+        "shortDescription": "Lab. Redes · FIEE",
+        "schedule": "Lun–Vie 08:00–18:00",
+        "howToGet": "Segundo piso del edificio de la FIEE"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49057357946336,
+          -0.21215346416622083
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_22",
+        "name": "Laboratorio de Manufactura y Metrología",
+        "category": "academic",
+        "description": "Parte de la Facultad de Ingeniería Mecánica. Dispone de tornos, fresadoras, equipos CNC y herramientas de metrología dimensional para prácticas de manufactura.",
+        "shortDescription": "Lab. Manufactura · FIM",
+        "schedule": "Lun–Vie 08:00–17:00",
+        "howToGet": "Talleres de la Facultad de Ingeniería Mecánica"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49048638537987,
+          -0.2115122538561991
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_23",
+        "name": "Laboratorio de Química Analítica",
+        "category": "academic",
+        "description": "Laboratorio de la FIQA dotado con equipos de cromatografía, espectrometría y análisis instrumental para investigación en química, alimentos y biotecnología.",
+        "shortDescription": "Lab. Química · FIQA",
+        "schedule": "Lun–Vie 08:00–17:00",
+        "howToGet": "Edificio de Ingeniería Química, planta baja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49124999264262,
+          -0.21189190059443774
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_24",
+        "name": "Laboratorio de Ciencias de la Computación",
+        "category": "academic",
+        "description": "Laboratorio de la Facultad de Ingeniería de Sistemas. Equipado con estaciones de trabajo de alto rendimiento para desarrollo de software, inteligencia artificial y redes.",
+        "shortDescription": "Lab. Computación · FIS",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Tercer piso del edificio de Ingeniería de Sistemas"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49119212304032,
+          -0.21221992754199448
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_25",
+        "name": "Centro de Investigación y Desarrollo (CIDE)",
+        "category": "academic",
+        "description": "Centro interdisciplinario de investigación aplicada. Desarrolla proyectos en energías renovables, materiales avanzados, biotecnología y tecnologías de la información.",
+        "shortDescription": "Investigación · CIDE",
+        "schedule": "Lun–Vie 08:00–17:00",
+        "howToGet": "Edificio de investigación, sector noreste del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49167118075518,
+          -0.21216777875523007
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_26",
+        "name": "Cancha de Fútbol",
+        "category": "sports",
+        "description": "Cancha de fútbol de grass sintético disponible para la práctica deportiva de toda la comunidad politécnica. Se pueden realizar reservas a través de Bienestar Estudiantil.",
+        "shortDescription": "Fútbol · Deportes",
+        "schedule": "Lun–Sáb 07:00–19:00",
+        "howToGet": "Sector sur del campus, junto al polideportivo"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49008453497638,
+          -0.21001379289616295
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_27",
+        "name": "Cancha de Básquetbol",
+        "category": "sports",
+        "description": "Cancha techada de básquetbol para uso deportivo y recreativo. También se utiliza para eventos y campeonatos interuniversitarios.",
+        "shortDescription": "Básquetbol · Deportes",
+        "schedule": "Lun–Sáb 07:00–19:00",
+        "howToGet": "Junto a la cancha de voleibol, sector deportivo del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49001271892207,
+          -0.21034791119961938
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_28",
+        "name": "Cancha de Voleibol",
+        "category": "sports",
+        "description": "Cancha de voleibol para práctica libre y torneos internos. Espacio abierto en el área deportiva del campus politécnico.",
+        "shortDescription": "Voleibol · Deportes",
+        "schedule": "Lun–Sáb 07:00–19:00",
+        "howToGet": "Área deportiva central del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48987465163718,
+          -0.20978692031161472
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_29",
+        "name": "Gimnasio Politécnico",
+        "category": "sports",
+        "description": "Gimnasio equipado con máquinas de musculación, zona de cardio y área de pesas. Disponible para estudiantes, docentes y personal con carné universitario.",
+        "shortDescription": "Gimnasio · Deportes",
+        "schedule": "Lun–Vie 06:30–19:00 · Sáb 08:00–14:00",
+        "howToGet": "Edificio polideportivo, planta baja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48964837985216,
+          -0.20990860747492945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_30",
+        "name": "Camerinos Deportivos",
+        "category": "sports",
+        "description": "Instalaciones de vestuario y duchas para uso de deportistas del campus. Disponibles durante el horario de uso de las instalaciones deportivas.",
+        "shortDescription": "Camerinos · Deportes",
+        "schedule": "Lun–Sáb 07:00–19:00",
+        "howToGet": "Junto al gimnasio, edificio polideportivo"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48946196742784,
+          -0.209279127858494
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_31",
+        "name": "Polibosque",
+        "category": "other",
+        "description": "Área verde natural dentro del campus. Espacio de recreación, estudio al aire libre y convivencia. Importante pulmón verde del campus politécnico.",
+        "shortDescription": "Zona Verde · Recreación",
+        "schedule": "Abierto durante el horario del campus",
+        "howToGet": "Sector noroccidental del campus, tras la Facultad de Ciencias"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48969952451063,
+          -0.20908904637100534
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_32",
+        "name": "Entrada Principal – Ladrón de Guevara",
+        "category": "other",
+        "description": "Acceso principal del campus EPN. Ubicado frente al Coliseo Rumiñahui en la calle Ladrón de Guevara E11-253. Punto de referencia para visitantes y entrada de vehículos.",
+        "shortDescription": "Entrada Principal · Acceso",
+        "schedule": "Lun–Sáb 06:00–22:00",
+        "howToGet": "Av. Ladrón de Guevara E11-253, frente al Coliseo Rumiñahui"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48928101655294,
+          -0.2095471141167451
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_33",
+        "name": "Entrada – Isabel la Católica",
+        "category": "other",
+        "description": "Acceso secundario del campus ubicado en la intersección de Isabel la Católica y Veintimilla. Principalmente utilizado por la comunidad de la Facultad de Ingeniería Eléctrica.",
+        "shortDescription": "Entrada FIEE · Acceso",
+        "schedule": "Lun–Vie 06:30–21:00",
+        "howToGet": "Calle Isabel la Católica y Veintimilla"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48917354648938,
+          -0.20981727346412526
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_34",
+        "name": "Entrada – Andalucía (Administrativo)",
+        "category": "other",
+        "description": "Acceso al edificio administrativo de la EPN por la calle Ladrón de Guevara y Andalucía. Recomendado para trámites en Secretaría, Rectorado y dependencias administrativas.",
+        "shortDescription": "Entrada Admin · Acceso",
+        "schedule": "Lun–Vie 07:30–17:30",
+        "howToGet": "Calle Ladrón de Guevara y Andalucía"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48881787660446,
+          -0.2090919637278006
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_35",
+        "name": "Entrada – Mena Caamaño (FIQA)",
+        "category": "other",
+        "description": "Acceso a la Facultad de Ingeniería Química y Agroindustria por la calle Alfredo Mena Caamaño y Andalucía.",
+        "shortDescription": "Entrada FIQA · Acceso",
+        "schedule": "Lun–Vie 07:00–19:00",
+        "howToGet": "Calle Alfredo Mena Caamaño y Andalucía"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48800274978754,
+          -0.20989641410234583
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_36",
+        "name": "Parqueadero Central",
+        "category": "other",
+        "description": "Parqueadero principal del campus para vehículos de docentes, personal administrativo y visitantes. El ingreso requiere autorización o tarjeta de acceso universitaria.",
+        "shortDescription": "Parqueadero · Vehículos",
+        "schedule": "Lun–Vie 06:30–20:00",
+        "howToGet": "Acceso por la entrada principal de Ladrón de Guevara"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48878951391556,
+          -0.21015155621098813
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_37",
+        "name": "Aulas Generales – Bloque A",
+        "category": "academic",
+        "description": "Bloque de aulas de uso compartido para materias de formación básica y cursos interdisciplinarios. Equipadas con proyector, aire acondicionado y conectividad WiFi.",
+        "shortDescription": "Aulas · Bloque A",
+        "schedule": "Lun–Vie 07:00–20:00",
+        "howToGet": "Centro del campus, planta baja del edificio principal"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48888136093336,
+          -0.21063347425159407
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_38",
+        "name": "Aulas Generales – Bloque B",
+        "category": "academic",
+        "description": "Segundo bloque de aulas de uso compartido. Incluye salas de seminario y espacios de trabajo colaborativo para grupos de investigación y proyectos académicos.",
+        "shortDescription": "Aulas · Bloque B",
+        "schedule": "Lun–Vie 07:00–20:00",
+        "howToGet": "Centro del campus, junto al Bloque A"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48886227571947,
+          -0.21051184769646625
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_39",
+        "name": "Observatorio Astronómico de Quito – Sede EPN",
+        "category": "academic",
+        "description": "Uno de los observatorios más antiguos de América del Sur. Vinculado históricamente a la EPN desde su fundación. Realiza investigación astronómica y monitoreo geofísico.",
+        "shortDescription": "Observatorio · Astronomía",
+        "schedule": "Visitas con cita previa",
+        "howToGet": "Sector histórico del campus"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.48888744472698,
+          -0.21037388929505596
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_40",
+        "name": "Edificio de Aulas y Relación con el Medio Externo",
+        "category": "academic",
+        "description": "Edificio moderno de aulas construido para ampliar la capacidad del campus. Sede del CEC-EPN (Centro de Educación Continua) y eventos de vinculación con la sociedad.",
+        "shortDescription": "Aulas Nuevas · CEC",
+        "schedule": "Lun–Vie 07:00–20:00 · Sáb 08:00–14:00",
+        "howToGet": "Av. Toledo N23-55 y Madrid"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49162961730258,
+          -0.21179421637222617
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "poi_41",
+        "name": "Plaza Central del Campus",
+        "category": "other",
+        "description": "Punto de encuentro central del campus politécnico. Espacio abierto rodeado de los principales edificios académicos. Sede de actividades culturales, ferias y eventos estudiantiles.",
+        "shortDescription": "Plaza Central · Punto de encuentro",
+        "schedule": "Abierto durante el horario del campus",
+        "howToGet": "Centro del campus, accesible desde cualquier entrada"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.49061739866679,
+          -0.211431042987428
+        ]
+      }
+    }
+  ]
+}

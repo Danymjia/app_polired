@@ -20,7 +20,7 @@ class MarkerImageUtil {
 
     // Fondo de la cápsula
     final bgPaint = Paint()
-      ..color = isSelected ? const Color(0xFF1D3557) : Colors.black
+      ..color = isSelected ? const Color(0xFF0D47A1) : const Color(0xFF1A237E)
       ..style = PaintingStyle.fill;
 
     final rrect = RRect.fromRectAndRadius(

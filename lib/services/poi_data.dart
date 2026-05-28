@@ -1,58 +1,55 @@
-// DATOS ESTÁTICOS DEL CAMPUS
-// Reemplazar las coordenadas con las reales de tu universidad
-// Reemplazar los datos con los reales de cada lugar
-
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import '../models/poi_model.dart';
 
 class PoiData {
-  static const List<PoiModel> all = [
-    PoiModel(
-      id: 'biblioteca-central',
-      name: 'Biblioteca Central',
-      shortDescription: 'Sala de estudio, préstamo de libros y acceso a recursos digitales',
-      category: PoiCategory.services,
-      latitude: -0.2288,    // REEMPLAZAR
-      longitude: -78.5240,  // REEMPLAZAR
-      schedule: [
-        'Lunes a Viernes: 8:00 - 20:00',
-        'Sábado: 9:00 - 14:00',
-        'Domingo: Cerrado',
-      ],
-      howToGet: 'Desde la entrada principal, camina por el pasillo central unos 80 metros. La biblioteca está a tu izquierda en el Edificio A, planta baja.',
-      photoAssets: ['assets/photos/biblioteca_1.jpg', 'assets/photos/biblioteca_2.jpg'],
-      floor: 'Planta baja',
-      building: 'Edificio A',
-    ),
-    PoiModel(
-      id: 'cafeteria-principal',
-      name: 'Cafetería Principal',
-      shortDescription: 'Menú diario, snacks y bebidas para toda la comunidad universitaria',
-      category: PoiCategory.food,
-      latitude: -0.2295,    // REEMPLAZAR
-      longitude: -78.5248,  // REEMPLAZAR
-      schedule: [
-        'Lunes a Viernes: 7:00 - 18:00',
-        'Sábado: 8:00 - 13:00',
-      ],
-      howToGet: 'Ubicada en el centro del campus junto al edificio administrativo. Señalizada con letrero azul.',
-      photoAssets: ['assets/photos/cafeteria_1.jpg'],
-      building: 'Edificio Central',
-    ),
-    PoiModel(
-      id: 'facultad-ingenieria',
-      name: 'Facultad de Ingeniería',
-      shortDescription: 'Aulas, laboratorios y oficinas de docentes de Ingeniería',
-      category: PoiCategory.academic,
-      latitude: -0.2301,    // REEMPLAZAR
-      longitude: -78.5235,  // REEMPLAZAR
-      schedule: [
-        'Lunes a Viernes: 7:00 - 21:00',
-        'Sábado: 8:00 - 14:00',
-      ],
-      howToGet: 'Desde la entrada norte, el edificio de Ingeniería es el de 4 pisos a mano derecha. Busca las letras grandes "ING" en la fachada.',
-      photoAssets: [],
-      building: 'Bloque de Ingeniería',
-    ),
-    // AGREGAR TODOS LOS POI REALES DEL CAMPUS AQUÍ
-  ];
+  PoiData._();
+
+  // Lista en memoria — se llena una sola vez con loadFromAssets()
+  static List<PoiModel> _all = [];
+  static List<PoiModel> get all => _all;
+
+  /// Llama este método UNA vez al arrancar el mapa (antes de _loadMarkers).
+  /// Lee el GeoJSON desde assets y convierte cada Feature en un PoiModel.
+  static Future<void> loadFromAssets() async {
+    if (_all.isNotEmpty) return; // ya cargado
+
+    final raw = await rootBundle.loadString('assets/docs/pois.geojson');
+    final json = jsonDecode(raw) as Map<String, dynamic>;
+    final features = json['features'] as List<dynamic>;
+
+    _all = features.map((f) {
+      final props = f['properties'] as Map<String, dynamic>;
+      final coords = f['geometry']['coordinates'] as List<dynamic>;
+
+      return PoiModel(
+        id: props['id'] as String,
+        name: props['name'] as String,
+        shortDescription: props['description'] as String? ?? 'Información por actualizar',
+        category: _parseCategory(props['category'] as String? ?? 'edificio'),
+        latitude: (coords[1] as num).toDouble(),
+        longitude: (coords[0] as num).toDouble(),
+        schedule: props['schedule'] != null ? [props['schedule'] as String] : [],
+        howToGet: props['howToGet'] as String? ?? 'Indicaciones no disponibles.',
+        floor: props['floor'] as String?,
+        building: props['building'] as String?,
+        phone: props['phone'] as String?,
+        email: props['email'] as String?,
+      );
+    }).toList();
+  }
+
+  static PoiCategory _parseCategory(String raw) {
+    switch (raw.toLowerCase()) {
+      case 'academic':
+        return PoiCategory.academic;
+      case 'services':
+        return PoiCategory.services;
+      case 'sports':
+        return PoiCategory.sports;
+      case 'other':
+      default:
+        return PoiCategory.other;
+    }
+  }
 }

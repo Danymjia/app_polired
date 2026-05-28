@@ -3,242 +3,244 @@ import 'package:provider/provider.dart';
 import '../../../providers/map_provider.dart';
 import '../../../models/poi_model.dart';
 
-class PoiDirectorySheet extends StatelessWidget {
+class PoiDirectorySheet extends StatefulWidget {
+  final PoiCategory? initialCategory;
   final VoidCallback onClose;
   final void Function(PoiModel poi) onPoiSelected;
 
   const PoiDirectorySheet({
     super.key,
+    this.initialCategory,
     required this.onClose,
     required this.onPoiSelected,
   });
 
   @override
+  State<PoiDirectorySheet> createState() => _PoiDirectorySheetState();
+}
+
+class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
+  PoiCategory? _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCategory != null) {
+      _selectedCategory = widget.initialCategory;
+    }
+  }
+
+  IconData _getCategoryIcon(PoiCategory cat) {
+    switch (cat) {
+      case PoiCategory.academic: return Icons.school_rounded;
+      case PoiCategory.services: return Icons.room_service_rounded;
+      case PoiCategory.sports: return Icons.sports_soccer_rounded;
+      case PoiCategory.food: return Icons.restaurant_rounded;
+      case PoiCategory.admin: return Icons.admin_panel_settings_rounded;
+      case PoiCategory.other: 
+        return Icons.place_rounded;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onClose,
+      onTap: widget.onClose,
       child: Container(
         color: Colors.black.withValues(alpha: 0.3),
         child: GestureDetector(
           onTap: () {}, // evitar que el tap interior cierre
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.55,
-            minChildSize: 0.3,
-            maxChildSize: 0.92,
-            builder: (context, scrollController) {
-              final mapProvider = context.watch<MapProvider>();
-              final byCategory = mapProvider.poiByCategory;
-
+          child: NotificationListener<DraggableScrollableNotification>(
+            onNotification: (notification) {
+              if (notification.extent <= 0.05) {
+                widget.onClose();
+              }
+              return false;
+            },
+            child: DraggableScrollableSheet(
+              initialChildSize: 0.5,
+              minChildSize: 0.0,
+              maxChildSize: 0.5,
+              snap: true,
+              snapSizes: const [0.5],
+              builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                child: Column(
-                  children: [
-                    // Handle
-                    Center(
-                      child: Container(
-                        margin: const EdgeInsets.only(top: 10, bottom: 6),
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      // Handle
+                      Center(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 10, bottom: 6),
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-
-                    // Título
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                      child: Row(
-                        children: [
-                          const Text('Directorio del campus',
-                              style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1D3557))),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 20),
-                            onPressed: onClose,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Lista por categorías
-                    Expanded(
-                      child: ListView(
-                        controller: scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                        children: byCategory.entries.map((entry) {
-                          return _CategorySection(
-                            category: entry.key,
-                            pois: entry.value,
-                            onPoiTap: (poi) {
-                              onPoiSelected(poi);
-                              context.read<MapProvider>().selectPoi(poi);
-                              onClose();
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
+  
+                      if (_selectedCategory == null)
+                        _buildLevel1()
+                      else
+                        _buildLevel2(context),
+                    ],
+                  ),
                 ),
               );
             },
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _CategorySection extends StatefulWidget {
-  final PoiCategory category;
-  final List<PoiModel> pois;
-  final void Function(PoiModel) onPoiTap;
+  Widget _buildLevel1() {
+    final categories = [
+      PoiCategory.academic,
+      PoiCategory.services,
+      PoiCategory.sports,
+      PoiCategory.other,
+    ];
 
-  const _CategorySection({
-    required this.category,
-    required this.pois,
-    required this.onPoiTap,
-  });
-
-  @override
-  State<_CategorySection> createState() => _CategorySectionState();
-}
-
-class _CategorySectionState extends State<_CategorySection> {
-  bool _expanded = true;
-
-  @override
-  Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header de categoría (colapsable)
-        InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1D3557),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.place_rounded,
-                      color: Colors.white, size: 16),
-                ),
-                const SizedBox(width: 10),
-                Text(widget.category.label,
-                    style: const TextStyle(
-                        fontSize: 14,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: Row(
+            children: [
+              const SizedBox(width: 48), // Balance for right button
+              const Expanded(
+                child: Text('Directorio EPN',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1D3557))),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1D3557).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text('${widget.pois.length}',
-                      style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1D3557))),
-                ),
-                const Spacer(),
-                Icon(
-                    _expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: Colors.grey.shade400),
-              ],
-            ),
-          ),
-        ),
-
-        // Lista de POIs de la categoría
-        AnimatedCrossFade(
-          firstChild: Column(
-            children: widget.pois
-                .map((poi) => _PoiListTile(
-                      poi: poi,
-                      onTap: () => widget.onPoiTap(poi),
-                    ))
-                .toList(),
-          ),
-          secondChild: const SizedBox.shrink(),
-          crossFadeState: _expanded
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
-          duration: const Duration(milliseconds: 200),
-        ),
-
-        Divider(height: 1, color: Colors.grey.shade100),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-}
-
-class _PoiListTile extends StatelessWidget {
-  final PoiModel poi;
-  final VoidCallback onTap;
-
-  const _PoiListTile({required this.poi, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      leading: poi.photoAssets.isNotEmpty
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                poi.photoAssets.first,
-                width: 44,
-                height: 44,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _placeholderIcon(),
               ),
-            )
-          : _placeholderIcon(),
-      title: Text(poi.name,
-          style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600)),
-      subtitle: poi.building != null
-          ? Text(poi.building!,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500))
-          : null,
-      trailing: const Icon(Icons.chevron_right_rounded,
-          color: Colors.grey, size: 18),
-      onTap: onTap,
-    );
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: widget.onClose,
+              ),
+            ],
+          ),
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.1,
+              ),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final cat = categories[index];
+                return InkWell(
+                  onTap: () => setState(() => _selectedCategory = cat),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _getCategoryIcon(cat),
+                          size: 48,
+                          color: const Color(0xFF1D3557),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          cat.label,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1D3557),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      );
   }
 
-  Widget _placeholderIcon() {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D3557).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Icon(Icons.place_rounded,
-          color: Color(0xFF1D3557), size: 20),
-    );
+  Widget _buildLevel2(BuildContext context) {
+    final mapProvider = context.watch<MapProvider>();
+    final pois = mapProvider.poiByCategory[_selectedCategory] ?? [];
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 16, 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1D3557)),
+                onPressed: () => setState(() => _selectedCategory = null),
+              ),
+              Expanded(
+                child: Text(
+                  _selectedCategory!.label,
+                  style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1D3557)),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 48), // balance back button
+            ],
+          ),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
+              itemCount: pois.length,
+              itemBuilder: (context, index) {
+                final poi = pois[index];
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D3557).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(_getCategoryIcon(_selectedCategory!),
+                        color: const Color(0xFF1D3557), size: 20),
+                  ),
+                  title: Text(poi.name,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: Text(poi.shortDescription,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                  onTap: () {
+                    widget.onPoiSelected(poi);
+                  },
+                );
+              },
+            ),
+        ],
+      );
   }
 }

@@ -3,8 +3,11 @@ class AppConstants {
   AppConstants._();
 
   // ─── Backend ────────────────────────────────────────────────────────────────
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-  static const String socketUrl = 'http://10.0.2.2:3000';
+  static const String baseUrl = 'https://polired-api.vercel.app/api';
+  static const String socketUrl = 'https://polired-api.vercel.app';
+
+  // static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // static const String socketUrl = 'http://10.0.2.2:3000';
 
   // ─── Auth endpoints ─────────────────────────────────────────────────────────
   static const String loginEndpoint = '/auth/login';
@@ -13,7 +16,8 @@ class AppConstants {
   static const String perfilEndpoint = '/perfil-estudiante';
   static const String perfilUsernameEndpoint = '/perfil/username';
   static const String completarPerfilEndpoint = '/completar/perfil';
-  static const String actualizarPasswordEndpoint = '/estudiante/actualizarpassword';
+  static const String actualizarPasswordEndpoint =
+      '/estudiante/actualizarpassword';
 
   // ─── Redes endpoints ────────────────────────────────────────────────────────
   static const String redesListarEndpoint = '/redes/listar';
@@ -25,7 +29,8 @@ class AppConstants {
   static const String publicacionesGlobalEndpoint = '/publicaciones/global';
 
   /// Feed de comunidades paginado (sin auth requerida)
-  static const String publicacionesComunidadesEndpoint = '/publicaciones/comunitarias';
+  static const String publicacionesComunidadesEndpoint =
+      '/publicaciones/comunitarias';
 
   /// Feed filtrado por red → /publicaciones/red/:redId  (requiere auth)
   static const String publicacionesPorRedEndpoint = '/publicaciones/red';
@@ -34,7 +39,8 @@ class AppConstants {
   static const String crearPublicacionEndpoint = '/estudiantes/publicaciones';
 
   /// Crear publicación extendida → POST /publicaciones/extendida (requiere auth + perfil completo)
-  static const String crearPublicacionExtendidaEndpoint = '/publicaciones/extendida';
+  static const String crearPublicacionExtendidaEndpoint =
+      '/publicaciones/extendida';
 
   // ─── Social endpoints ────────────────────────────────────────────────────────
   /// Like → POST /publicaciones/:id/like
@@ -52,7 +58,8 @@ class AppConstants {
 
   // ─── Mensajes / conversaciones ───────────────────────────────────────────────
   /// Listar conversaciones del usuario → GET /mensajes/conversaciones (requiere auth)
-  static const String mensajesConversacionesEndpoint = '/mensajes/conversaciones';
+  static const String mensajesConversacionesEndpoint =
+      '/mensajes/conversaciones';
 
   // ─── Storage keys ────────────────────────────────────────────────────────────
   static const String tokenKey = 'auth_token';

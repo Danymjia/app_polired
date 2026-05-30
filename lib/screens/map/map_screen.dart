@@ -59,9 +59,12 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   bool _userInteracting = false;
   bool _isFlying = false;
 
+  late MapProvider _mapProvider;
+
   @override
   void initState() {
     super.initState();
+    _mapProvider = context.read<MapProvider>();
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -85,6 +88,15 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   @override
   void dispose() {
     _rotationController.dispose();
+    
+    // Limpiar el estado global del mapa al salir de la pantalla para que
+    // los sheets se cierren y la carga inicial sea limpia.
+    Future.microtask(() {
+      _mapProvider.clearSelection();
+      _mapProvider.clearSearch();
+      _mapProvider.setActiveCategory(null);
+    });
+
     super.dispose();
   }
 

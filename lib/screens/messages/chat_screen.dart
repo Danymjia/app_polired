@@ -8,7 +8,7 @@ import '../../services/socket_service.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../providers/messages_inbox_provider.dart';
 
-class ChatScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
   final String conversationId;
   final String contactId;
   final String contactName;
@@ -23,43 +23,58 @@ class ChatScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final currentUserId = context.read<AuthProvider>().user?.id ?? '';
-    
-    // Bug 4: Marcar como visto al entrar
-    Future.microtask(() {
-      if (context.mounted) {
-        context.read<MessagesInboxProvider>().markConversationPreviewSeen(conversationId);
-      }
-    });
+  State<ChatScreen> createState() => _ChatScreenState();
+}
 
-    return ChangeNotifierProvider(
-      create: (_) => ChatProvider(
-        socketService: SocketService(),
-        conversationId: conversationId,
-        contactId: contactId,
-        currentUserId: currentUserId,
-        onMessageSent: (msg, author, date) {
-           if (context.mounted) {
-             context.read<MessagesInboxProvider>().updateConversationPreview(conversationId, msg, author, date);
-           }
+class _ChatScreenState extends State<ChatScreen> {
+  late final ChatProvider _chatProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatProvider = ChatProvider(
+      socketService: SocketService(),
+      conversationId: widget.conversationId,
+      contactId: widget.contactId,
+      currentUserId: context.read<AuthProvider>().user?.id ?? '',
+      onMessageSent: (msg, author, date) {
+        if (mounted) {
+          context.read<MessagesInboxProvider>().updateConversationPreview(
+            widget.conversationId, msg, author, date);
         }
-      ),
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+
+    _chatProvider.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: _chatProvider,
       child: _ChatScreenContent(
-        contactName: contactName,
-        contactAvatar: contactAvatar,
-        currentUserId: currentUserId,
+        conversationId: widget.conversationId,
+        contactName: widget.contactName,
+        contactAvatar: widget.contactAvatar,
+        currentUserId: context.read<AuthProvider>().user?.id ?? '',
       ),
     );
   }
 }
 
 class _ChatScreenContent extends StatefulWidget {
+  final String conversationId;
   final String contactName;
   final String? contactAvatar;
   final String currentUserId;
 
   const _ChatScreenContent({
+    required this.conversationId,
     required this.contactName,
     this.contactAvatar,
     required this.currentUserId,
@@ -78,6 +93,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
   }
 
   @override
@@ -143,27 +159,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
                       color: Colors.black,
                     ),
                   ),
-                  Row(
-                    children: [
-                      if (provider.isContactOnline)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(right: 6),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      Text(
-                        provider.isContactOnline ? 'En línea' : 'Desconectado',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: const Color(0xFF71717A),
-                        ),
-                      ),
-                    ],
-                  ),
+
                 ],
               ),
             ),

@@ -4,12 +4,7 @@ import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
 import '../config/constants.dart';
 
-enum SocketConnectionPhase {
-  disconnected,
-  connecting,
-  connected,
-  reconnecting,
-}
+enum SocketConnectionPhase { disconnected, connecting, connected, reconnecting }
 
 /// Servicio Singleton de PusherChannels para tiempo real.
 class SocketService {
@@ -21,10 +16,12 @@ class SocketService {
   String? _token;
   String? _userId;
 
-  final ValueNotifier<SocketConnectionPhase> connectionPhase =
-      ValueNotifier(SocketConnectionPhase.disconnected);
+  final ValueNotifier<SocketConnectionPhase> connectionPhase = ValueNotifier(
+    SocketConnectionPhase.disconnected,
+  );
 
-  bool get isConnected => connectionPhase.value == SocketConnectionPhase.connected;
+  bool get isConnected =>
+      connectionPhase.value == SocketConnectionPhase.connected;
 
   final Map<String, List<Function(dynamic)>> _eventListeners = {};
 
@@ -46,51 +43,49 @@ class SocketService {
     _setPhase(SocketConnectionPhase.connecting);
 
     try {
+
       await pusher.init(
         apiKey: "278aa167ddc365cd37a2",
         cluster: "us2",
         onConnectionStateChange: _onConnectionStateChange,
         onError: _onError,
         onEvent: _onEvent,
-        authEndpoint: "${AppConstants.socketUrl}/api/pusher/auth",
+        authEndpoint: "${AppConstants.socketUrl}/api/pusher/auth?token=$_token",
         authParams: {
-          'headers': {
-            'Authorization': 'Bearer $_token',
-          }
+          'headers': {'Authorization': 'Bearer $_token'},
         },
       );
-
+      
       await pusher.connect();
+
       _isPusherConnectedFlag = true;
-      await pusher.subscribe(channelName: "private-user-$_userId");
-      _setPhase(SocketConnectionPhase.connected);
     } catch (e) {
       debugPrint("Pusher connect error: $e");
       _setPhase(SocketConnectionPhase.disconnected);
     }
   }
 
-  Future<void> subscribeToConversation(String conversationId) async {
-    if (!isConnected) return;
-    try {
-      await pusher.subscribe(channelName: "presence-chat-$conversationId");
-    } catch (e) {
-      debugPrint("Pusher subscribe error: $e");
-    }
-  }
-
-  Future<void> unsubscribeFromConversation(String conversationId) async {
-    if (!isConnected) return;
-    try {
-      await pusher.unsubscribe(channelName: "presence-chat-$conversationId");
-    } catch (e) {
-      debugPrint("Pusher unsubscribe error: $e");
-    }
-  }
-
   void _onConnectionStateChange(dynamic currentState, dynamic previousState) {
     if (currentState == "CONNECTED") {
       _setPhase(SocketConnectionPhase.connected);
+      final uid = _userId;
+      if (uid != null && uid.isNotEmpty) {
+        pusher
+            .subscribe(channelName: "private-user-$uid")
+            .then((_) {
+            })
+            .catchError((e) {
+            });
+            
+        // TEMPORAL - solo para diagnóstico
+        pusher
+            .subscribe(channelName: "test-channel")
+            .then((_) {
+            })
+            .catchError((e) {
+            });
+      } else {
+      }
     } else if (currentState == "CONNECTING") {
       _setPhase(SocketConnectionPhase.connecting);
     } else if (currentState == "DISCONNECTED") {
@@ -101,8 +96,8 @@ class SocketService {
   }
 
   void _onError(String message, int? code, dynamic e) {
-    debugPrint("Pusher error: $message code: $code");
-    if (!isConnected && connectionPhase.value != SocketConnectionPhase.reconnecting) {
+    if (!isConnected &&
+        connectionPhase.value != SocketConnectionPhase.reconnecting) {
       _setPhase(SocketConnectionPhase.disconnected);
     }
   }
@@ -110,6 +105,7 @@ class SocketService {
   void _onEvent(PusherEvent event) {
     final eventName = event.eventName;
     dynamic data = event.data;
+
     if (data is String) {
       try {
         data = jsonDecode(data);
@@ -128,11 +124,22 @@ class SocketService {
     if (!_eventListeners.containsKey(event)) {
       _eventListeners[event] = [];
     }
-    _eventListeners[event]!.add(handler);
+    // Evitar duplicar el listener si un provider re-registra
+    if (!_eventListeners[event]!.contains(handler)) {
+      _eventListeners[event]!.add(handler);
+    }
   }
 
-  void off(String event) {
-    _eventListeners.remove(event);
+  void off(String event, [void Function(dynamic)? handler]) {
+
+    if (handler != null) {
+      _eventListeners[event]?.remove(handler);
+      if (_eventListeners[event]?.isEmpty == true) {
+        _eventListeners.remove(event);
+      }
+    } else {
+      _eventListeners.remove(event);
+    }
   }
 
   Future<void> disconnect() async {
@@ -150,9 +157,14 @@ class SocketService {
     }
     _token = null;
     _userId = null;
-    _eventListeners.clear();
+
     if (clearPhase) {
       _setPhase(SocketConnectionPhase.disconnected);
     }
+  }
+
+  // Nuevo método explícito para limpiar todo (Logout)
+  void clearAllListeners() {
+    _eventListeners.clear();
   }
 }

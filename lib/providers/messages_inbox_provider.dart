@@ -38,6 +38,7 @@ class MessagesInboxProvider extends ChangeNotifier {
   final Set<String> _socketUnreadConversationIds = {};
   final Set<String> _localSeenConversations = {};
   bool _socketListeners = false;
+  void Function(dynamic)? _incomingMessageHandler;
 
   InboxListStatus get listStatus => _listStatus;
   String? get listError => _listError;
@@ -47,7 +48,14 @@ class MessagesInboxProvider extends ChangeNotifier {
 
   SocketConnectionPhase get socketPhase => _socketService.connectionPhase.value;
 
-  void _onSocketPhase() => notifyListeners();
+  void _onSocketPhase() {
+    // Re-registrar al reconectar (Fix 2)
+    if (socketPhase == SocketConnectionPhase.connected) {
+
+      _ensureSocketListeners();
+    }
+    notifyListeners();
+  }
 
   /// Llamado desde [ChangeNotifierProxyProvider] cuando cambia la sesión.
   void onAuthChanged(UserModel? user) {
@@ -116,27 +124,34 @@ class MessagesInboxProvider extends ChangeNotifier {
   void _ensureSocketListeners() {
     if (_socketListeners) return;
     _socketListeners = true;
-    void handler(dynamic data) => _handleIncomingMessageMap(data);
-    _socketService.on('nuevo_mensaje', handler);
-    _socketService.on('nuevo_mensaje_local', handler);
+    _incomingMessageHandler ??= (dynamic data) => _handleIncomingMessageMap(data);
+    _socketService.on('nuevo_mensaje', _incomingMessageHandler!);
+    _socketService.on('nuevo_mensaje_local', _incomingMessageHandler!);
   }
 
   void _removeSocketListeners() {
     if (!_socketListeners) return;
-    _socketService.off('nuevo_mensaje');
-    _socketService.off('nuevo_mensaje_local');
+    if (_incomingMessageHandler != null) {
+      _socketService.off('nuevo_mensaje', _incomingMessageHandler!);
+      _socketService.off('nuevo_mensaje_local', _incomingMessageHandler!);
+    }
     _socketListeners = false;
   }
 
   void _handleIncomingMessageMap(dynamic raw) {
+
     final uid = _sessionUserId;
     if (uid == null) return;
     if (raw is! Map) return;
     final map = Map<String, dynamic>.from(raw);
-    final convId = parseMongoId(map['conversacionId']);
+    
     final m = map['mensaje'];
-    if (convId == null || convId.isEmpty || m is! Map) return;
+    if (m is! Map) return;
     final mm = Map<String, dynamic>.from(m);
+    
+    final convId = parseMongoId(mm['conversacionId']);
+    if (convId == null || convId.isEmpty) return;
+
     final content = mm['contenido'] as String? ?? '';
     final createdAt = parseDate(mm['createdAt']) ?? DateTime.now();
     String? autorId;

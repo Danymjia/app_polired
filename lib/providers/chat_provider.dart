@@ -20,7 +20,6 @@ class ChatProvider extends ChangeNotifier {
   String? _errorMessage;
 
   List<MessageModel> _messages = [];
-  bool _isContactOnline = false;
   final void Function(String contenido, String autorId, DateTime createdAt)? onMessageSent;
 
   ChatProvider({
@@ -33,6 +32,7 @@ class ChatProvider extends ChangeNotifier {
         _conversationId = conversationId,
         _contactId = contactId,
         _currentUserId = currentUserId {
+    _socketService.connectionPhase.addListener(_onSocketPhase);
     _init();
   }
 
@@ -41,13 +41,19 @@ class ChatProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   String? get errorMessage => _errorMessage;
   List<MessageModel> get messages => List.unmodifiable(_messages);
-  bool get isContactOnline => _isContactOnline;
+
+  void _onSocketPhase() {
+    // Re-registrar al reconectar
+    if (_socketService.connectionPhase.value == SocketConnectionPhase.connected) {
+
+      _setupSocketListeners();
+    }
+  }
 
   Future<void> _init() async {
     _isLoading = true;
     notifyListeners();
 
-    await _socketService.subscribeToConversation(_conversationId);
     _setupSocketListeners();
     await _fetchMessages(refresh: true);
     await _markAsRead();
@@ -60,29 +66,23 @@ class ChatProvider extends ChangeNotifier {
     _socketService.on('nuevo_mensaje', _onNuevoMensaje);
     _socketService.on('nuevo_mensaje_local', _onNuevoMensaje);
     _socketService.on('mensajes_leidos', _onMensajesLeidos);
-    
-    // Pusher presence events
-    _socketService.on('pusher:subscription_succeeded', _onPresenceSucceeded);
-    _socketService.on('pusher:member_added', _onPresenceAdded);
-    _socketService.on('pusher:member_removed', _onPresenceRemoved);
   }
 
   void _removeSocketListeners() {
-    _socketService.off('nuevo_mensaje');
-    _socketService.off('nuevo_mensaje_local');
-    _socketService.off('mensajes_leidos');
-    _socketService.off('pusher:subscription_succeeded');
-    _socketService.off('pusher:member_added');
-    _socketService.off('pusher:member_removed');
+    _socketService.off('nuevo_mensaje', _onNuevoMensaje);
+    _socketService.off('nuevo_mensaje_local', _onNuevoMensaje);
+    _socketService.off('mensajes_leidos', _onMensajesLeidos);
   }
 
   void _onNuevoMensaje(dynamic payload) {
+
     if (payload == null) return;
     try {
       final map = payload is Map ? payload : jsonDecode(payload.toString());
       final msgMap = map['mensaje'];
       if (msgMap == null) return;
-      if (msgMap['conversacionId'] != _conversationId) return;
+      final convId = msgMap['conversacionId']?.toString();
+      if (convId != _conversationId) return;
 
       final newMsg = MessageModel.fromJson(Map<String, dynamic>.from(msgMap));
       
@@ -129,39 +129,7 @@ class ChatProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  void _onPresenceSucceeded(dynamic payload) {
-    if (payload == null) return;
-    try {
-      final data = payload is Map ? payload : jsonDecode(payload.toString());
-      final membersMap = data['presence']?['hash'] as Map?;
-      if (membersMap != null) {
-        _isContactOnline = membersMap.containsKey(_contactId);
-        notifyListeners();
-      }
-    } catch (_) {}
-  }
 
-  void _onPresenceAdded(dynamic payload) {
-    if (payload == null) return;
-    try {
-      final data = payload is Map ? payload : jsonDecode(payload.toString());
-      if (data['user_id'] == _contactId) {
-        _isContactOnline = true;
-        notifyListeners();
-      }
-    } catch (_) {}
-  }
-
-  void _onPresenceRemoved(dynamic payload) {
-    if (payload == null) return;
-    try {
-      final data = payload is Map ? payload : jsonDecode(payload.toString());
-      if (data['user_id'] == _contactId) {
-        _isContactOnline = false;
-        notifyListeners();
-      }
-    } catch (_) {}
-  }
 
   Future<void> _fetchMessages({bool refresh = false}) async {
     if (refresh) {
@@ -263,8 +231,11 @@ class ChatProvider extends ChangeNotifier {
         if (idx != -1) {
           _messages[idx] = realMsg;
         } else {
-          // Si por alguna razón Pusher no lo agregó y el optimista desapareció
-          _messages.insert(0, realMsg);
+          // Si por alguna razón no está el optimista, verificamos si Pusher ya lo insertó
+          final yaExiste = _messages.any((m) => m.id == realMsg.id);
+          if (!yaExiste) {
+            _messages.insert(0, realMsg);
+          }
         }
         onMessageSent?.call(realMsg.contenido, realMsg.autorId, realMsg.createdAt);
         notifyListeners();
@@ -281,8 +252,9 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+
+    _socketService.connectionPhase.removeListener(_onSocketPhase);
     _removeSocketListeners();
-    _socketService.unsubscribeFromConversation(_conversationId);
     super.dispose();
   }
 }

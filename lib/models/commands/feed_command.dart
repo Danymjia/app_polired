@@ -14,6 +14,7 @@ class CreatePostCommand extends FeedCommand {
   final String postType; // 'texto' o 'imagen'
   final List<File>? imageFiles;
   final double? price;
+  final double aspectRatio;
 
   CreatePostCommand({
     required this.feedContext,
@@ -25,6 +26,7 @@ class CreatePostCommand extends FeedCommand {
     this.networkName,
     this.imageFiles,
     this.price,
+    this.aspectRatio = 1.0,
   });
 }
 

@@ -40,6 +40,16 @@ class StorageService {
     await _prefs?.remove(AppConstants.userKey);
   }
 
+  // ─── Preferencias de Notificaciones ────────────────────────────────────────
+  static bool getNotifLikes() => _prefs?.getBool('notif_likes') ?? true;
+  static Future<void> setNotifLikes(bool value) async => await _prefs?.setBool('notif_likes', value);
+
+  static bool getNotifComments() => _prefs?.getBool('notif_comments') ?? true;
+  static Future<void> setNotifComments(bool value) async => await _prefs?.setBool('notif_comments', value);
+
+  static bool getNotifMessages() => _prefs?.getBool('notif_messages') ?? true;
+  static Future<void> setNotifMessages(bool value) async => await _prefs?.setBool('notif_messages', value);
+
   // ─── Clear all ───────────────────────────────────────────────────────────
   static Future<void> clear() async {
     await _prefs?.clear();

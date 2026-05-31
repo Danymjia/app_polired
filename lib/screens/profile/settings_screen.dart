@@ -10,7 +10,6 @@ import '../settings/support_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/legal_document_screen.dart';
 import '../settings/request_network_screen.dart';
-import '../settings/notifications_screen.dart';
 import 'saved_posts_screen.dart';
 import 'liked_posts_screen.dart';
 
@@ -68,17 +67,6 @@ class SettingsScreen extends StatelessWidget {
               'Me gusta',
               Icons.favorite_outline,
               screen: const LikedPostsScreen(),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Group 2: Ajustes del sistema
-            _buildSectionTitle('Ajustes del sistema'),
-            _buildMenuItem(
-              context,
-              'Notificaciones',
-              Icons.notifications_outlined,
-              screen: const NotificationsScreen(),
             ),
 
             const SizedBox(height: 20),

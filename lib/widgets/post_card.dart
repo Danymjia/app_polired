@@ -136,7 +136,10 @@ class _PostCardState extends State<PostCard> {
           // ── Imagen ────────────────────────────────────────────────────────
           Stack(
             children: [
-              PostImageCarousel(mediaUrls: post.mediaUrls),
+              PostImageCarousel(
+                mediaUrls: post.mediaUrls,
+                aspectRatio: post.aspectRatio,
+              ),
               if (post.isArticle && post.priceLabel.isNotEmpty)
                 Positioned(
                   bottom: 12,
@@ -333,6 +336,7 @@ class _PostCardState extends State<PostCard> {
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
+                useRootNavigator: true,
                 backgroundColor: Colors.transparent,
                 builder: (_) => LikesBottomSheet(postId: post.id),
               );
@@ -352,6 +356,7 @@ class _PostCardState extends State<PostCard> {
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
+                useRootNavigator: true,
                 backgroundColor: Colors.transparent,
                 builder: (_) => CommentTreeSheet(postId: post.id),
               );

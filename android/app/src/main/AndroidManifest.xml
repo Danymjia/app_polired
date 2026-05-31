@@ -34,6 +34,10 @@
         <meta-data
             android:name="com.mapbox.token"
             android:value="${mapboxAccessToken}"/>
+
+        <activity android:name="com.yalantis.ucrop.UCropActivity" 
+            android:screenOrientation="portrait" 
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

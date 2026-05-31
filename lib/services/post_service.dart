@@ -85,6 +85,7 @@ class PostService {
     String? comunidadId,
     List<String>? mediaUrls,
     List<File>? imageFiles,
+    double aspectRatio = 1.0,
   }) async {
     if (imageFiles != null && imageFiles.isNotEmpty) {
       final fields = <String, String>{
@@ -92,6 +93,7 @@ class PostService {
         'contenido': contenido,
         'categoria': categoria,
         'tipoContenido': 'imagen',
+        'aspectRatio': aspectRatio.toString(),
       };
       if (titulo != null && titulo.isNotEmpty) fields['titulo'] = titulo;
       if (comunidadId != null) fields['comunidadId'] = comunidadId;
@@ -107,6 +109,7 @@ class PostService {
       'contenido': contenido,
       'categoria': categoria,
       'tipoContenido': (mediaUrls != null && mediaUrls.isNotEmpty) ? 'imagen' : 'texto',
+      'aspectRatio': aspectRatio,
     };
     if (titulo != null && titulo.isNotEmpty) body['titulo'] = titulo;
     if (comunidadId != null) body['comunidadId'] = comunidadId;
@@ -128,6 +131,7 @@ class PostService {
     String tipoContenido = 'texto',
     List<String>? mediaUrls,
     List<File>? imageFiles,
+    double aspectRatio = 1.0,
   }) async {
     if (imageFiles != null && imageFiles.isNotEmpty) {
       final fields = <String, String>{
@@ -136,6 +140,7 @@ class PostService {
         'precio': precio.toString(),
         'categoria': categoria,
         'tipoContenido': 'imagen',
+        'aspectRatio': aspectRatio.toString(),
       };
       if (titulo != null && titulo.isNotEmpty) fields['titulo'] = titulo;
       if (comunidadId != null) fields['comunidadId'] = comunidadId;
@@ -152,6 +157,7 @@ class PostService {
       'precio': precio,
       'categoria': categoria,
       'tipoContenido': tipoContenido,
+      'aspectRatio': aspectRatio,
     };
     if (titulo != null && titulo.isNotEmpty) body['titulo'] = titulo;
     if (comunidadId != null) body['comunidadId'] = comunidadId;

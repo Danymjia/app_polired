@@ -31,6 +31,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
     _scrollController.addListener(_onScroll);
     // Save reference now while context is still active.
     _cacheService = context.read<ReadModelCacheService>();
@@ -118,148 +119,136 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
             return post != null && post.isArticle;
           }).toList();
 
-          return NestedScrollView(
+          return CustomScrollView(
             controller: _scrollController,
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverAppBar(
-                  backgroundColor: AppTheme.surfaceContainerLowest,
-                  elevation: 0,
-                  scrolledUnderElevation: 0,
-                  pinned: true,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.onSurface, size: 20),
-                    onPressed: () => context.pop(),
+            slivers: [
+              // ── AppBar ──────────────────────────────────────────────
+              SliverAppBar(
+                backgroundColor: AppTheme.surfaceContainerLowest,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                pinned: true,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.onSurface, size: 20),
+                  onPressed: () => context.pop(),
+                ),
+                title: Text(
+                  info != null ? '@${info.username}' : 'Perfil',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.onSurface,
                   ),
-                  title: Text(
-                    info != null ? '@${info.username}' : 'Perfil',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.onSurface,
-                    ),
-                  ),
-                  centerTitle: true,
-                  actions: [
-                    _isLoadingChat
-                        ? const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppTheme.primary,
-                              ),
+                ),
+                centerTitle: true,
+                actions: [
+                  _isLoadingChat
+                      ? const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primary,
                             ),
-                          )
-                        : IconButton(
-                            icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
-                            onPressed: () async {
-                              if (_isLoadingChat) return;
-                              setState(() => _isLoadingChat = true);
-
-                              final repo = context.read<ConversationsRepository>();
-                              final result = await repo.getOrCreateConversation(widget.userId);
-
-                              if (!mounted || !context.mounted) return;
-                              setState(() => _isLoadingChat = false);
-
-                              if (result.success && result.data != null) {
-                                context.push(
-                                  '/chat/${result.data}',
-                                  extra: {
-                                    'contactId': widget.userId,
-                                    'contactName': info?.nombreCompleto ?? 'Usuario',
-                                    'contactAvatar': info?.fotoPerfil,
-                                  },
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(result.message ?? 'Error al iniciar conversación')),
-                                );
-                              }
-                            },
                           ),
-                  ],
-                ),
-                if (info != null)
-                  SliverToBoxAdapter(
-                    child: PublicProfileHeader(profile: info),
-                  ),
-                SliverToBoxAdapter(
-                  child: Divider(height: 1, thickness: 1, color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
-                ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SliverTabBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      indicatorColor: Colors.black,
-                      labelColor: Colors.black,
-                      unselectedLabelColor: AppTheme.onSurfaceVariant,
-                      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-                      unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
-                      tabs: const [
-                        Tab(
-                          icon: Icon(Icons.grid_on_rounded, size: 20),
-                          text: 'Publicaciones',
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
+                          onPressed: () async {
+                            if (_isLoadingChat) return;
+                            setState(() => _isLoadingChat = true);
+                            final repo = context.read<ConversationsRepository>();
+                            final result = await repo.getOrCreateConversation(widget.userId);
+                            if (!mounted || !context.mounted) return;
+                            setState(() => _isLoadingChat = false);
+                            if (result.success && result.data != null) {
+                              context.push(
+                                '/chat/${result.data}',
+                                extra: {
+                                  'contactId': widget.userId,
+                                  'contactName': info?.nombreCompleto ?? 'Usuario',
+                                  'contactAvatar': info?.fotoPerfil,
+                                },
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(result.message ?? 'Error al iniciar conversación')),
+                              );
+                            }
+                          },
                         ),
-                        Tab(
-                          icon: Icon(Icons.shopping_bag_rounded, size: 20),
-                          text: 'Artículos',
+                ],
+              ),
+
+              // ── Header del perfil ────────────────────────────────────
+              if (info != null)
+                SliverToBoxAdapter(
+                  child: PublicProfileHeader(profile: info),
+                ),
+
+              // ── Divider ──────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+              ),
+
+              // ── TabBar pinned ────────────────────────────────────────
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverTabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: Colors.black,
+                    labelColor: Colors.black,
+                    unselectedLabelColor: AppTheme.onSurfaceVariant,
+                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                    unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                    tabs: const [
+                      Tab(icon: Icon(Icons.grid_on_rounded, size: 20), text: 'Publicaciones'),
+                      Tab(icon: Icon(Icons.shopping_bag_rounded, size: 20), text: 'Artículos'),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Grid del tab activo ──────────────────────────────────
+              if (profileProvider.isLoadingFeed && allIds.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary),
+                  ),
+                )
+              else if (profileProvider.feedError != null && allIds.isEmpty)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          profileProvider.feedError ?? 'Error al cargar feed',
+                          style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () => profileProvider.fetchInitialFeed(),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                          child: const Text('Reintentar'),
                         ),
                       ],
                     ),
                   ),
+                )
+              else
+                PublicProfileGrid(
+                  postIds: _tabController.index == 0 ? publicationIds : articleIds,
+                  isFetchingMore: profileProvider.isLoadingMoreFeed,
                 ),
-              ];
-            },
-            body: profileProvider.isLoadingFeed && allIds.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                : profileProvider.feedError != null && allIds.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              profileProvider.feedError ?? 'Error al cargar feed',
-                              style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
-                            ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: () => profileProvider.fetchInitialFeed(),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : TabBarView(
-                        controller: _tabController,
-                        children: [
-                          CustomScrollView(
-                            key: const PageStorageKey('publications-scroll'),
-                            slivers: [
-                              PublicProfileGrid(
-                                postIds: publicationIds,
-                                scrollController: _scrollController,
-                                isFetchingMore: profileProvider.isLoadingMoreFeed,
-                              ),
-                            ],
-                          ),
-                          CustomScrollView(
-                            key: const PageStorageKey('articles-scroll'),
-                            slivers: [
-                              PublicProfileGrid(
-                                postIds: articleIds,
-                                scrollController: _scrollController,
-                                isFetchingMore: profileProvider.isLoadingMoreFeed,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+            ],
           );
         },
       ),

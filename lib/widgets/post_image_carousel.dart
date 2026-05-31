@@ -1,23 +1,26 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'fullscreen_image_viewer.dart';
 import '../config/theme.dart';
-import 'safe_network_image.dart';
 
 /// Carousel or single image renderer for posts.
 /// Handles multi-image swiping, "1/3" overlay, and blue dot indicators below.
 class PostImageCarousel extends StatefulWidget {
   final List<String> mediaUrls;
   final List<File>? localFiles;
-  final double height;
+  final double aspectRatio;
   final BorderRadius? borderRadius;
+  final VoidCallback? onTap;
 
   const PostImageCarousel({
     super.key,
     required this.mediaUrls,
     this.localFiles,
-    this.height = 320,
+    this.aspectRatio = 1.0,
     this.borderRadius,
+    this.onTap,
   });
 
   @override
@@ -36,52 +39,68 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
 
     Widget content;
     if (_itemCount == 1) {
-      content = _hasLocalFiles 
-        ? _buildLocalImage(widget.localFiles!.first)
-        : _buildImage(widget.mediaUrls.first);
+      content = GestureDetector(
+        onTap: widget.onTap ?? () {
+          if (!_hasLocalFiles) {
+            FullscreenImageViewer.show(context, widget.mediaUrls, initialIndex: 0);
+          }
+        },
+        child: AspectRatio(
+          aspectRatio: widget.aspectRatio,
+          child: _hasLocalFiles 
+            ? _buildLocalImage(widget.localFiles!.first)
+            : _buildImage(widget.mediaUrls.first),
+        ),
+      );
     } else {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: widget.height,
-            child: Stack(
-              children: [
-                PageView.builder(
-                  itemCount: _itemCount,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    return _hasLocalFiles 
-                      ? _buildLocalImage(widget.localFiles![index])
-                      : _buildImage(widget.mediaUrls[index]);
-                  },
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${_currentIndex + 1}/$_itemCount',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
+      content = GestureDetector(
+        onTap: widget.onTap ?? () {
+          if (!_hasLocalFiles) {
+            FullscreenImageViewer.show(context, widget.mediaUrls, initialIndex: _currentIndex);
+          }
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              aspectRatio: widget.aspectRatio,
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    itemCount: _itemCount,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return _hasLocalFiles 
+                        ? _buildLocalImage(widget.localFiles![index])
+                        : _buildImage(widget.mediaUrls[index]);
+                    },
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${_currentIndex + 1}/$_itemCount',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -101,7 +120,8 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
             }),
           ),
         ],
-      );
+      ),
+    );
     }
 
     if (widget.borderRadius != null) {
@@ -121,13 +141,17 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
   }
 
   Widget _buildImage(String url) {
-    return SafeNetworkImage(
-      url: url,
+    return CachedNetworkImage(
+      imageUrl: url,
       width: double.infinity,
-      height: widget.height,
       fit: BoxFit.cover,
-      errorWidget: Container(
-        height: widget.height,
+      placeholder: (context, url) => Container(
+        color: AppTheme.surfaceContainer,
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.primary),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
         color: AppTheme.surfaceContainer,
         child: const Center(
           child: Icon(
@@ -144,10 +168,8 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
     return Image.file(
       file,
       width: double.infinity,
-      height: widget.height,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
-        height: widget.height,
         color: AppTheme.surfaceContainer,
         child: const Center(
           child: Icon(

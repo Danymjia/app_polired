@@ -58,64 +58,72 @@ class _LikesBottomSheetState extends State<LikesBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.5,
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-      ),
-      child: Column(
-        children: [
-          // Modal Header
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 0),
-            child: Column(
-              children: [
-                // Handle Bar
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(bottom: 16),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: AppTheme.surfaceContainer,
-                        width: 1,
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Modal Header
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 0),
+                child: Column(
+                  children: [
+                    // Handle Bar
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-                  ),
-                  child: Text(
-                    'Me gusta',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
-                      color: AppTheme.onSurface,
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(bottom: 16),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: AppTheme.surfaceContainer,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Me gusta',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                          color: AppTheme.onSurface,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              
+              Flexible(
+                child: _buildContent(scrollController),
+              ),
+            ],
           ),
-          
-          Expanded(
-            child: _buildContent(),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(ScrollController scrollController) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.primary),
@@ -180,6 +188,7 @@ class _LikesBottomSheetState extends State<LikesBottomSheet> {
     }
 
     return ListView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: 32),
       itemCount: _likes.length,
       itemBuilder: (context, index) {

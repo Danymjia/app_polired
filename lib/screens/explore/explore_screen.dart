@@ -209,7 +209,12 @@ class _ExploreFeedListState extends State<ExploreFeedList>
             ),
           ),
           _CategoryFeedBuilder(category: widget.category.toLowerCase()),
-          SliverToBoxAdapter(child: const SizedBox(height: 32)),
+          SliverPadding(
+            padding: EdgeInsets.only(
+              bottom: kBottomNavigationBarHeight +
+                      MediaQuery.of(context).padding.bottom,
+            ),
+          ),
         ],
       ),
     );

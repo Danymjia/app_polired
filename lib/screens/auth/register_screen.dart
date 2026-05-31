@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../config/spacing.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/core/base_screen.dart';
+import '../../widgets/core/keyboard_aware_layout.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/polired_logo.dart';
 import '../../widgets/primary_button.dart';
@@ -107,16 +110,21 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Fondo ligeramente gris como en el HTML (canvas-bg: #f9f9f9)
+    return BaseScreen(
+      safeAreaTop: true,
+      safeAreaBottom: true,
+      resizeToAvoidBottomInset: true,
+      dismissKeyboardOnTap: true,
       backgroundColor: const Color(0xFFF9F9F9),
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Center(
-              child: ConstrainedBox(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: KeyboardAwareLayout(
+          child: Column(
+            children: [
+              const SizedBox(height: AppSpacing.lg),
+              
+              // ── Contenido central ────────────────────────────────────
+              ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 350),
                 child: Column(
                   children: [
@@ -133,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         children: [
                           // Logo
                           const PoliredLogo(size: 80),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.md),
                           // Título
                           Text(
                             'Polired',
@@ -144,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               letterSpacing: -0.04 * 28,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.sm),
                           Text(
                             'Únete al círculo académico exclusivo.',
                             style: GoogleFonts.inter(
@@ -154,7 +162,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: AppSpacing.lg),
 
                           // ── Formulario ───────────────────────────────────
                           Form(
@@ -168,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   textInputAction: TextInputAction.next,
                                   validator: (v) => Validators.name(v, 'El nombre'),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.sm),
                                 // Apellido
                                 AppTextField(
                                   hint: 'Apellido',
@@ -177,7 +185,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   validator: (v) => Validators.name(v, 'El apellido'),
                                 ),
 
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.sm),
                                 // Email
                                 AppTextField(
                                   hint: 'Correo universitario',
@@ -186,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   textInputAction: TextInputAction.next,
                                   validator: Validators.email,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.sm),
                                 // Contraseña
                                 AppTextField(
                                   hint: 'Contraseña',
@@ -195,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   textInputAction: TextInputAction.next,
                                   validator: Validators.strongPassword,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.sm),
                                 // Confirmar contraseña
                                 AppTextField(
                                   hint: 'Confirmar contraseña',
@@ -205,7 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   validator: (v) => Validators.confirmPassword(v, _passCtrl.text),
                                 ),
 
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.sm),
 
                                 // ── Texto legal ──────────────────────────
                                 Text.rich(
@@ -266,7 +274,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   textAlign: TextAlign.center,
                                 ),
 
-                                const SizedBox(height: 16),
+                                const SizedBox(height: AppSpacing.md),
 
                                 // ── Botón registrarse ─────────────────────
                                 PrimaryButton(
@@ -281,7 +289,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // ── Tarjeta secundaria: "¿Ya tienes cuenta?" ────────────
                     Container(
@@ -318,23 +326,25 @@ class _RegisterScreenState extends State<RegisterScreen>
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 40),
-
-                    // ── Footer copyright ────────────────────────────────────
-                    Text(
-                      '@2026 POLIRED PARA LA POLITECNICA',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: AppTheme.outline,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-            ),
+
+              const Expanded(child: SizedBox()), // empuja footer al fondo
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // ── Footer copyright ────────────────────────────────────
+              Text(
+                '@2026 POLIRED PARA LA POLITECNICA',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: AppTheme.outline,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
           ),
         ),
       ),

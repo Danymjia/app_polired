@@ -6,6 +6,7 @@ import '../../models/post_model.dart';
 import '../../providers/post_store_provider.dart';
 import '../../services/post_service.dart';
 import '../../widgets/post_card.dart';
+import '../../widgets/core/base_screen.dart';
 
 class SavedPostsScreen extends StatefulWidget {
   const SavedPostsScreen({super.key});
@@ -75,7 +76,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
       return post != null && post.saved;
     }).toList();
 
-    return Scaffold(
+    return BaseScreen(
       backgroundColor: AppTheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -121,31 +122,32 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     }
 
     if (_errorMessage != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      return Column(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _fetchSavedPosts,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    minimumSize: const Size(120, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
                   ),
-                  child: const Text('Reintentar', style: TextStyle(fontSize: 13)),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchSavedPosts,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      minimumSize: const Size(120, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
+                    child: const Text('Reintentar', style: TextStyle(fontSize: 13)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -153,46 +155,47 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     }
 
     if (activeSavedPostIds.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      return Column(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceContainerLow,
-                    shape: BoxShape.circle,
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.bookmark_outline,
+                      size: 32,
+                      color: AppTheme.outline,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.bookmark_outline,
-                    size: 32,
-                    color: AppTheme.outline,
+                  const SizedBox(height: 16),
+                  Text(
+                    'No tienes publicaciones guardadas',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.onSurface,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No tienes publicaciones guardadas',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.onSurface,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Las publicaciones que guardes aparecerán aquí.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Las publicaciones que guardes aparecerán aquí.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -200,9 +203,14 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     }
 
     return ListView.builder(
-      itemCount: activeSavedPostIds.length,
+      itemCount: activeSavedPostIds.length + 1,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemBuilder: (context, index) {
+        if (index == activeSavedPostIds.length) {
+          return SizedBox(
+            height: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom,
+          );
+        }
         final postId = activeSavedPostIds[index];
         return Builder(
           builder: (context) {

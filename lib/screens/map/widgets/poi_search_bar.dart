@@ -113,11 +113,13 @@ class _PoiSearchBarState extends State<PoiSearchBar> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: results.length > 6 ? 6 : results.length,
-          separatorBuilder: (_, _) => Divider(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 300),
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: results.length,
+            separatorBuilder: (_, _) => Divider(
             height: 1,
             color: Colors.grey.shade100,
           ),
@@ -151,6 +153,7 @@ class _PoiSearchBarState extends State<PoiSearchBar> {
               },
             );
           },
+        ),
         ),
       ),
     );

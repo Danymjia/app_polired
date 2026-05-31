@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
 import '../providers/post_store_provider.dart';
-import 'safe_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// A **Sliver** widget that renders a grid of posts.
 /// Must be placed directly inside a [CustomScrollView]'s [slivers] list.
@@ -54,9 +54,9 @@ class PublicProfileGrid extends StatelessWidget {
         SliverGrid.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 1,
-            crossAxisSpacing: 1,
-            childAspectRatio: 0.7,
+            mainAxisSpacing: 1.5,
+            crossAxisSpacing: 1.5,
+            childAspectRatio: 0.8, // ← más alto que ancho, como Instagram
           ),
           itemCount: postIds.length,
           itemBuilder: (context, index) => _GridCell(postId: postIds[index]),
@@ -117,11 +117,20 @@ class _GridCell extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (post.hasImage && post.mediaUrls.isNotEmpty)
-              Transform.scale(
-                scale: 1.15,
-                child: SafeNetworkImage(
-                  url: post.mediaUrls.first,
+              ClipRect(
+                child: CachedNetworkImage(
+                  imageUrl: post.mediaUrls.first,
                   fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  memCacheWidth: 300,
+                  placeholder: (context, url) => Container(
+                    color: AppTheme.surfaceContainerLow,
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppTheme.surfaceContainerLow,
+                    child: const Icon(Icons.broken_image_outlined, color: AppTheme.onSurfaceVariant),
+                  ),
                 ),
               )
             else

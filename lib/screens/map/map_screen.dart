@@ -10,6 +10,7 @@ import 'widgets/poi_detail_sheet.dart';
 import 'widgets/poi_directory_sheet.dart';
 import 'dart:convert';
 import 'utils/campus_polygon.dart';
+import '../../widgets/core/base_screen.dart';
 
 // Centro del campus EPN
 final _campusCenter = Point(coordinates: Position(-78.4900, -0.2107));
@@ -79,7 +80,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     // Solo rotar cuando hay un marcador seleccionado
     if (context.read<MapProvider>().selectedPoi == null) return;
 
-    _currentBearing += 0.05;
+    _currentBearing += 0.08;
     if (_currentBearing >= 360) _currentBearing -= 360;
 
     _mapboxMap!.setCamera(CameraOptions(bearing: _currentBearing));
@@ -102,8 +103,12 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BaseScreen(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
+      safeAreaTop: false,
+      safeAreaBottom: false,
+      dismissKeyboardOnTap: true,
       body: Stack(
         children: [
           // MAPA BASE

@@ -23,6 +23,7 @@ class PostModel {
   final String tipoContenido; // 'texto' | 'imagen'
   final String categoria; // 'comunidad' | 'noticias' | 'venta' | 'cursos'
   final List<String> mediaUrls;
+  final double aspectRatio;
 
   // Artículo / marketplace
   final dynamic precio;
@@ -52,6 +53,7 @@ class PostModel {
     required this.tipoContenido,
     required this.categoria,
     required this.mediaUrls,
+    this.aspectRatio = 1.0,
     this.precio,
     required this.likesCount,
     required this.commentsCount,
@@ -74,6 +76,7 @@ class PostModel {
     String? tipoContenido,
     String? categoria,
     List<String>? mediaUrls,
+    double? aspectRatio,
     dynamic precio,
     int? likesCount,
     int? commentsCount,
@@ -95,6 +98,7 @@ class PostModel {
       tipoContenido: tipoContenido ?? this.tipoContenido,
       categoria: categoria ?? this.categoria,
       mediaUrls: mediaUrls ?? this.mediaUrls,
+      aspectRatio: aspectRatio ?? this.aspectRatio,
       precio: precio ?? this.precio,
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
@@ -177,6 +181,7 @@ class PostModel {
       tipoContenido: tipoContenido,
       categoria: categoria,
       mediaUrls: mediaUrls,
+      aspectRatio: (json['aspectRatio'] as num?)?.toDouble() ?? 1.0,
       precio: precio,
       likesCount: _parseInt(json['likesCount'] ?? json['likes'] ?? 0),
       commentsCount: _parseInt(json['commentsCount'] ?? json['comentarios'] ?? 0),
@@ -288,9 +293,10 @@ class PostModel {
         likedByMe == other.likedByMe &&
         savedByMe == other.savedByMe &&
         likesCount == other.likesCount &&
-        commentsCount == other.commentsCount;
+        commentsCount == other.commentsCount &&
+        aspectRatio == other.aspectRatio;
   }
 
   @override
-  int get hashCode => Object.hash(id, likedByMe, savedByMe, likesCount, commentsCount);
+  int get hashCode => Object.hash(id, likedByMe, savedByMe, likesCount, commentsCount, aspectRatio);
 }

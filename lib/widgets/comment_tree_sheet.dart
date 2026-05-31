@@ -4,6 +4,8 @@ import '../config/theme.dart';
 import '../services/post_service.dart';
 import '../providers/post_store_provider.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'safe_network_image.dart';
 
 // ────────────────────────────────────────────────────────
 // Lightweight data models for in-memory use only
@@ -12,7 +14,8 @@ import 'package:provider/provider.dart';
 class _CommentAuthor {
   final String displayName;
   final String username;
-  _CommentAuthor({required this.displayName, required this.username});
+  final String? imageUrl;
+  _CommentAuthor({required this.displayName, required this.username, this.imageUrl});
 }
 
 class _FlatReply {
@@ -62,9 +65,11 @@ _CommentAuthor _parseAuthor(dynamic userId) {
   final apellido = (userId['apellido'] ?? '').toString().trim();
   final username = (userId['username'] ?? '').toString().trim();
   final displayName = '$nombre $apellido'.trim();
+  final fotoPerfil = userId['fotoPerfil']?.toString();
   return _CommentAuthor(
     displayName: displayName.isNotEmpty ? displayName : 'Usuario',
     username: username.isNotEmpty ? username : (displayName.isNotEmpty ? displayName : 'usuario'),
+    imageUrl: fotoPerfil,
   );
 }
 
@@ -274,56 +279,68 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.5,
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
-        children: [
-          // Handle
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 4),
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.outlineVariant,
-                borderRadius: BorderRadius.circular(4),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              'Comentarios',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.onSurface,
-                letterSpacing: -0.4,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Comentarios',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.onSurface,
+                  letterSpacing: -0.4,
+                ),
               ),
             ),
-          ),
-          const Divider(height: 1, thickness: 1, color: AppTheme.surfaceContainerHigh),
+            const Divider(height: 1, thickness: 1, color: AppTheme.surfaceContainerHigh),
 
-          // List
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                : _comments.isEmpty
-                    ? _buildEmpty()
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(top: 8, bottom: 16),
-                        itemCount: _comments.length,
-                        itemBuilder: (ctx, i) => _buildRootComment(_comments[i]),
+            // List
+            Flexible(
+              child: _isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [CircularProgressIndicator(color: AppTheme.primary)],
                       ),
-          ),
+                    )
+                  : _comments.isEmpty
+                      ? _buildEmpty()
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(top: 8, bottom: 16),
+                          itemCount: _comments.length,
+                          itemBuilder: (ctx, i) => _buildRootComment(_comments[i]),
+                        ),
+            ),
 
-          // Input
-          _buildInput(),
-        ],
+            // Input
+            _buildInput(),
+          ],
+        ),
       ),
     );
   }
@@ -331,8 +348,10 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
   // ── Empty state ───────────────────────────────────────
 
   Widget _buildEmpty() {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.outline),
@@ -362,7 +381,7 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _avatar(radius: 18),
+              _avatar(radius: 18, imageUrl: c.author.imageUrl, name: c.author.displayName),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -428,7 +447,7 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _avatar(radius: 14),
+          _avatar(radius: 14, imageUrl: reply.author.imageUrl, name: reply.author.displayName),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -488,11 +507,17 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
 
   // ── Shared sub-widgets ────────────────────────────────
 
-  Widget _avatar({required double radius}) {
-    return CircleAvatar(
-      radius: radius,
+  Widget _avatar({required double radius, String? imageUrl, required String name}) {
+    return CircularNetworkAvatar(
+      imageUrl: imageUrl,
+      initials: name.isNotEmpty ? name[0].toUpperCase() : '?',
+      size: radius * 2,
       backgroundColor: AppTheme.surfaceContainerHighest,
-      child: Icon(Icons.person, size: radius * 1.2, color: AppTheme.onSurfaceVariant),
+      initialsStyle: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: radius * 0.8,
+      ),
     );
   }
 
@@ -570,10 +595,18 @@ class _CommentTreeSheetState extends State<CommentTreeSheet> {
             ),
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppTheme.surfaceContainerHighest,
-                child: Icon(Icons.person, color: AppTheme.onSurfaceVariant, size: 20),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) => CircularNetworkAvatar(
+                  imageUrl: auth.user?.fotoPerfil,
+                  initials: (auth.user?.nombre.isNotEmpty ?? false) ? auth.user!.nombre[0].toUpperCase() : '?',
+                  size: 36,
+                  backgroundColor: AppTheme.surfaceContainerHighest,
+                  initialsStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

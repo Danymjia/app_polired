@@ -197,6 +197,12 @@ class HomeScreenState extends State<HomeScreen> {
               child: _NetworkStoriesSection(provider: networkProvider),
             ),
             ..._buildFeedContent(context, networkProvider, joinedNetworks),
+            SliverPadding(
+              padding: EdgeInsets.only(
+                bottom: kBottomNavigationBarHeight +
+                        MediaQuery.of(context).padding.bottom,
+              ),
+            ),
           ],
         ),
       ),
@@ -337,13 +343,9 @@ class _HomeFeedBatchList extends StatelessWidget {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          final isLast = index == posts.length - 1;
-          return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 80.0 : 0),
-            child: CommunityPostCard(
-              key: ValueKey(posts[index].id),
-              post: posts[index],
-            ),
+          return CommunityPostCard(
+            key: ValueKey(posts[index].id),
+            post: posts[index],
           );
         },
         childCount: posts.length,

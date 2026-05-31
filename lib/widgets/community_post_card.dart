@@ -120,7 +120,11 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
           ),
 
           // ── Imagen ────────────────────────────────────────────────────────
-          PostImageCarousel(mediaUrls: post.mediaUrls),
+          if (post.mediaUrls.isNotEmpty)
+            PostImageCarousel(
+              mediaUrls: post.mediaUrls,
+              aspectRatio: post.aspectRatio,
+            ),
 
           // ── Acciones ──────────────────────────────────────────────────────
           _buildActions(context, post),
@@ -228,8 +232,6 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
           if (post.displayContent.isNotEmpty)
             _PostContentText(post: post),
 
-          const SizedBox(height: 12),
-
           // ── Acciones ──────────────────────────────────────────────────────
           _buildActions(context, post, padding: EdgeInsets.zero),
         ],
@@ -262,6 +264,7 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
             onTap: () => showModalBottomSheet(
               context: context,
               isScrollControlled: true,
+              useRootNavigator: true,
               backgroundColor: Colors.transparent,
               builder: (_) => LikesBottomSheet(postId: post.id),
             ),
@@ -278,6 +281,7 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
             onTap: () => showModalBottomSheet(
               context: context,
               isScrollControlled: true,
+              useRootNavigator: true,
               backgroundColor: Colors.transparent,
               builder: (_) => CommentTreeSheet(postId: post.id),
             ),

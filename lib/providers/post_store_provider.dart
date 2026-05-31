@@ -71,14 +71,41 @@ class PostStoreProvider extends ChangeNotifier {
     return (_lastSequenceNumber[context] ?? -1) + 1;
   }
 
+  String _normalizeId(String id) => id.split(':').last;
+
   // ─── Hidratación Social Base ───────────────────────────────────────────────
   void setSocialHydration(List<String> likedIds, List<String> savedIds) {
+    debugPrint('--- SOCIAL HYDRATION LOGS ---');
+    debugPrint('Liked IDs from backend: $likedIds');
+    debugPrint('Saved IDs from backend: $savedIds');
+    debugPrint('Posts currently in store keys: ${_postsById.keys.take(5).toList()}...');
+
     _likedPostIds.clear();
     _savedPostIds.clear();
-    _likedPostIds.addAll(likedIds);
-    _savedPostIds.addAll(savedIds);
+    _likedPostIds.addAll(likedIds.map(_normalizeId));
+    _savedPostIds.addAll(savedIds.map(_normalizeId));
     _isSocialStateInitialized = true;
     _globalVersion++;
+    
+    // Fix Timing: Update posts already in memory that missed hydration
+    bool changed = false;
+    for (final post in _postsById.values) {
+      final normId = _normalizeId(post.id);
+      final isLiked = _likedPostIds.contains(normId);
+      final isSaved = _savedPostIds.contains(normId);
+      
+      if (post.likedByMe != isLiked || post.savedByMe != isSaved) {
+        _postsById[post.id] = post.copyWith(likedByMe: isLiked, savedByMe: isSaved);
+        changed = true;
+      }
+    }
+    
+    if (changed) {
+      for (final context in _contextVersion.keys) {
+        _contextVersion[context] = (_contextVersion[context] ?? 0) + 1;
+      }
+    }
+
     notifyListeners();
   }
 
@@ -134,8 +161,8 @@ class PostStoreProvider extends ChangeNotifier {
     
     _postsById.remove(event.postId);
     _contextIndex[event.context]?.remove(event.postId);
-    _likedPostIds.remove(event.postId);
-    _savedPostIds.remove(event.postId);
+    _likedPostIds.remove(_normalizeId(event.postId));
+    _savedPostIds.remove(_normalizeId(event.postId));
     _bumpVersion(event.context);
     notifyListeners();
   }
@@ -173,14 +200,14 @@ class PostStoreProvider extends ChangeNotifier {
           commentsCount: event.commentCount,
         );
         if (event.liked) {
-          _likedPostIds.add(event.postId);
+          _likedPostIds.add(_normalizeId(event.postId));
         } else {
-          _likedPostIds.remove(event.postId);
+          _likedPostIds.remove(_normalizeId(event.postId));
         }
         if (event.saved) {
-          _savedPostIds.add(event.postId);
+          _savedPostIds.add(_normalizeId(event.postId));
         } else {
-          _savedPostIds.remove(event.postId);
+          _savedPostIds.remove(_normalizeId(event.postId));
         }
         _globalVersion++;
         
@@ -200,9 +227,10 @@ class PostStoreProvider extends ChangeNotifier {
     bool changed = false;
     for (final post in posts) {
       if (post.id.isEmpty) continue;
+      final normId = _normalizeId(post.id);
       _postsById[post.id] = post.copyWith(
-        likedByMe: _likedPostIds.contains(post.id) || post.likedByMe,
-        savedByMe: _savedPostIds.contains(post.id) || post.savedByMe,
+        likedByMe: _likedPostIds.contains(normId) || post.likedByMe,
+        savedByMe: _savedPostIds.contains(normId) || post.savedByMe,
       );
       
       if (context != null) {

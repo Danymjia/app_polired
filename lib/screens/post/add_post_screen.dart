@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 import '../../config/theme.dart';
 import '../../services/command_bus.dart';
@@ -14,6 +15,8 @@ import '../../providers/auth_provider.dart';
 import '../../models/network_story_model.dart';
 import '../../widgets/post_image_carousel.dart';
 import '../../providers/my_profile_feed_provider.dart';
+
+enum CustomCropRatio { ratio4x5, ratio4x3, square }
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -40,6 +43,17 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
   final List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
+  double _postAspectRatio = 1.0;
+
+  double _clampAspectRatio(double ratio) {
+    return ratio.clamp(0.8, 1.91);
+  }
+
+  CustomCropRatio _guessPreset(double ratio) {
+    if (ratio <= 0.85) return CustomCropRatio.ratio4x5; // 4:5
+    if (ratio >= 1.4) return CustomCropRatio.ratio4x3;
+    return CustomCropRatio.square;
+  }
 
   Future<void> _pickImages() async {
     if (_selectedImages.length >= 3) {
@@ -56,28 +70,89 @@ class _AddPostScreenState extends State<AddPostScreen> {
     try {
       final pickedFiles = await _picker.pickMultiImage(
         imageQuality: 85,
-        maxWidth: 1440,
-        maxHeight: 1440,
       );
 
       if (pickedFiles.isEmpty) return;
 
       final availableSlots = 3 - _selectedImages.length;
-      final filesToProcess = pickedFiles.take(availableSlots).map((xfile) => File(xfile.path)).toList();
+      final filesToProcess = pickedFiles.take(availableSlots).toList();
 
-      // Se elimina setState de _statusMessage = 'Comprimiendo...'
+      final croppedFiles = <File>[];
+      CropAspectRatioPreset? cropPreset;
+      CropAspectRatio? fixedRatio;
+      CustomCropRatio? selectedCustomRatio;
 
+      for (final xFile in filesToProcess) {
+        if (selectedCustomRatio == CustomCropRatio.ratio4x5) {
+          fixedRatio = const CropAspectRatio(ratioX: 4, ratioY: 5);
+          cropPreset = null;
+        } else if (selectedCustomRatio == CustomCropRatio.ratio4x3) {
+          fixedRatio = const CropAspectRatio(ratioX: 4, ratioY: 3);
+          cropPreset = CropAspectRatioPreset.ratio4x3;
+        } else if (selectedCustomRatio == CustomCropRatio.square) {
+          fixedRatio = const CropAspectRatio(ratioX: 1, ratioY: 1);
+          cropPreset = CropAspectRatioPreset.square;
+        }
 
-      final compressedFiles = await Future.wait(filesToProcess.map((originalFile) async {
-        final compressed = await compressPostImageFile(originalFile);
-        return compressed ?? originalFile;
-      }));
+        final cropped = await ImageCropper().cropImage(
+          sourcePath: xFile.path,
+          aspectRatio: fixedRatio,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Ajustar imagen',
+              toolbarColor: Colors.black,
+              toolbarWidgetColor: Colors.white,
+              lockAspectRatio: fixedRatio != null,
+              initAspectRatio: cropPreset ?? CropAspectRatioPreset.square,
+              hideBottomControls: false,
+              aspectRatioPresets: cropPreset != null
+                  ? [cropPreset]
+                  : [
+                      CropAspectRatioPreset.square,
+                      CropAspectRatioPreset.ratio4x3,
+                    ],
+            ),
+            IOSUiSettings(
+              title: 'Ajustar imagen',
+              aspectRatioLockEnabled: fixedRatio != null,
+              resetAspectRatioEnabled: fixedRatio == null,
+              aspectRatioPresets: cropPreset != null
+                  ? [cropPreset]
+                  : [
+                      CropAspectRatioPreset.square,
+                      CropAspectRatioPreset.ratio4x3,
+                    ],
+            ),
+          ],
+        );
+
+        if (cropped == null) continue;
+
+        if (selectedCustomRatio == null) {
+          final decoded = await decodeImageFromList(
+            await File(cropped.path).readAsBytes(),
+          );
+          final w = decoded.width.toDouble();
+          final h = decoded.height.toDouble();
+          _postAspectRatio = _clampAspectRatio(w / h);
+          selectedCustomRatio = _guessPreset(_postAspectRatio);
+        }
+
+        final compressed = await compressPostImageFile(File(cropped.path));
+        if (compressed != null) {
+          croppedFiles.add(compressed);
+        } else {
+          croppedFiles.add(File(cropped.path));
+        }
+      }
 
       if (!mounted) return;
 
-      setState(() {
-        _selectedImages.addAll(compressedFiles);
-      });
+      if (croppedFiles.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(croppedFiles);
+        });
+      }
     } catch (e, stack) {
       debugPrint('[AddPostScreen] Error al preparar imágenes: $e\n$stack');
       if (mounted) {
@@ -165,6 +240,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
         networkName: _selectedNetwork?.name,
         imageFiles: _selectedImages.isNotEmpty ? _selectedImages : null,
         price: _isFree ? 0.0 : (double.tryParse(_priceController.text.trim()) ?? 0.0),
+        aspectRatio: _postAspectRatio,
       );
 
       final result = await commandBus.dispatch(command);
@@ -284,6 +360,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                             PostImageCarousel(
                               localFiles: _selectedImages,
                               mediaUrls: const [],
+                              aspectRatio: _postAspectRatio,
                               borderRadius: BorderRadius.circular(16),
                             ),
                             const SizedBox(height: 16),

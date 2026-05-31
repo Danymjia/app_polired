@@ -6,6 +6,7 @@ import '../../models/post_model.dart';
 import '../../providers/post_store_provider.dart';
 import '../../services/post_service.dart';
 import '../../widgets/post_card.dart';
+import '../../widgets/core/base_screen.dart';
 
 class LikedPostsScreen extends StatefulWidget {
   const LikedPostsScreen({super.key});
@@ -122,7 +123,7 @@ class _LikedPostsScreenState extends State<LikedPostsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BaseScreen(
       backgroundColor: AppTheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -168,31 +169,32 @@ class _LikedPostsScreenState extends State<LikedPostsScreen> {
     }
 
     if (_errorMessage != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      return Column(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _fetchLikedPosts(isInitial: true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    minimumSize: const Size(120, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
                   ),
-                  child: const Text('Reintentar', style: TextStyle(fontSize: 13)),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => _fetchLikedPosts(isInitial: true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      minimumSize: const Size(120, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
+                    child: const Text('Reintentar', style: TextStyle(fontSize: 13)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -206,46 +208,47 @@ class _LikedPostsScreenState extends State<LikedPostsScreen> {
     }).toList();
 
     if (activeLikedPostIds.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      return Column(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceContainerLow,
-                    shape: BoxShape.circle,
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceContainerLow,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.favorite_border,
+                      size: 32,
+                      color: AppTheme.outline,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.favorite_border,
-                    size: 32,
-                    color: AppTheme.outline,
+                  const SizedBox(height: 16),
+                  Text(
+                    'No tienes publicaciones con me gusta',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.onSurface,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No tienes publicaciones con me gusta',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.onSurface,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Las publicaciones a las que des me gusta aparecerán aquí.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Las publicaciones a las que des me gusta aparecerán aquí.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -254,9 +257,15 @@ class _LikedPostsScreenState extends State<LikedPostsScreen> {
 
     return ListView.builder(
       controller: _scrollController,
-      itemCount: activeLikedPostIds.length + (_hasMore ? 1 : 0),
+      itemCount: activeLikedPostIds.length + (_hasMore ? 1 : 0) + 1,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemBuilder: (context, index) {
+        if (index == activeLikedPostIds.length + (_hasMore ? 1 : 0)) {
+          return SizedBox(
+            height: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom,
+          );
+        }
+
         if (index == activeLikedPostIds.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0),

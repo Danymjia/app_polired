@@ -32,6 +32,7 @@ class CreatePostCommandHandler extends CommandHandler<CreatePostCommand> {
               comunidadId: command.networkId,
               tipoContenido: command.postType,
               imageFiles: command.imageFiles,
+              aspectRatio: command.aspectRatio,
             )
           : (command.postType == 'imagen'
               ? await _postService.createPost(
@@ -41,6 +42,7 @@ class CreatePostCommandHandler extends CommandHandler<CreatePostCommand> {
                   titulo: command.title,
                   comunidadId: command.networkId,
                   imageFiles: command.imageFiles,
+                  aspectRatio: command.aspectRatio,
                 )
               : await _postService.createPost(
                   feedContext: backendFeedContext,

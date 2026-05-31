@@ -69,29 +69,27 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  child: Column(
-                    children: [
-                      // Handle
-                      Center(
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 10, bottom: 6),
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                child: Column(
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 10, bottom: 6),
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
+                    ),
   
-                      if (_selectedCategory == null)
-                        _buildLevel1()
-                      else
-                        _buildLevel2(context),
-                    ],
-                  ),
+                    Expanded(
+                      child: _selectedCategory == null
+                          ? _buildLevel1(scrollController)
+                          : _buildLevel2(context, scrollController),
+                    ),
+                  ],
                 ),
               );
             },
@@ -102,7 +100,7 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
   );
 }
 
-  Widget _buildLevel1() {
+  Widget _buildLevel1(ScrollController controller) {
     final categories = [
       PoiCategory.academic,
       PoiCategory.services,
@@ -132,10 +130,10 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
             ],
           ),
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        Expanded(
+          child: GridView.builder(
+            controller: controller,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
@@ -176,11 +174,12 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
                 );
               },
             ),
+          ),
         ],
       );
   }
 
-  Widget _buildLevel2(BuildContext context) {
+  Widget _buildLevel2(BuildContext context, ScrollController controller) {
     final mapProvider = context.watch<MapProvider>();
     final pois = mapProvider.poiByCategory[_selectedCategory] ?? [];
 
@@ -208,10 +207,10 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
             ],
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 24),
+        Expanded(
+          child: ListView.builder(
+            controller: controller,
+            padding: const EdgeInsets.only(bottom: 24),
               itemCount: pois.length,
               itemBuilder: (context, index) {
                 final poi = pois[index];
@@ -240,6 +239,7 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
                 );
               },
             ),
+          ),
         ],
       );
   }

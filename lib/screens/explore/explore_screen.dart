@@ -15,6 +15,21 @@ import 'widgets/explore_loading.dart';
 import '../../widgets/global_post_card.dart';
 import 'widgets/explore_tabs.dart';
 
+/// Responsabilidad principal:
+/// Pantalla de Exploración Global con soporte para múltiples Tabs (Noticias, Marketplace, Cursos).
+///
+/// Flujo dentro de la app:
+/// Utiliza un `IndexedStack` interno para mantener vivos los estados de cada Tab. Cuando el usuario hace scroll vertical en un tab, solicita más páginas de su categoría respectiva a `GlobalFeedProvider.loadMore()`.
+///
+/// Dependencias críticas:
+/// - `GlobalFeedProvider` (Paginación y manejo del estado de error/carga por categoría).
+/// - `FeedProvider` (Resolución reactiva masiva de los PostModel mediante CQRS).
+///
+/// Side Effects:
+/// - Memory Retention: Usa `AutomaticKeepAliveClientMixin` en las listas hijas, por lo que las tres listas permanecen activas en memoria simultáneamente.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Múltiples ScrollControllers: El `NavigationService` inyecta 4 controladores distintos (1 global y 3 por categoría). Si la limpieza en `dispose()` falla, causará colisiones de nombres en el diccionario global.
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
 

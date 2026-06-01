@@ -13,6 +13,21 @@ import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
 import '../providers/post_store_provider.dart';
 
+/// Responsabilidad principal:
+/// Renderizar una tarjeta de publicación para el feed Home (Mi Red). Soporta contenido mixto (texto o imágenes).
+///
+/// Flujo dentro de la app:
+/// Actúa como un suscriptor de CQRS local. Recibe un `PostModel` base como parámetro, pero se envuelve en `context.select<PostStoreProvider>` para escuchar mutaciones (likes, deletes) en tiempo real sin reconstruir toda la lista (List View).
+///
+/// Dependencias críticas:
+/// - `PostStoreProvider` (Caché local de entidades).
+/// - `CommandBus` (Despacho de `ToggleLikeCommand` y `ToggleSaveCommand`).
+///
+/// Side Effects:
+/// - Renderizado Aislado: El redibujado se auto-limita a este nodo en el árbol de widgets.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Interfaz Optimista: Los botones de interacción NO bloquean el UI ni esperan al Backend. Despachan un Comando y asumen que `PostStoreProvider` actualizará el estado instantáneamente.
 class PostCard extends StatefulWidget {
   final PostModel post;
 

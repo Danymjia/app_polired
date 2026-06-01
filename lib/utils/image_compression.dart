@@ -11,6 +11,20 @@ String _formatBytes(int bytes) {
   return '${size.toStringAsFixed(1)} ${suffixes[i]}';
 }
 
+/// Responsabilidad principal:
+/// Proveer funciones asíncronas para comprimir y reducir las dimensiones de imágenes antes de subirlas al backend.
+///
+/// Flujo dentro de la app:
+/// Usado en la creación de posts (`CreatePostCommandHandler` / pantallas de post) y actualización de avatares.
+///
+/// Dependencias críticas:
+/// - flutter_image_compress
+///
+/// Side Effects:
+/// - E/S de Archivos (File I/O): Escribe nuevos archivos comprimidos temporalmente en `Directory.systemTemp`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fugas de disco: Los archivos temporales creados (`tempDir.path`) deberían ser borrados manualmente tras la subida exitosa. Actualmente delegan al OS.
 Future<File?> compressImageFile(
   File inputFile, {
   required int maxWidth,

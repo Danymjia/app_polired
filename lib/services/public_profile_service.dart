@@ -2,6 +2,20 @@ import 'api_service.dart';
 import '../models/public_profile_model.dart';
 import '../models/post_model.dart';
 
+/// Responsabilidad principal:
+/// Repositorio de dominio para consultar perfiles públicos y feeds (muros) de estudiantes de terceros.
+///
+/// Flujo dentro de la app:
+/// Llamado por `PublicProfileProvider` y `MyProfileFeedProvider` para recuperar datos y paginar el feed del usuario.
+///
+/// Dependencias críticas:
+/// - `ApiService` (Red).
+///
+/// Side Effects:
+/// - Ninguno. Puramente operaciones de Lectura (Queries).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Parseo DTO: Convierte mapas JSON directamente a `PublicProfileModel` y `PostModel`. Retorna estructuras complejas (ej. el Map `{items, hasMore}`) que podrían formalizarse en un DTO Pagination.
 class PublicProfileService {
   final ApiService _apiService;
 

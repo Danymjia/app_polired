@@ -6,8 +6,21 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/polired_logo.dart';
 
-/// Splash Screen — fondo blanco, logo centrado, tagline y footer.
-/// Diseño basado en el HTML de referencia con animación suave de entrada.
+/// Responsabilidad principal:
+/// Pantalla de carga inicial transitoria que enruta al usuario al App o al Login.
+///
+/// Flujo dentro de la app:
+/// Se muestra inmediatamente al arrancar. Corre animaciones visuales y a los 2 segundos evalúa el flag `isAuthenticated` del `AuthProvider`.
+///
+/// Dependencias críticas:
+/// - `AuthProvider` (Determina la ruta destino).
+/// - `go_router` (Reemplazo absoluto del stack de navegación).
+///
+/// Side Effects:
+/// - Ninguno propio.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Race Condition Potencial: El enrutamiento depende de un `Future.delayed` de 2000ms. Si la lectura del Disco (StorageService) en `AuthProvider` toma más de 2 segundos, mandará al usuario a Login incorrectamente. Se debe escuchar reactivamente al estado "inicializado" en lugar de adivinar el tiempo.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

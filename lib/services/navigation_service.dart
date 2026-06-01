@@ -4,6 +4,20 @@ import '../models/feed_context.dart';
 import '../models/events/post_event.dart';
 import 'navigation_bus.dart';
 
+/// Responsabilidad principal:
+/// Controlador de la Interfaz Gráfica sin contexto. Manipula el Scroll y el Foco visual de los Feeds sin acoplar los Providers (o Handlers) al árbol de Widgets de Flutter.
+///
+/// Flujo dentro de la app:
+/// Los widgets (ej. listas) registran sus `ScrollController` aquí. Cuando la capa de dominio emite un `FocusPostEvent` por el bus, este servicio ejecuta `Scrollable.ensureVisible` para hacer auto-scroll hacia el nuevo post.
+///
+/// Dependencias críticas:
+/// - `NavigationBus` (Stream de eventos pub/sub).
+///
+/// Side Effects:
+/// - Mutación de UI: Controla físicamente animaciones y posiciones en pantalla.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fugas de Memoria Severas: Mantener referencias globales (`_controllers`, `postKeys`) a los elementos visuales es peligroso. Si un Widget olvida llamar a `unregister()` en su método `dispose()`, causará Memory Leaks e inconsistencias fatales al tratar de animar componentes desmontados.
 class NavigationService {
   NavigationService._();
   static final instance = NavigationService._();

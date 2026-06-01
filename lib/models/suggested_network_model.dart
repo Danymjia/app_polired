@@ -1,6 +1,22 @@
 import '../utils/network_acronym.dart';
 import '../utils/json_ids.dart';
 
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable que representa una red sugerida a la que el usuario aún NO pertenece.
+///
+/// Flujo dentro de la app:
+/// Parseado en `ExploreNetworksProvider` tras consultar las redes globales (Queries).
+///
+/// Dependencias críticas:
+/// - `network_acronym.dart` (para generar fallback visual del avatar).
+/// - `json_ids.dart`.
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Solo lectura (Query Side). Unirse a la red se procesa como un Comando HTTP que invalida este DTO eliminándolo de la lista de sugerencias.
+
 /// Red comunitaria sugerida (listado general menos las del usuario).
 class SuggestedNetworkModel {
   final String id;

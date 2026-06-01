@@ -12,6 +12,22 @@ import 'dart:convert';
 import 'utils/campus_polygon.dart';
 import '../../widgets/core/base_screen.dart';
 
+/// Responsabilidad principal:
+/// Renderizar el mapa de la Escuela Politécnica Nacional usando Mapbox. Gestiona el "Fog of War" (polígono invertido oscuro fuera del campus), marcadores dinámicos y la cámara interactiva (Auto-rotación).
+///
+/// Flujo dentro de la app:
+/// Utiliza `MapboxMap` para el renderizado nativo. Extrae los POIs de un archivo estático local (`PoiData.all`). Coordina el vuelo de cámara (`flyTo`) cuando se interactúa con un marcador o con el directorio de búsqueda.
+///
+/// Dependencias críticas:
+/// - `MapboxMapsFlutter` (Motor nativo).
+/// - `MapProvider` (Estado efímero de selección y rastreo del nivel de zoom actual).
+///
+/// Side Effects:
+/// - Ticker Continuo: Posee un `AnimationController` infinito `_rotationController.repeat()` que rota la cámara silenciosamente si el usuario no interactúa. Esto drena batería si la pantalla se deja abierta.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Desconexión del Dominio: Los Puntos de Interés (POIs) están *hardcodeados* en assets locales en lugar de consumirse vía API / Repositorio CQRS, lo que genera una brecha técnica respecto al resto de la arquitectura.
+
 // Centro del campus EPN
 final _campusCenter = Point(coordinates: Position(-78.4900, -0.2107));
 

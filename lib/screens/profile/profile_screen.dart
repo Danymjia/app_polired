@@ -13,7 +13,21 @@ import '../../providers/post_store_provider.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/public_profile_grid.dart';
 
-/// Pantalla de Perfil de Usuario — diseño estilo Instagram/Threads minimalista.
+/// Responsabilidad principal:
+/// Pantalla principal del Perfil de Usuario ("Mi Perfil"). Muestra estadísticas (número de redes, posts), biografía, y un feed personal dividido entre Publicaciones y Artículos.
+///
+/// Flujo dentro de la app:
+/// Inicia peticiones asíncronas para refrescar las estadísticas del usuario. Delega el renderizado de la cuadrícula inferior a `PublicProfileGrid`, pasándole sublistas de IDs filtrados.
+///
+/// Dependencias críticas:
+/// - `MyProfileFeedProvider` (Gestión paginada de los IDs de los posts del usuario activo).
+/// - `PostStoreProvider` (Entity Cache para resolver esos IDs e identificar cuáles son Artículos `isArticle`).
+///
+/// Side Effects:
+/// - Reconstrucciones manuales del TabBar: Utiliza un `addListener(() => setState(() {}))` en el `_tabController` para forzar la reevaluación de las listas filtradas en tiempo real.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Filtrado Eficiente: La separación entre Artículos y Publicaciones es muy rápida porque solo se filtran listas de `String` (IDs) en memoria mediante el caché `PostStoreProvider`, sin hacer llamadas REST extra al servidor.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 

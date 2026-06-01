@@ -33,6 +33,29 @@ import 'services/command_bus.dart';
 import 'services/handlers/post_command_handlers.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Responsabilidad principal:
+/// Punto de entrada de la aplicación. Inicializa servicios base, configura el entorno,
+/// y ensambla el árbol de dependencias global utilizando MultiProvider.
+///
+/// Flujo dentro de la app:
+/// Es el primer archivo ejecutado. Construye e inyecta los repositorios, servicios y
+/// command handlers (CQRS), proveyendo el estado global a `PoliredApp`.
+///
+/// Dependencias críticas:
+/// - flutter_dotenv
+/// - mapbox_maps_flutter
+/// - shared_preferences (vía StorageService)
+/// - Provider (MultiProvider, ChangeNotifierProxyProvider)
+///
+/// Side Effects:
+/// - Carga variables de entorno (I/O).
+/// - Inicializa token global de Mapbox.
+/// - Persiste configuración inicial en memoria (StorageService).
+/// - Configura orientación forzada y estilos de barra de estado en SystemChrome.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fuerte acoplamiento en la inyección de dependencias estáticas (CQRS Handlers se registran aquí).
+/// - `PostStoreProvider` es el núcleo reactivo; se inyecta ANTES que los ProxyProviders para evitar nulos y garantizar consistencia de estado.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

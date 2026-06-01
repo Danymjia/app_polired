@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Sistema de diseño centralizado de Polired.
-/// Colores extraídos directamente de los HTMLs de referencia.
-/// TODOS los colores viven aquí. Nunca hardcodear en widgets.
+/// Responsabilidad principal:
+/// Sistema de diseño centralizado. Provee tokens visuales (colores extraídos de referencias HTML) y la configuración base de Material.
+///
+/// Flujo dentro de la app:
+/// Consumido globalmente por `MaterialApp` en `main.dart` y referenciado localmente por componentes visuales y textos.
+///
+/// Dependencias críticas:
+/// - google_fonts
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mantener estrictamente sincronizado con diseño UI/UX (Figma/HTML).
+/// - NO hardcodear colores hexadecimales sueltos en el código de widgets; usar SIEMPRE estos tokens para escalabilidad (ej: temas oscuros).
 class AppTheme {
   AppTheme._();
 

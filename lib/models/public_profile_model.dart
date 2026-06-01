@@ -1,3 +1,17 @@
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable para representar el perfil público de otro usuario (incluyendo sus estadísticas y redes asociadas).
+///
+/// Flujo dentro de la app:
+/// Parseado tras consultar la API de perfiles públicos, consumido centralizadamente por el `PublicProfileProvider`.
+///
+/// Dependencias críticas:
+/// - Ninguna externa.
+///
+/// Side Effects:
+/// - Ninguno. Modelo puramente de lectura (Query Side).
+///
+/// Recordatorios técnicos y CQRS:
+/// - La lista `redes` contiene objetos de tipo `PublicProfileNetworkModel` que son DTOs anidados.
 class PublicProfileModel {
   final String id;
   final String nombre;

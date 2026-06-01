@@ -13,8 +13,21 @@ import '../../models/feed_context.dart';
 import '../../providers/network_provider.dart';
 import 'profile/profile_screen.dart';
 
-/// Pantalla contenedor principal que gestiona la navegación por pestañas (Bottom Navigation).
-/// Utiliza un [IndexedStack] para mantener el estado de cada sección.
+/// Responsabilidad principal:
+/// Contenedor raíz (Layout) para la navegación principal basada en pestañas (BottomNavigationBar).
+///
+/// Flujo dentro de la app:
+/// Mantiene un `IndexedStack` para preservar el estado de las 5 pantallas principales y no reconstruirlas al cambiar de tab. Escucha eventos del `NavigationBus` para forzar cambios de pestaña programáticos.
+///
+/// Dependencias críticas:
+/// - `NavigationBus` (Para FocusPostEvent).
+/// - `NetworkProvider` (Para pre-seleccionar comunidades desde notificaciones/eventos).
+///
+/// Side Effects:
+/// - Preservación de Estado: Mantiene vivos todos los sub-árboles de widgets (Home, Chat, Perfil) simultáneamente en RAM.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Anti-patrón de GlobalKey: El uso de `_homeKey` y `_exploreKey` para castear de forma dinámica (`as dynamic`) y forzar métodos (`scrollToTop`) es frágil. Todos los scrolls globales deben manejarse con el `NavigationService`.
 class MainLayoutScreen extends StatefulWidget {
   const MainLayoutScreen({super.key});
 

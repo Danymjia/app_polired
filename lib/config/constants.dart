@@ -1,13 +1,24 @@
-/// Constantes globales de la aplicación Polired.
+/// Responsabilidad principal:
+/// Almacena constantes globales de la aplicación, principalmente rutas de la API, websockets y claves de almacenamiento.
+///
+/// Flujo dentro de la app:
+/// Consumido transversalmente por `ApiService`, `SocketService`, y `StorageService` para resolver endpoints y claves.
+///
+/// Dependencias críticas:
+/// - Ninguna (puro Dart).
+///
+/// Side Effects:
+/// - Ninguno. Define valores estáticos de solo lectura en memoria.
+///
+/// Recordatorios técnicos y CQRS:
+/// - No contiene estado.
+/// - Riesgo de acoplamiento: Las URLs apuntan directo a Vercel. Si hay ambientes dev/prod, migrar URLs base al `.env`.
 class AppConstants {
   AppConstants._();
 
   // ─── Backend ────────────────────────────────────────────────────────────────
   static const String baseUrl = 'https://polired-api.vercel.app/api';
   static const String socketUrl = 'https://polired-api.vercel.app';
-
-  // static const String baseUrl = 'http://10.0.2.2:3000/api';
-  // static const String socketUrl = 'http://10.0.2.2:3000';
 
   // ─── Auth endpoints ─────────────────────────────────────────────────────────
   static const String loginEndpoint = '/auth/login';

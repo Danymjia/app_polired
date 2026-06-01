@@ -13,8 +13,22 @@ class AuthResult {
   const AuthResult({required this.success, this.message, this.data});
 }
 
-/// Servicio de autenticación: login, registro y recuperación de contraseña.
-/// Se comunica con el backend usando [ApiService].
+/// Responsabilidad principal:
+/// Servicio de dominio para autenticación. Consume endpoints de Auth y maneja el guardado seguro en disco del JWT y perfil.
+///
+/// Flujo dentro de la app:
+/// Llamado exclusivamente por el `AuthProvider`. Ejecuta login/registro HTTP y delega la persistencia cruda al `StorageService`.
+///
+/// Dependencias críticas:
+/// - `ApiService` (Red).
+/// - `StorageService` (SharedPreferences).
+///
+/// Side Effects:
+/// - Storage local: Mutación de SharedPreferences (I/O bloqueante o síncrono diferido) al hacer login (`saveToken`) y logout (`clear`).
+/// - Mutación de API: Modifica el estado global de red inyectando el `_token` en `ApiService`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fuerte acoplamiento: Mezcla las peticiones de red y la escritura a disco en un solo lugar. Técnicamente `AuthProvider` (el estado) debería orquestar esto.
 class AuthService {
   final ApiService _api;
 

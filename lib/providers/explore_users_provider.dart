@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 import '../models/public_user_model.dart';
 import '../services/explore_user_service.dart';
 
+/// Responsabilidad principal:
+/// Estado de paginación y filtrado en memoria de la lista pública de estudiantes (para la vista Explorar).
+///
+/// Flujo dentro de la app:
+/// Pide páginas de usuarios al servidor y permite filtrarlos localmente (en el cliente).
+///
+/// Dependencias críticas:
+/// - `ExploreUserService` (HTTP).
+///
+/// Side Effects:
+/// - Ninguno. Estado aislado.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda técnica grave (Búsqueda local): Descarga páginas del servidor pero realiza el filtrado de texto *en memoria* (`_allUsers.where()`). Buscar "Juan" solo lo encontrará si ya fue cargado en la página actual. Se DEBE migrar la búsqueda (Search Query) al Backend.
 enum ExploreUsersStatus { idle, loading, success, error }
 
 class ExploreUsersProvider extends ChangeNotifier {

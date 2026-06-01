@@ -13,8 +13,21 @@ import '../../widgets/primary_button.dart';
 import '../../utils/app_snackbar.dart';
 import '../../utils/validators.dart';
 
-/// Login Screen — reinterpretación del HTML de referencia en Flutter.
-/// Layout: logo + título centrado, campos de email/password, botón, footer.
+/// Responsabilidad principal:
+/// Interfaz visual para la autenticación de usuarios existentes mediante correo y contraseña.
+///
+/// Flujo dentro de la app:
+/// Valida los campos localmente. Al enviar (`_submit`), invoca síncronamente a `AuthProvider.login()`. Si es exitoso, delega la redirección a `context.go('/home')`. En caso de error, mapea heurísticamente el string devuelto por la API para mostrar un `AppSnackbar` amigable (cuenta no activada, credenciales inválidas, etc).
+///
+/// Dependencias críticas:
+/// - `AuthProvider` (Lógica de autenticación y persistencia de tokens).
+/// - `go_router` (Enrutamiento estricto).
+///
+/// Side Effects:
+/// - Mutación de estado de UI transitorio (`_isLoading`).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Patrón Anti-Robusto (Mapeo de Errores): Buscar cadenas de texto como `lowerMsg.contains('activada')` para mostrar mensajes es propenso a romperse silenciosamente si el backend (Vercel API) cambia la redacción de sus errores. Se debe refactorizar a verificación por códigos HTTP específicos (`statusCode`).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 

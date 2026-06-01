@@ -1,7 +1,20 @@
 import '../models/conversation_model.dart';
 import '../services/api_service.dart';
 
-/// Acceso HTTP a conversaciones 1:1 (sin modificar contratos del backend).
+/// Responsabilidad principal:
+/// Repositorio de datos estricto para extraer las conversaciones 1:1 desde la API y mapearlas a Objetos de Dominio (`ConversationModel`).
+///
+/// Flujo dentro de la app:
+/// Actúa como capa de abstracción para `MessagesInboxProvider`. Realiza la llamada HTTP y parsea defensivamente los JSON asumiendo que el backend puede omitir campos.
+///
+/// Dependencias críticas:
+/// - `ApiService` (Red).
+///
+/// Side Effects:
+/// - Ninguno. Puramente de lectura (Data Fetching / Mapping).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Diseño Correcto: A diferencia de la carpeta `/services` (que actúa como Repositorio y Cliente REST a la vez), este archivo cumple correctamente el patrón Repository al aislar el conocimiento del JSON de los Providers.
 class ConversationsRepository {
   final ApiService _api;
 

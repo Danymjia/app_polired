@@ -18,6 +18,21 @@ import '../../providers/my_profile_feed_provider.dart';
 
 enum CustomCropRatio { ratio4x5, ratio4x3, square }
 
+/// Responsabilidad principal:
+/// Pantalla de creación de publicaciones (texto o imagen). Orquesta la selección, recorte (`image_cropper`) y compresión de imágenes antes de subirlas al backend.
+///
+/// Flujo dentro de la app:
+/// El usuario selecciona un `FeedContext` explícito (destino). En el modo imagen, fuerza el recorte visual. Al presionar Publicar, no hace peticiones directas HTTP, sino que despacha un `CreatePostCommand` hacia el `CommandBus`.
+///
+/// Dependencias críticas:
+/// - `CommandBus` (Enrutamiento del comando hacia la capa de servicios mutadores).
+/// - `ImageCropper` y utilidades de compresión (Manejo de `Uint8List`).
+///
+/// Side Effects:
+/// - Actualización Optimista Indirecta: Tras despachar el comando y obtener un `success`, la UI prependea manualmente el ID resultante al `MyProfileFeedProvider`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Violación Menor de CQRS: Idealmente, el `CommandBus` debería emitir un evento que `MyProfileFeedProvider` capture automáticamente en background. Acoplar la vista a inyectar el ID devuelto (`result.data as String`) hace a la pantalla responsable del estado global.
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
 

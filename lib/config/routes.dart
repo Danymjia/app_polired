@@ -15,7 +15,23 @@ import '../screens/post/post_detail_screen.dart';
 import '../screens/messages/chat_screen.dart';
 import '../screens/map/map_screen.dart';
 
-/// Configuración centralizada de navegación con go_router.
+/// Responsabilidad principal:
+/// Configuración centralizada del enrutamiento declarativo y protección de rutas mediante redirects basados en estado de sesión.
+///
+/// Flujo dentro de la app:
+/// Consumido por el parámetro `routerConfig` de `MaterialApp.router` en `main.dart`.
+///
+/// Dependencias críticas:
+/// - go_router
+/// - Provider (consumo síncrono de AuthProvider)
+///
+/// Side Effects:
+/// - Mutación de navegación: redirige automáticamente a `/login` si no hay sesión, o a `/complete-profile` si el perfil está incompleto.
+/// - Bloqueo estricto de navegación a rutas protegidas.
+///
+/// Recordatorios técnicos y CQRS:
+/// - El `redirect` depende críticamente del estado síncrono del `AuthProvider`; un estado inicial incorrecto causará parpadeos UI.
+/// - Precaución con bucles infinitos de redirección si se anidan más reglas lógicas complejas de Auth.
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   redirect: (context, state) {

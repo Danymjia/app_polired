@@ -2,7 +2,20 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/constants.dart';
 
-/// Gestión de persistencia local con SharedPreferences.
+/// Responsabilidad principal:
+/// Capa de abstracción estática para la persistencia local de datos clave-valor usando `shared_preferences`.
+///
+/// Flujo dentro de la app:
+/// Inicializado de forma bloqueante en `main.dart`. Consumido globalmente por `AuthService`, `AuthProvider`, y `NotificationProvider` para persistir estado entre reinicios.
+///
+/// Dependencias críticas:
+/// - `shared_preferences`.
+///
+/// Side Effects:
+/// - Persistencia: Realiza I/O en disco (asíncrono).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Riesgo de Seguridad: `SharedPreferences` guarda datos en texto plano. Almacenar el JWT (`saveToken`) directamente aquí expone la sesión en dispositivos rooteados. Deuda técnica: migrar a `flutter_secure_storage`.
 class StorageService {
   static SharedPreferences? _prefs;
 

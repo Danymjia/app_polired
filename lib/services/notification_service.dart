@@ -1,10 +1,20 @@
 import 'api_service.dart';
 import '../models/notification_model.dart';
 
-/// Servicio de notificaciones del backend.
-/// Endpoints utilizados:
-///   - GET   /notificaciones            → listar notificaciones del usuario autenticado
-///   - PATCH /notificaciones/:id/leida  → marcar notificación como leída
+/// Responsabilidad principal:
+/// Repositorio de dominio para la carga inicial y el marcado de lectura del historial de Notificaciones.
+///
+/// Flujo dentro de la app:
+/// Llamado exclusivamente por el `NotificationProvider` para traer el historial REST y sincronizar estados de lectura (`leida: true`).
+///
+/// Dependencias críticas:
+/// - `ApiService` (Cliente HTTP).
+///
+/// Side Effects:
+/// - Envía Commands (`marcarLeida`) que alteran el registro de la base de datos central.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Responsabilidad acotada: A diferencia de `PostService`, este archivo mantiene un SRP claro y delegado (Query vs Command simples).
 class NotificationService {
   final ApiService _api;
 

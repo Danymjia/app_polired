@@ -1,3 +1,17 @@
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable que representa un Punto de Interés (POI) geolocalizado en el campus.
+///
+/// Flujo dentro de la app:
+/// Consumido por el `MapProvider` para renderizar marcadores en `mapbox_maps_flutter`.
+///
+/// Dependencias críticas:
+/// - Ninguna externa.
+///
+/// Side Effects:
+/// - Ninguno. Modelo de solo lectura.
+///
+/// Recordatorios técnicos y CQRS:
+/// - No participa del patrón CQRS. Es un modelo estático y de lectura para el subsistema de Mapas.
 enum PoiCategory {
   academic,    // Facultades, aulas, laboratorios
   services,    // Biblioteca, secretaría, imprenta

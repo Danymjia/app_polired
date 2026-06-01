@@ -8,6 +8,21 @@ import '../../services/socket_service.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../providers/messages_inbox_provider.dart';
 
+/// Responsabilidad principal:
+/// Pantalla de conversación 1:1. Renderiza el historial de mensajes e integra una caja de texto para el envío bidireccional vía WebSockets.
+///
+/// Flujo dentro de la app:
+/// Se instancia con un `conversationId`. Crea localmente un `ChatProvider` y lo provee a sus widgets hijos. Escucha el ScrollController inversamente para disparar paginación histórica (`loadMore`).
+///
+/// Dependencias críticas:
+/// - `ChatProvider` (Paginación histórica REST + Eventos en tiempo real Pusher).
+/// - `MessagesInboxProvider` (Para actualizar la previsualización del último mensaje globalmente).
+///
+/// Side Effects:
+/// - Provider efímero: El `ChatProvider` nace y muere con la pantalla, no es un singleton.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fuga de Abstracción: El uso del callback `onMessageSent` para actualizar manualmente el `MessagesInboxProvider` es un anti-patrón. El Inbox debería escuchar directamente los eventos del `SocketService` para auto-actualizarse sin depender de que la vista del chat esté activa e invocando callbacks.
 class ChatScreen extends StatefulWidget {
   final String conversationId;
   final String contactId;

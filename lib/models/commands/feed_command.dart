@@ -2,6 +2,21 @@ import 'dart:io';
 import '../events/post_event.dart';
 import '../../models/feed_context.dart';
 
+/// Responsabilidad principal:
+/// Definición formal de Comandos (Command Side - CQRS) que expresan intención del usuario para mutar estado (Crear, Dar Like, Borrar).
+///
+/// Flujo dentro de la app:
+/// Instanciados desde la UI (ej. botón de "Like") y despachados hacia los `CommandHandlers` (ej. `ToggleLikeCommandHandler`) a través del `CommandBus`.
+///
+/// Dependencias críticas:
+/// - `post_event.dart` (Eventos asociados para posibles Rollbacks u Optmistic Updates).
+/// - `dart:io` (Manejo de archivos físicos temporales para uploads).
+///
+/// Side Effects:
+/// - Estos objetos EN SÍ no tienen side effects, son DTOs de intención, pero su *ejecución* vía Handlers dispara llamadas HTTP y mutaciones masivas de estado.
+///
+/// Recordatorios técnicos y CQRS:
+/// - CQRS Puro: Un comando no debe retornar datos de dominio, excepto el `CommandResult` genérico para confirmación de éxito/fallo a la UI.
 abstract class FeedCommand {}
 
 class CreatePostCommand extends FeedCommand {

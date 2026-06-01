@@ -1,5 +1,20 @@
 import '../utils/json_ids.dart';
 
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable para la vista detallada del perfil de una Red o Comunidad.
+///
+/// Flujo dentro de la app:
+/// Parseado por `NetworkProfileProvider` tras ejecutar la Query `/redes/:id`.
+///
+/// Dependencias críticas:
+/// - `json_ids.dart` (parseo seguro frente a `$oid`).
+///
+/// Side Effects:
+/// - Ninguno. Modelo puro.
+///
+/// Recordatorios técnicos y CQRS:
+/// - DTO estrictamente de lectura. Cualquier mutación (ej. unirse a la red) se dispara como un Comando que invalida y recarga este modelo.
+
 class NetworkProfileModel {
   final String id;
   final String nombre;

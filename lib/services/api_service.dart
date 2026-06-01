@@ -4,7 +4,21 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../config/constants.dart';
 
-/// Resultado genérico de las llamadas API.
+/// Responsabilidad principal:
+/// Cliente HTTP base (Wrapper de `http`) para toda la aplicación. Centraliza el manejo de cabeceras, manejo de timeouts, inyección del token JWT y estandarización de respuestas unificadas (`ApiResult`).
+///
+/// Flujo dentro de la app:
+/// Es instanciado (o pasado por inyección de dependencias) a todos los demás servicios de dominio (`AuthService`, `PostService`, etc.).
+///
+/// Dependencias críticas:
+/// - Librería base `http`.
+/// - `AppConstants` (Base URL y Timeouts).
+///
+/// Side Effects:
+/// - Ninguno. Puramente funcional (Petición -> Respuesta).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mutabilidad de Sesión: Contiene estado mutable interno (`_token`). `AuthService` debe asegurarse de invocar `setToken()` en el login/logout para no mandar peticiones anónimas accidentalmente.
 class ApiResult<T> {
   final bool success;
   final T? data;

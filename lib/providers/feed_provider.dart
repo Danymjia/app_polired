@@ -5,6 +5,21 @@ import '../models/post_model.dart';
 import '../providers/post_store_provider.dart';
 import '../services/read_model_cache_service.dart';
 
+/// Responsabilidad principal:
+/// Facade/Selector reactivo (Query Layer) para conectar la UI con el `PostStoreProvider` previniendo redibujos innecesarios.
+///
+/// Flujo dentro de la app:
+/// Consumido directamente por los Widgets de listas de Posts. Utiliza `context.select` sobre el `fingerprint` del contexto de ese Feed.
+///
+/// Dependencias críticas:
+/// - `PostStoreProvider` (Caché crudo).
+/// - `ReadModelCacheService` (Caché computada y ordenada).
+///
+/// Side Effects:
+/// - Ninguno. Selector de lectura pura.
+///
+/// Recordatorios técnicos y CQRS:
+/// - PUNTO CRÍTICO DE RENDIMIENTO: Usar `context.watch<PostStoreProvider>()` destruiría los frames de la app. `context.select` sobre el fingerprint evita jank masivo.
 class FeedProvider {
   /// Devuelve el feed reaccional para el contexto dado.
   /// Se suscribe SOLO a los cambios de ese contexto específico (vía fingerprint),

@@ -14,13 +14,21 @@ import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
 import '../providers/post_store_provider.dart';
 
-/// PostCard para el contexto comunitario (Home).
+/// Responsabilidad principal:
+/// Renderizar una tarjeta de publicación simplificada para el contexto de una Red Comunitaria. Suprime lógica de comercio y etiquetas globales.
 ///
-/// REGLAS:
-///   - Sin price labels.
-///   - Sin lógica de artículos (isArticle, priceLabel).
-///   - Sin tabs ni categorías globales.
-///   - Solo texto e imagen social.
+/// Flujo dentro de la app:
+/// Se comporta igual que `PostCard`. Actúa como suscriptor reactivo de `PostStoreProvider` por ID. Registra su GlobalKey en `NavigationService`.
+///
+/// Dependencias críticas:
+/// - `NavigationService` (Registro/Desregistro para Scroll-To-Post).
+/// - `PostStoreProvider` y `CommandBus` (CQRS).
+///
+/// Side Effects:
+/// - Fugas en Navegación: Mismo riesgo que `GlobalPostCard` si `dispose` no se ejecuta.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Violación severa de DRY: Esta es la TERCERA variante de PostCard con >90% de código repetido. Diferencias sutiles (ausencia de precios) no justifican triplicar la lógica base de redibujado de UI y Likes. Requiere refactorización hacia un widget unificado `BasePostCard` con variantes enum (Contexto: Global, Community, Home).
 class CommunityPostCard extends StatefulWidget {
   final PostModel post;
 

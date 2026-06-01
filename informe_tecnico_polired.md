@@ -1,1169 +1,306 @@
-# Informe Técnico Completo — Polired Mobile App
+# Informe Técnico del Proyecto Flutter: PoliRed
 
-> **Versión:** 1.15 — Rediseño de Perfil y Ajustes, Estadísticas en Tiempo Real y Flujo de Redes
-> **Fecha:** 19 de mayo de 2026  
-> **Plataforma:** Flutter (Android / iOS)  
-> **Backend:** Node.js + Express + MongoDB (BackendV2)
+## 1. Introducción Técnica
 
----
+**PoliRed** es una aplicación móvil desarrollada en Flutter orientada a conectar estudiantes en redes o comunidades académicas y sociales. El proyecto está construido para plataformas móviles (Android/iOS) con un diseño técnico moderno que combina el manejo de estado reactivo mediante Provider, una capa de servicios orientada a la inyección de dependencias, y la implementación de un patrón CQRS (Command Query Responsibility Segregation) para el manejo de mutaciones complejas (como la interacción con publicaciones). El objetivo general es proveer una plataforma altamente interactiva que soporte feeds de publicaciones, mensajería en tiempo real, notificaciones push, gestión de redes comunitarias y visualización de mapas integrados.
 
-## 1. Descripción del Proyecto
+## 2. Tecnologías y Dependencias Principales
 
-**Polired** es una aplicación móvil tipo red social universitaria inspirada en Instagram, conectada a un backend existente en `/BackendV2`. Se desarrolla de forma progresiva, ordenada y documentada.
+El ecosistema de la aplicación está basado en Flutter SDK ^3.10.1. A continuación, se detalla una tabla con las herramientas críticas utilizadas según el archivo pubspec.yaml:
 
----
+| Categoría | Paquete / Tecnología | Versión | Propósito / Uso en PoliRed |
+| :--- | :--- | :--- | :--- |
+| **Arquitectura y Estado** | provider | ^6.1.5+1 | Manejo de estado reactivo mediante ChangeNotifiers y ProxyProviders. |
+| **Enrutamiento** | go_router | ^17.2.3 | Navegación declarativa, interceptación de rutas y deep linking. |
+| **Comunicaciones** | http | ^1.6.0 | Capa base para solicitudes REST hacia el backend. |
+| **Tiempo Real** | pusher_channels_flutter | ^2.2.0 | Conexión WebSockets para el sistema de chat y notificaciones push. |
+| **Mapas** | mapbox_maps_flutter | ^2.3.0 | Despliegue de mapas interactivos y Puntos de Interés (POIs). |
+| **Almacenamiento** | shared_preferences | ^2.5.5 | Persistencia síncrona local (ej. JWT Tokens). |
+| **Manejo de Medios** | image_picker, image_cropper | Varios | Selección, toma de fotografías y recorte para perfiles y posts. |
+| **Optimización** | flutter_image_compress | ^2.4.0 | Reducción de bytes y escalado antes de envíos multiparte. |
+| **Interfaz y UI** | google_fonts, flutter_svg | Varios | Tipografías enriquecidas e iconografía vectorial personalizada. |
+| **Utilidades** | flutter_dotenv | ^6.0.1 | Manejo seguro de variables de entorno y API Keys (.env). |
 
-## 2. Arquitectura Implementada
+## 3. Arquitectura Implementada
 
-### Patrón
+El proyecto utiliza una arquitectura de **Capas Separadas (Layered Architecture)** con fuerte influencia de **CQRS** para operaciones de dominio complejas y el patrón **Service-Repository** para la abstracción de datos.
 
-```
-Provider + Repository Pattern simplificado
-```
+### 3.1. Diagrama de Arquitectura de Capas
 
-**Decisión técnica:** No se usa Clean Architecture ni Bloc/Riverpod por criterio de simplicidad, claridad y mantenibilidad.
+El siguiente diagrama ilustra cómo se interconectan los componentes del sistema, especialmente el uso centralizado del CommandBus y el PostStoreProvider:
 
-### Árbol de capas
-
-```
-main.dart
-  └── MultiProvider
-        ├── Provider<ApiService>
-        ├── Provider<PostService>
-        ├── Provider<SocketService>
-        ├── Provider<NetworkService>
-        ├── AuthProvider
-        │     ├── AuthService  ──► ApiService  ──► Backend HTTP
-        │     └── SocketService ──► Backend Socket.IO (JWT en handshake)
-        ├── NetworkProvider
-        │     └── NetworkService ──► ApiService ──► Backend HTTP
-        ├── PostStoreProvider          ← store global normalizado de PostModel
-        │     └── PostService ──► ApiService ──► Backend HTTP
-        ├── CommunityFeedProvider  (ProxyProvider<PostStoreProvider, …>)
-        │     └── lista de IDs del feed comunitario
-        ├── GlobalFeedProvider     (ProxyProvider<PostStoreProvider, …>)
-        │     └── lista de IDs por categoría (Noticias / Marketplace / Cursos)
-        ├── NotificationProvider
-        └── MessagesInboxProvider (ChangeNotifierProxyProvider<AuthProvider, …>)
-              ├── ConversationsRepository ──► ApiService
-              ├── NetworkService
-              └── SocketService
+```mermaid
+graph TD
+    UI[UI / Screens / Widgets] --> |Lee Estado| PROV[Providers<br/>GlobalFeed, Network, Profile]
+    UI --> |Despacha Comandos| BUS[Command Bus]
+    BUS --> |Ejecuta| CH[Command Handlers<br/>CreatePost, ToggleLike]
+    CH --> |Peticiones HTTP| SERV[Services / Repositories<br/>PostService, ApiService]
+    CH --> |Muta Estado Central| STORE[PostStoreProvider]
+    STORE --> |Actualiza Reactivamente| PROV
+    SERV -.-> |Suscripciones Pusher| SOCK[SocketService]
+    SOCK -.-> |Notifica| PROV
 ```
 
----
+### 3.2. Estructura del Proyecto (lib/)
 
-## 3. Estructura del Proyecto
+A continuación se detalla la estructura completa de carpetas basada en los archivos reales encontrados en el proyecto:
 
-```
+```text
 lib/
 ├── main.dart
 ├── config/
 │   ├── constants.dart
 │   ├── routes.dart
+│   ├── spacing.dart
 │   └── theme.dart
 ├── models/
-│   ├── user_model.dart
-│   ├── network_story_model.dart
-│   ├── post_model.dart
+│   ├── commands/
+│   ├── events/
 │   ├── conversation_model.dart
-│   └── suggested_network_model.dart
+│   ├── feed_context.dart
+│   ├── message_model.dart
+│   ├── network_profile_model.dart
+│   ├── network_story_model.dart
+│   ├── notification_model.dart
+│   ├── poi_model.dart
+│   ├── post_model.dart
+│   ├── public_profile_model.dart
+│   ├── public_user_model.dart
+│   ├── suggested_network_model.dart
+│   └── user_model.dart
+├── providers/
+│   ├── auth_provider.dart
+│   ├── chat_provider.dart
+│   ├── explore_networks_provider.dart
+│   ├── explore_users_provider.dart
+│   ├── feed_provider.dart
+│   ├── global_feed_provider.dart
+│   ├── map_provider.dart
+│   ├── messages_inbox_provider.dart
+│   ├── my_profile_feed_provider.dart
+│   ├── network_profile_provider.dart
+│   ├── network_provider.dart
+│   ├── notification_provider.dart
+│   ├── post_store_provider.dart
+│   └── public_profile_provider.dart
 ├── repositories/
 │   └── conversations_repository.dart
 ├── services/
+│   ├── handlers/
 │   ├── api_service.dart
 │   ├── auth_service.dart
+│   ├── command_bus.dart
+│   ├── explore_user_service.dart
+│   ├── navigation_bus.dart
+│   ├── navigation_service.dart
 │   ├── network_service.dart
+│   ├── notification_service.dart
+│   ├── poi_data.dart
 │   ├── post_service.dart
+│   ├── public_profile_service.dart
+│   ├── read_model_cache_service.dart
 │   ├── socket_service.dart
 │   └── storage_service.dart
-├── providers/
-│   ├── auth_provider.dart
-│   ├── community_feed_provider.dart
-│   ├── global_feed_provider.dart
-│   ├── messages_inbox_provider.dart
-│   ├── network_provider.dart
-│   ├── notification_provider.dart
-│   └── post_store_provider.dart     ← NUEVO: store global normalizado
 ├── screens/
 │   ├── main_layout_screen.dart
+│   ├── auth/
+│   │   ├── complete_profile_screen.dart
+│   │   ├── forgot_password_screen.dart
+│   │   ├── login_screen.dart
+│   │   ├── register_screen.dart
+│   │   ├── splash_screen.dart
+│   │   └── welcome_screen.dart
 │   ├── explore/
+│   │   ├── explore_networks_screen.dart
 │   │   ├── explore_screen.dart
+│   │   ├── network_profile_screen.dart
+│   │   ├── public_profile_screen.dart
 │   │   └── widgets/
-│   │       ├── explore_header.dart
-│   │       ├── explore_post_card.dart  ← rediseñado (diseño unificado)
-│   │       └── explore_tabs.dart
 │   ├── home/
 │   │   └── home_screen.dart
+│   ├── map/
+│   │   ├── map_screen.dart
+│   │   ├── utils/
+│   │   └── widgets/
 │   ├── messages/
+│   │   ├── chat_screen.dart
 │   │   └── messages_screen.dart
+│   ├── notifications/
+│   │   └── notifications_screen.dart
 │   ├── post/
 │   │   ├── add_post_screen.dart
-│   │   └── post_detail_screen.dart    ← NUEVO: pantalla de detalle
-│   ├── profile/
-│   │   ├── profile_screen.dart
+│   │   └── post_detail_screen.dart
+│   │   ├── profile/
 │   │   ├── edit_profile_screen.dart
-│   │   └── settings_screen.dart
+│   │   ├── liked_posts_screen.dart
+│   │   ├── profile_screen.dart
+│   │   ├── saved_posts_screen.dart
+│   │   ├── settings_screen.dart
+│   │   └── update_password_screen.dart
 │   └── settings/
-│       ├── notifications_screen.dart
-│       ├── help_screen.dart
-│       ├── support_screen.dart
 │       ├── about_screen.dart
+│       ├── help_detail_screen.dart
+│       ├── help_screen.dart
+│       ├── legal_document_screen.dart
 │       ├── privacy_screen.dart
-│       └── request_network_screen.dart
+│       ├── request_network_screen.dart
+│       └── support_screen.dart
 ├── utils/
 │   ├── app_snackbar.dart
-│   ├── validators.dart
+│   ├── feed_selectors.dart
+│   ├── image_compression.dart
+│   ├── json_ids.dart
 │   ├── network_acronym.dart
-│   └── json_ids.dart
+│   ├── post_context_resolver.dart
+│   └── validators.dart
 └── widgets/
+    ├── core/
+    │   ├── base_screen.dart
+    │   └── keyboard_aware_layout.dart
+    ├── app_text_field.dart
     ├── comment_tree_sheet.dart
+    ├── community_post_card.dart
+    ├── fullscreen_image_viewer.dart
+    ├── global_post_card.dart
+    ├── leave_network_dialog.dart
+    ├── likes_bottom_sheet.dart
+    ├── network_avatar.dart
+    ├── network_list_dialog.dart
+    ├── network_options_bottom_sheet.dart
     ├── polired_logo.dart
     ├── post_card.dart
     ├── post_image_carousel.dart
+    ├── post_options_bottom_sheet.dart
     ├── primary_button.dart
-    ├── app_text_field.dart
-    ├── network_avatar.dart
-    └── safe_network_image.dart
+    ├── public_profile_grid.dart
+    ├── public_profile_header.dart
+    ├── report_network_bottom_sheet.dart
+    ├── report_post_bottom_sheet.dart
+    ├── safe_network_image.dart
+    └── user_search_tile.dart
 ```
 
----
-
-## 4. Dependencias Instaladas
-
-| Paquete                  | Versión | Uso                                       |
-| ------------------------ | ------- | ----------------------------------------- |
-| `provider`               | ^6.1.5  | Gestión de estado                         |
-| `http`                   | ^1.6.0  | Peticiones HTTP al backend                |
-| `socket_io_client`       | ^3.1.4  | WebSocket con el backend                  |
-| `shared_preferences`     | ^2.5.5  | Persistencia de token y usuario           |
-| `go_router`              | ^17.2.3 | Navegación declarativa con redirects      |
-| `google_fonts`           | ^8.1.0  | Tipografía Inter                          |
-| `flutter_launcher_icons` | ^0.13.1 | Generación de íconos de la app            |
-| `image_picker`           | ^1.2.2  | Selección de foto de perfil desde galería |
-
----
-
-## 5. Backend — Endpoints Utilizados (Fase 1)
-
-### Base URL
-
-```
-http://10.0.2.2:3000/api   (emulador Android)
-```
-
-> Para dispositivo físico cambiar a la IP local del servidor en `lib/config/constants.dart`
-
-### Endpoints
-
-| Método   | Ruta                                       | Uso                                                                                                         |
-| -------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `POST`   | `/auth/login`                              | Login con email + password                                                                                  |
-| `POST`   | `/registro-estudiantes`                    | Crear cuenta nueva                                                                                          |
-| `POST`   | `/recuperar-password-e`                    | Enviar email de recuperación                                                                                |
-| `GET`    | `/perfil-estudiante`                       | Obtener datos completos del usuario autenticado (incluye `biografia`)                                       |
-| `PATCH`  | `/completar/perfil`                        | Completar perfil: `username`, `fotoPerfil` y `biografia` (opcional, máx. 150 caracteres)                   |
-| `PATCH`  | `/perfil/username`                         | Cambiar nombre de usuario (perfil ya completo)                                                              |
-| `PATCH`  | `/estudiante/:id`                          | Actualizar datos de perfil: `nombre`, `apellido`, `biografia`, etc.                                         |
-| `GET`    | `/mensajes/conversaciones`                 | Listar conversaciones 1:1 del usuario autenticado                                                           |
-| `GET`    | `/redes/listar`                            | Listar comunidades disponibles                                                                              |
-| `POST`   | `/estudiantes/unirse/red`                  | Unirse a una comunidad específica                                                                           |
-| `POST`   | `/estudiantes/publicaciones`               | Crear post estándar (Comunidad/Noticias)                                                                    |
-| `POST`   | `/publicaciones/articulos`                 | Crear artículo de Venta o Cursos                                                                            |
-| `GET`    | `/estudiantes/listar/redes`                | Listar redes inscritas por el usuario                                                                       |
-| `GET`    | `/publicaciones/red/:redId`                | Feed filtrado por red (Home)                                                                                |
-| `GET`    | `/publicaciones/global`                    | Feed global de Noticias (Explorar)                                                                          |
-| `GET`    | `/publicaciones/articulos/global`          | Feed global de artículos (Marketplace/Cursos), filtrado por `categoria`                                     |
-| `GET`    | `/notificaciones`                          | Listar notificaciones del usuario                                                                           |
-| `PATCH`  | `/notificaciones/:id/leida`                | Marcar notificación como leída                                                                              |
-| `POST`   | `/publicaciones/:id/like`                  | Dar like a publicación o artículo                                                                           |
-| `DELETE` | `/publicaciones/:id/like`                  | Quitar like de publicación o artículo                                                                       |
-| `POST`   | `/publicaciones/:id/guardar`               | Guardar publicación o artículo en la lista del estudiante                                                   |
-| `DELETE` | `/publicaciones/:id/guardar`               | Quitar publicación o artículo de guardados                                                                  |
-| `POST`   | `/publicaciones/:id/comentarios`           | Crear comentario en publicación o artículo                                                                  |
-| `GET`    | `/publicaciones/:id/comentarios/arbol`     | Obtener árbol de comentarios (raíces + hijos anidados)                                                      |
-| `POST`   | `/comentarios/:comentarioId/responder`     | Responder a un comentario específico (anidado)                                                              |
-
-> Rutas de perfil adicionales declaradas en `lib/config/constants.dart`: `perfilUsernameEndpoint` → `/perfil/username`. La ruta `PATCH /estudiante/:id` se arma en código con el `_id` del usuario autenticado.
-
-### Respuesta del Login
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "usuario": {
-    "_id": "...",
-    "nombre": "...",
-    "apellido": "...",
-    "email": "...",
-    "roles": ["estudiante"],
-    "username": null,
-    "fotoPerfil": null,
-    "perfilCompleto": false
-  }
-}
-```
-
-**Nota (app móvil):** El objeto `usuario` del login es **reducido** y no incluye `biografia`. Para que la descripción y el resto de campos coincidan siempre con MongoDB, la app llama a `GET /perfil-estudiante` tras iniciar sesión y al restaurar la sesión guardada (ver §9).
-
-### JWT
-
-- Firmado con `JWT_SECRET`, expiración: `1d`
-- Payload: `{ id, roles, context }`
-- Header: `Authorization: Bearer <token>`
-
----
-
-## 6. Sistema de Diseño (Tema Claro)
-
-Los tokens fueron extraídos directamente de los HTMLs de referencia proporcionados.
-
-| Token                 | Valor     | Uso                      |
-| --------------------- | --------- | ------------------------ |
-| `background`          | `#fbf9f8` | Fondo de pantallas       |
-| `surfaceContainerLow` | `#f5f3f3` | Fondo de campos de texto |
-| `primary` (botones)   | `#1D3557` | Botones principales      |
-| `primaryText`         | `#000000` | Títulos "Polired"        |
-| `onSurface`           | `#1b1c1c` | Texto principal          |
-| `onSurfaceVariant`    | `#474747` | Texto secundario         |
-| `outline`             | `#777777` | Bordes y captions        |
-| `outlineVariant`      | `#c6c6c6` | Bordes suaves            |
-| `error`               | `#ba1a1a` | Mensajes de error        |
-
-**Fuente:** Inter (Google Fonts)  
-**Border radius campos:** 8px (`0.5rem`)
-
----
+### 3.3. Patrones Estructurales Relevantes
 
-## 7. Pantallas Implementadas
-
-### 7.1 Splash Screen
+- **Inyección de Dependencias:** Lograda nativamente en Flutter agrupando servicios como singletons mediante Provider.value() en el nivel superior de la app (main.dart).
+- **Proxy Providers:** Uso extensivo de ChangeNotifierProxyProvider para componer dependencias reactivas (ej: recargar el feed global cuando el estado de autenticación cambia o inyectar PostStoreProvider en los providers de perfiles).
+- **CQRS:** Para evitar cuellos de botella en mutaciones distribuidas, el proyecto usa un CommandBus. Los comandos como CreatePostCommandHandler, ToggleLikeCommandHandler, y DeletePostCommandHandler alteran el estado centralizado de PostStoreProvider, garantizando consistencia a lo largo de diferentes pantallas.
 
-- Fondo blanco, logo centrado (128px circular), nombre "Polired" en azul marino
-- Footer: "ECOSISTEMA UNIVERSITARIO"
-- Animación: fade + scale de entrada (900ms)
-- Navega a `/home` o `/login` a los 2 segundos
+## 4. Flujos Principales y Módulos Internos
 
-### 7.2 Login Screen
+### 4.1. Flujo de Arranque y Configuración Global (main.dart)
 
-- Logo circular 80px + título "Polired" (negro, peso 900)
-- Campos: email/usuario, contraseña (con toggle)
-- Botón azul marino "Iniciar sesión"
-- Link "¿Olvidaste tu contraseña?" → `/forgot-password`
-- Línea de acento superior (gradiente)
-- Footer fijo: link de registro + copyright
-- **UX:** Notificaciones modernas (`AppSnackbar`) para errores de red o credenciales incorrectas.
+1. Carga de variables de entorno usando flutter_dotenv desde .env.
+2. Inicialización de MapboxOptions.setAccessToken a nivel global.
+3. Inicialización síncrona del StorageService.
+4. Instanciación en memoria (fuera del widget tree) de la capa de servicios y repositorios (API, Sockets, Auth, Network).
+5. Configuración del CommandBus y registro de sus *Handlers*.
+6. Inyección del árbol de dependencias mediante MultiProvider.
 
-### 7.3 Register Screen
+### 4.2. Flujo de Navegación (routes.dart)
 
-- Fondo `#f9f9f9`, tarjeta blanca con bordes
-- Campos: **nombre**, **apellido**, correo, contraseña, confirmar contraseña
-- ⚠️ **Sin username** — se solicita en pantalla post-login (Fase 2)
-- Texto legal con referencias a políticas
-- Tarjeta secundaria con link a login
-- Footer copyright
-- **UX:** Registro exitoso muestra mensaje de activación de cuenta y redirige a login tras 2 segundos.
+La navegación está centralizada usando go_router.
 
-### 7.4 Forgot Password Screen
+- **Redirects dinámicos:** En la función redirect de GoRouter se consume el AuthProvider síncronamente. Si el usuario no está autenticado, la navegación se redirige forzosamente a /login.
+- **Completar Perfil:** Si el usuario está autenticado pero la bandera perfilCompleto es falsa, se redirige forzosamente a /complete-profile para impedir la navegación al resto de la app.
+- **Rutas paramétricas:** Se utilizan rutas avanzadas como /explore/networks/:id o /chat/:id pasando identificadores. También se apoya en un NavigationBus para realizar redirecciones imperativas desde la capa de servicios/comandos.
 
-- AppBar: flecha back + "Polired"
-- Logo con esquinas redondeadas (`rounded-2xl`)
-- Título "Recupera tu acceso" + descripción
-- Campo con etiqueta "CORREO UNIVERSITARIO" y ícono mail
-- Botón "Enviar enlace" con ícono flecha →
-- Estado de éxito con animación fade (transición suave)
-- Link "¿Volver al inicio de sesión?"
+### 4.3. Autenticación y Perfil (AuthProvider y AuthService)
 
-### 7.5 Complete Profile Screen
+- Gestiona el token JWT mediante StorageService.
+- Consume endpoints REST definidos en AppConstants (/auth/login, /registro-estudiantes, /perfil-estudiante).
+- Al autenticarse con éxito, notifica a los *Proxy Providers* descendientes y ejecuta la suscripción al canal privado de Websockets (Pusher).
 
-- Se activa tras primer login cuando `perfilCompleto === false`.
-- Avatar interactivo con `image_picker` + badge flotante "+".
-- Campo obligatorio para **Nombre de Usuario** (mínimo 3 caracteres, validación asíncrona en backend).
-- Campo opcional **Descripción** (en API: `biografia`), máximo **150** caracteres, con contador en el campo.
-- Botón "Continuar" azul marino (editorial-shadow).
-- Conversión de imagen a **Base64** para envío directo en el JSON del patch (`PATCH /completar/perfil`).
+### 4.4. Comunicación con el Backend (ApiService)
 
-### 7.6 Welcome Screen
+- Es la capa base para todas las peticiones de red usando http.
+- Centraliza la inyección del token Bearer en los *Headers*.
+- Estandariza las respuestas bajo el envoltorio genérico ApiResult<T>, facilitando el manejo de excepciones, timeouts y parseo del payload en un solo lugar.
+- Soporta peticiones multipartRequest críticas para la subida de imágenes (usado intensivamente en perfiles y posts).
 
-- Título de bienvenida + descripción de comunidad.
-- Listado de **5 redes aleatorias** (obtenidas del backend y mezcladas localmente).
-- Contador de selección: obliga a elegir **exactamente 3 redes**.
-- Botón "Continuar" que realiza peticiones secuenciales de unión.
-- Navegación final a `/home` tras éxito.
+### 4.5. Sistema de Tiempo Real y Sockets (SocketService)
 
-### 7.7 Main Layout (Bottom Navigation)
+- Integración directa con **Pusher** (pusher_channels_flutter).
+- Estado administrado por ValueNotifier<SocketConnectionPhase> para visualizar la conexión y reconexión.
+- Se suscribe a canales privados: private-user-$uid y delega eventos recibidos usando un patrón Pub/Sub personalizado a través de los métodos .on() y .off().
+- Este servicio es consumido proactivamente por NotificationProvider y MessagesInboxProvider para actualizar UI sin pull-to-refresh.
 
-- Implementado como contenedor principal (`Scaffold`) con `IndexedStack` para preservar el estado de las pestañas.
-- **BottomNavigationBar:** 5 apartados (Home, Explorar, Publicar, Mensajes, Perfil).
-- **Estética:** Glassmorphism/Backdrop Blur (10px) en la barra inferior, sincronizada con el diseño de Threads/Instagram.
+### 4.6. Manejo de Publicaciones y Feeds (PostStoreProvider & CQRS)
 
-### 7.8 Home Screen (Feed Real)
+- Diferentes fuentes de feed coexisten en la app (GlobalFeedProvider, NetworkProvider, MyProfileFeedProvider).
+- Para evitar que la lógica de "Like", "Save" o "Delete" se duplique, el estado atómico de las publicaciones reside en el PostStoreProvider.
+- La UI despacha *Comandos* (CommandBus) que interactúan con PostService, mutan el backend y finalmente el PostStoreProvider actualiza las entidades localmente, reflejando el cambio reactivamente en todas las pantallas simultáneamente.
 
-- **Integración con Backend:** El feed ya no utiliza datos mock. Consume publicaciones reales mediante `GET /publicaciones/red/:redId`.
-- **TopAppBar:** Efecto blur, botón `add_box`, título "Polired" y acceso a notificaciones (icono búho).
-- **Network Stories:** Lista horizontal de las redes del estudiante (`GET /estudiantes/listar/redes`).
-  - **Lógica de Filtrado:** Al seleccionar una red, se carga automáticamente su feed específico.
-  - **Sin Fallback Global:** Si el usuario no tiene redes o la red seleccionada está vacía, se muestra un estado informativo. No se mezcla con el feed global por arquitectura.
-- **Feed:** Lista de `PostCard` que renderiza contenido real (texto e imágenes).
-- **UX:** Manejo de estados `loading`, `empty` (sin publicaciones), `error` (fallo de red) y `pull-to-refresh`.
+### 4.7. Módulo de Chat (chat_provider.dart y Repositorio)
 
-### 7.9 Notifications Screen
+- Permite listar conversaciones mediante ConversationsRepository.
+- La carga de mensajes es reactiva. Se apoya fuertemente en eventos del SocketService para anexar mensajes nuevos a la vista sin recargar.
 
-- **Diseño Informativo:** Las notificaciones se presentan como una lista cronológica agrupada (Hoy, Esta semana, Anteriormente).
-- **Tipos de Notificación:** Soporta `like`, `comentario`, `respuesta_comentario` y `mensaje`.
-- **Restricción de Interacción:** Por requerimiento de arquitectura, las notificaciones son **solo informativas**. No son clickeables ni navegan a otras pantallas.
-- **Sincronización:** Consume `GET /notificaciones` y muestra el estado real (leída/no leída) mediante indicadores visuales.
+### 4.8. Implementación de Mapas (MapProvider y MapScreen)
 
-### 7.10 Profile Screen
+- Usa mapbox_maps_flutter. La API Key (MAPBOX_ACCESS_TOKEN) se lee desde el .env.
+- Implementa POIs (Puntos de Interés) definidos en el modelo PoiModel para mostrar información espacial relevante (como redes o comunidades geolocalizadas) en la vista MapScreen.
 
-- **Datos Reales:** Integración con `AuthProvider` y `NetworkProvider`. Muestra nombre completo, username en la AppBar y foto real.
-- **Descripción:** Si el usuario tiene `biografia` en el modelo (proveniente de la base de datos), se muestra debajo del subtítulo "Estudiante de Polired".
-- **Conteo de Redes:** Consumo dinámico de `/estudiantes/listar/redes`.
-- **Limpieza de Mocks:** Se eliminó el conteo de publicaciones falso y la cuadrícula de imágenes placeholder.
-- **Estado Vacío:** Si el usuario no tiene publicaciones (funcionalidad de "Mis Publicaciones" pendiente en backend), se muestra un estado informativo limpio.
-- **Acciones:** Botón de edición de perfil y acceso a configuración.
+### 4.9. Integración con Endpoints REST (Backend)
 
-### 7.11 Add Post Screen (Publicar)
+La aplicación consume una API REST desplegada en https://polired-api.vercel.app/api. A continuación se detallan los endpoints mapeados en AppConstants y operados por la capa de servicios:
 
-- **Multicategoría y Rutas Diferenciadas:** Soporta creación de publicaciones estándar (Comunidad, Noticias, Cursos) y artículos de Venta, dirigiendo cada tipo al endpoint del backend correspondiente.
-- **Formularios Dinámicos:** Muestra campos específicos según la categoría elegida; por ejemplo, solicita el campo **Precio** dinámicamente solo para publicaciones de categoría Venta.
-- **Lógica de Redes y Validación:** Carga las redes a las que el estudiante se ha unido. Valida estrictamente la selección de una red cuando se trata de la categoría Comunidad.
-- **Integración Segura con ApiService:** Utiliza la instancia global inyectada de `ApiService` con JWT de autenticación para evitar errores 401.
-- **Robustez y UX:** Controla los estados de carga con un indicador `_isLoading` y gestiona las respuestas de éxito y error mediante alertas visuales con `AppSnackbar`.
+| Módulo | Endpoint | Método HTTP | Descripción |
+| :--- | :--- | :--- | :--- |
+| **Auth & Perfil** | /auth/login | POST | Autenticación y obtención de token JWT. |
+| | /registro-estudiantes | POST | Creación de cuenta de estudiante. |
+| | /recuperar-password-e | POST | Flujo de recuperación de contraseña. |
+| | /perfil-estudiante | GET | Obtener datos completos del usuario logueado. |
+| | /completar/perfil | POST | Rellenar los datos requeridos tras el registro. |
+| **Redes / Comunidades** | /redes/listar | GET | Listar redes o comunidades disponibles. |
+| | /estudiantes/listar/redes | GET | Obtener redes a las que el usuario ya pertenece. |
+| | /estudiantes/unirse/red | POST | Lógica para afiliarse a una comunidad específica. |
+| **Publicaciones** | /publicaciones/global | GET | Feed paginado de todas las publicaciones públicas. |
+| | /publicaciones/comunitarias | GET | Feed de publicaciones de las redes propias. |
+| | /publicaciones/red/:id | GET | Obtener publicaciones exclusivas de una red. |
+| | /estudiantes/publicaciones | POST | Crear una publicación simple. |
+| | /publicaciones/extendida | POST | Crear una publicación con imágenes u otros recursos. |
+| **Interacción Social** | /publicaciones/:id/like | POST | Acción para dar o quitar 'Me Gusta'. |
+| | /publicaciones/:id/comentarios| POST | Comentar en el hilo de una publicación. |
+| **Mensajes** | /mensajes/conversaciones | GET | Listado del inbox de chats activos del usuario. |
+| **Notificaciones** | /notificaciones | GET/PATCH| Obtener lista y/o marcar como leídas las notificaciones. |
 
-### 7.12 Edit Profile Screen
+## 5. Almacenamiento, Persistencia y Cache
 
-- **Campos:** Nombre, apellido, nombre de usuario y **Descripción** (`biografia` en API), máximo **150** caracteres.
-- **Backend:** `PATCH /estudiante/:id` para nombre, apellido y biografía; si el username cambió, `PATCH /perfil/username`; luego `GET /perfil-estudiante` para refrescar el usuario en memoria y en `SharedPreferences`.
-- **Diseño:** Inputs minimalistas tipo iOS.
+- **StorageService:** Wrapper estático sobre shared_preferences. Utiliza claves constantes como AppConstants.tokenKey y AppConstants.userKey para persistir la sesión de forma síncrona.
+- **ReadModelCacheService:** Servicio en memoria para evitar llamadas redundantes a la API al cambiar de pestañas, útil para optimizar la red de endpoints pesados.
+- **Cache Multimedia:** Las imágenes remotas son procesadas y cacheadas agresivamente usando cached_network_image. Las subidas locales se minimizan usando flutter_image_compress antes de enviar el multipart a la API.
 
-### 7.13 Settings & Secondary Screens
+## 6. UI/UX y Diseño (Widgets)
 
-- **Centro de Control:** Gestión de notificaciones, ayuda, soporte y privacidad.
-- **Solicitud de Red:** Formulario para proponer nuevas redes académicas.
-- **Logout:** Limpieza de `SharedPreferences` y desconexión de Sockets.
+- Usa un archivo theme.dart centralizado para tipografías (Google Fonts) y colores consistentes.
+- Existen gran variedad de BottomSheets modulares: comment_tree_sheet.dart, likes_bottom_sheet.dart, network_options_bottom_sheet.dart, report_post_bottom_sheet.dart.
+- Utiliza carruseles de imágenes interactivos (post_image_carousel.dart) y un visualizador en pantalla completa (fullscreen_image_viewer.dart).
+- Avatares de red seguros (network_avatar.dart, safe_network_image.dart) previenen crashes por URLs inválidas.
 
-### 7.14 Messages Screen (Bandeja de conversaciones)
+## 7. Optimización, Rendimiento y Seguridad
 
-- **Layout:** Header con `@username`, buscador deshabilitado (solo UI), banner de estado del socket, carrusel horizontal de “historias” (usuario + redes del estudiante), lista de conversaciones, sección “Redes para seguir”.
-- **Datos:** `GET /mensajes/conversaciones`, `GET /estudiantes/listar/redes`, `GET /redes/listar`, `POST /estudiantes/unirse/red`; actualización en vivo vía `mensaje:nuevo` y `mensaje:enviado` (`MessagesInboxProvider` + `SocketService`).
-- **Estados:** carga con skeleton animado, vacío, error con reintentar, banner para `connecting` / `reconnecting` / `disconnected`.
-- **Sugerencias:** hasta 10 redes aleatorias no unidas, sin repetir en la sesión; al cerrar todas con “X” se genera un nuevo lote. “Seguir” llama al endpoint real de unión a red.
-- **Pendiente explícito:** pantalla de chat individual, envío de mensajes y navegación al detalle (no implementado en esta fase).
+### 7.1. Optimización
 
----
+- **ProxyProviders:** Inicialización tardía o "lazy" de recursos pesados. Los feeds de red y perfil global se vacían o recargan automáticamente según los cambios en el ciclo de vida del AuthProvider.
+- **Inmutabilidad y CQRS:** La separación de comandos minimiza renders innecesarios en la jerarquía de widgets.
+- **Compresión Local:** No se sube una imagen tal cual se toma; flutter_image_compress optimiza bytes en memoria.
 
-## 8. Flujo de Navegación
+### 7.2. Seguridad
 
-```
-/splash
-   ├── token guardado → /home
-   └── sin token     → /login
+- Las URLs de base de API y Websockets en constants.dart apuntan a infraestructura remota (polired-api.vercel.app), pero se soporta inyección por entorno local si es necesario.
+- Los tokens MAPBOX_ACCESS_TOKEN y MAPBOX_DOWNLOADS_TOKEN están completamente externalizados en el .env, excluidos de control de versiones vía .gitignore.
+- La intercepción de navegación mediante go_router funciona como guardia robusto (Route Guard) garantizando que usuarios sin sesión no puedan acceder a rutas protegidas bajo ninguna circunstancia.
+- Peticiones HTTPS mandatorias para el backend alojado en Vercel.
 
-/login
-   ├── login OK (perfilCompleto=false) → /complete-profile
-   ├── login OK (perfilCompleto=true)  → /home
-   ├── → /register
-   └── → /forgot-password
+## 8. Riesgos Técnicos y Mejoras Recomendadas
 
-/complete-profile
-   └── éxito → /welcome
+1. **Pusher Channels Fijos:** En el archivo socket_service.dart, la apiKey y el cluster de Pusher están quemados (*hardcoded*) directamente en la inicialización en vez de estar inyectados desde .env. Es un riesgo potencial si se requiere rotar credenciales.
+2. **Dependencia Fuerte a Singletons Dinámicos:** El modelo CQRS mezclado con Proveedores inyectados hace que el tracing del flujo de un comando pueda ser oscuro para nuevos desarrolladores.
+3. **Escalabilidad del Cache:** ReadModelCacheService actualmente reside en memoria temporal. Para una experiencia offline pura o persistencia a largo plazo, migrar a Hive, Isar o SQLite (vía sqflite) brindaría un rendimiento inmensamente superior.
+4. **Manejo de Excepciones del Socket:** La conexión con Pusher realiza intentos de reconexión, sin embargo, el encolamiento de mensajes enviados offline no parece estar cubierto, por lo que podrían perderse si la red falla temporalmente.
+5. **Código Muerto/Comentado:** En constants.dart aún yacen comentadas configuraciones de localhost, lo cual sugiere un entorno de desarrollo algo manual en vez del uso de sabores (*flavors*) nativos de Flutter.
 
-/welcome
-   └── 3 redes seleccionadas → éxito → /home
+## 9. Conclusiones Técnicas
 
-/home (MainLayout)
-   ├── Index 0: Home / Feed
-   ├── Index 1: Explorar (Feed por categorías)
-   ├── Index 2: Publicar (Formulario real)
-   ├── Index 3: Mensajes (lista de conversaciones + redes + sugerencias)
-   └── Index 4: Perfil
-       └── logout (previsto) → /login
-```
-
----
-
-## 9. Persistencia de Sesión
-
-1. Login exitoso → `SharedPreferences.setString('auth_token', jwt)` y usuario parcial del JSON de login.
-2. Al iniciar app → `AuthProvider._init()` lee token + user guardados, inyecta el token en `ApiService` y marca sesión autenticada.
-3. **Sincronización de perfil:** Tras restaurar sesión y tras cada login exitoso, la app ejecuta `GET /perfil-estudiante` (`AuthService.refreshUserFromPerfil`) y **sobrescribe** el usuario local con la respuesta completa (incluye `biografia`, alineado con MongoDB). Lo mismo ocurre tras completar perfil con éxito. Así se evita que desaparezca la biografía al cerrar y reabrir la app (el login solo devuelve un subconjunto de campos).
-4. Logout → `StorageService.clear()` → `AuthStatus.unauthenticated` → `SocketService.disconnect()` y `MessagesInboxProvider` limpia sesión vía `ChangeNotifierProxyProvider`.
-
-### Modelo de usuario (`UserModel`)
-
-- Incluye `biografia` (`String?`) además de `_id`, nombre, apellido, email, roles, `username`, `fotoPerfil` y `perfilCompleto`.
-
----
-
-## 10. WebSocket (Socket.IO)
-
-### Autenticación
-
-El backend (`BackendV2/src/socket.js`) valida el JWT en el **handshake**:
-
-- `socket.handshake.auth.token`, o
-- Cabecera `Authorization: Bearer <token>`.
-
-La app móvil envía el mismo token que las peticiones HTTP mediante `OptionBuilder().setAuth({'token': jwt})`. **No** se emite ningún evento de registro adicional (el antiguo `usuario:conectar` del cliente no existe en el servidor).
-
-### Reconexión y estados en UI
-
-`SocketService` expone `ValueNotifier<SocketConnectionPhase>` (`disconnected`, `connecting`, `connected`, `reconnecting`) escuchando también los eventos internos del manager (`reconnect_attempt`, `reconnect`, `reconnect_failed`).
-
-### Eventos utilizados en la bandeja (solo lectura)
-
-| Dirección          | Evento                               | Uso en la app                                                  |
-| ------------------ | ------------------------------------ | -------------------------------------------------------------- |
-| Servidor → cliente | `mensaje:nuevo`                      | Actualizar preview y orden de la conversación en la lista      |
-| Servidor → cliente | `mensaje:enviado`                    | Igual (mensaje propio cuando el socket no estaba en la room)   |
-| Servidor → cliente | `usuario:online` / `usuario:offline` | **No** usados en UI (fase actual)                              |
-| Servidor → cliente | `chat:error`                         | **No** suscrito en la bandeja (solo errores de `join` / envío) |
-
-La carga inicial de conversaciones es **HTTP**: `GET /mensajes/conversaciones`. Los eventos anteriores mantienen la lista al día cuando alguien envía vía WebSocket (`mensaje:enviar` en servidor). Los mensajes enviados **solo** por HTTP **no** disparan estos eventos en el backend actual.
-
-### Limitaciones conocidas del backend (mensajería)
-
-- **Sin contador de no leídos ni recibos:** el listado HTTP no incluye `unreadCount`. La app muestra un indicador aproximado: mensajes entrantes por socket o último mensaje cuyo `autorId` no es el usuario actual.
-- **`GET /redes/listar`** solo devuelve `nombre`, `descripcion`, `cantidadMiembros`, `esOficial`, `esVerificada` (sin `fotoPerfil`). Las tarjetas de sugerencias usan siglas en el círculo.
-- **`GET /estudiantes/listar/redes`** hace populate con `nombre` y `descripcion` solamente: en la práctica **no** llega `fotoPerfil` de la red; las historias circulares usan imagen solo si el backend amplía el `select` en el futuro (la app ya contempla fallback por siglas).
-
----
-
-## 11. Assets
-
-| Archivo        | Ruta                          |
-| -------------- | ----------------------------- |
-| Logo de la app | `assets/images/logo_v5.2.png` |
-
-> **Acción realizada:** Configurado como ícono de lanzador para Android e iOS mediante `flutter_launcher_icons`. Nombre de la app actualizado a **"Polired"**.
-
----
-
-## 12. Validaciones y UX
-
-### Sistema de Notificaciones (`AppSnackbar`)
-
-Implementado en `lib/utils/app_snackbar.dart`, inspirado en Threads/Discord.
-
-- **Éxito (Verde):** Acciones completadas correctamente.
-- **Error (Rojo):** Errores de validación o fallos de red. `ApiService` está configurado para parsear tanto mensajes simples (`msg`) como arreglos de errores complejos de `express-validator`, extrayendo la descripción específica del fallo.
-- **Info (Azul):** Avisos de sistema (ej. "Cuenta no activada").
-
-### Validaciones (`Validators`)
-
-Centralizadas en `lib/utils/validators.dart`.
-
-#### Login
-
-- Usuario/Email: no vacío.
-- Password: no vacío, mínimo 8 caracteres (sincronizado con backend).
-- **Manejo de errores:** Detección robusta de cuenta no activada, usuario inexistente y contraseña incorrecta mediante el mapeo exacto de mensajes del backend (`confirma`, `registrado`, `incorrecta`).
-
-#### Registro
-
-- Nombre/Apellido: requerido, solo letras (regex), sincronizado con las restricciones del backend.
-- Email: regex estricto de correo electrónico.
-- Password: fuerte (mínimo 8 caracteres, 1 mayúscula, 1 número).
-- Confirmar password: debe coincidir exactamente.
-
-#### Recuperar contraseña
-
-- Email: requerido, formato válido.
-- **UX:** Muestra estado de éxito dentro de la pantalla o error si el correo no se encuentra en la base de datos (mapeo de excepción `registrado`).
-
-#### Completar y editar perfil (descripción)
-
-- Campo **Descripción** / `biografia`: máximo **150** caracteres en cliente y backend; opcional al completar perfil, editable en "Editar perfil".
-
----
-
-## 13. QA — Resultados
-
-```
-flutter analyze → No issues found ✅
-```
-
----
-
-## 14. Decisiones Técnicas
-
-| Decisión                                | Alternativa                       | Razón                                                                                                                |
-| --------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Provider                                | Riverpod / Bloc                   | Menor complejidad                                                                                                    |
-| GoRouter                                | Navigator 2.0                     | Redirects de auth declarativos                                                                                       |
-| `package:http`                          | Dio                               | Suficiente para la escala                                                                                            |
-| Tema claro                              | Tema oscuro                       | Los HTMLs de referencia son light                                                                                    |
-| DI manual                               | GetIt                             | Evitar overhead                                                                                                      |
-| `10.0.2.2`                              | `localhost`                       | IP del host en emulador Android                                                                                      |
-| Refresco de perfil tras login e `_init` | Confiar solo en el JSON del login | El backend no envía `biografia` en el login; sin `GET /perfil-estudiante` la descripción se perdía al guardar sesión |
-
----
-
-## 15. Pendiente — Fase 2 (Continuación)
-
-- [x] Pantalla completar perfil (username + foto + descripción / `biografia`, máx. 150 caracteres)
-- [x] Pantalla bienvenida (elección de redes)
-- [x] Home Screen con feed dinámico por red (Datos Reales)
-- [x] Bottom NavBar con 5 apartados y glassmorphism
-- [x] Profile Screen dinámica sin mocks (muestra `biografia` cuando existe en el servidor)
-- [x] Pantalla "Agregar Publicación" (Integrada)
-- [x] Centro de Configuración y Subpantallas
-- [x] Pantalla "Editar Perfil" (persistencia real)
-- [x] Integración de Notificaciones Informativas
-- [x] Bandeja de Mensajes (lista de conversaciones + socket + redes + sugerencias)
-- [x] Sección "Explorar" con Feed Global por categorías (Noticias, Marketplace, Cursos)
-- [x] **Sistema Social Unificado** (likes, comentarios, guardados, replies para Publicacion y Articulo)
-- [x] **PostStoreProvider** — store global normalizado con optimistic updates y rollback
-- [x] **ExplorePostCard** rediseñado (layout social unificado para las 3 categorías)
-- [x] **PostDetailScreen** — pantalla de detalle funcional con todas las acciones sociales
-- [x] **Bookmark para Marketplace/Cursos** — corregido (`guardarPublicacion` ahora acepta IDs de Articulo)
-- [x] **Replies funcionales** — corregida URL de endpoint y redraw del árbol de comentarios
-- [ ] Pantalla de chat 1:1 (historial, `join:conversacion`, envío `mensaje:enviar`)
-- [ ] "Mis Publicaciones" en perfil (requiere endpoint backend pendiente)
-
----
-
-## 16. Normalización de Identificadores (MongoDB Compatibility)
-
-Para garantizar la compatibilidad con el backend (que expone identificadores tanto como `_id` como `id` según el endpoint), se implementó un sistema de normalización centralizado en `lib/utils/json_ids.dart`.
-
-### Problema Identificado
-
-En fases anteriores, el cliente esperaba exclusivamente `_id`. Esto causaba:
-
-- Identificadores vacíos en `SuggestedNetworkModel` cuando el backend devolvía `id`.
-- Filtrado erróneo de sugerencias (se omitían redes con `id` en lugar de `_id` debido a validaciones de `isEmpty`).
-- Fallos en la pantalla de bienvenida y al unirse a redes (envío de `redId` vacío al backend).
-
-### Solución: `parseMongoId` y `parseMongoIdFromMap`
-
-Se rediseñó la lógica de parsing para ser extremadamente robusta:
-
-- **`parseMongoId`**:
-  - Realiza `trim()` automático a strings.
-  - Rechaza strings vacíos.
-  - Admite tipos `int`.
-  - Soporta mapas complejos (objetos con `$oid` de MongoDB).
-  - Evita el uso de `.toString()` sobre mapas arbitrarios para prevenir basura visual como ID.
-- **`parseMongoIdFromMap`**:
-  - Intenta obtener el ID buscando en orden de prioridad (configurable, por defecto `_id` -> `id`).
-  - Reutiliza `parseMongoId` para manejar los valores encontrados de forma recursiva o anidada.
-
-### Impacto en el Código
-
-- **Modelos:** `SuggestedNetworkModel` ahora utiliza `parseMongoIdFromMap`, permitiendo que el pool de sugerencias se llene correctamente sin importar el formato de la respuesta.
-- **Servicios:** `NetworkService.getRedesEstudianteStories` normaliza cada entrada y omite aquellas sin ID válido, previniendo errores en el feed. Se añadió validación previa en `unirseRed`.
-- **Providers:** `NetworkProvider.unirseRedes` ahora limpia, normaliza y deduplica los IDs antes de procesar las uniones, devolviendo errores claros si no hay IDs válidos.
-- **UI:** En `WelcomeScreen`, se restauró la validación obligatoria de 3 redes y se eliminó cualquier bypass de navegación. Los ítems sin ID válido simplemente no se renderizan para mantener la integridad de la interfaz.
-
----
-
-## 17. Flujo de Publicaciones y Corrección de Ventas (BackendV2 Integration)
-
-Para alinear el comportamiento del frontend con los requerimientos reales del backend (`BackendV2`) y evitar fallos de autorización (401) y campos faltantes, se realizó una reestructuración profunda en el módulo de creación de publicaciones.
-
-### 17.1 Problemas Detectados en el Flujo Original
-
-1. **Pérdida de Autorización:** La pantalla `AddPostScreen` instanciaba un `ApiService` local (`new ApiService()`) en lugar de heredar el singleton global. Al no contar con el JWT cargado, las solicitudes fallaban con código de error **401 Unauthorized**.
-2. **Formulario Incompleto:** Al enviar publicaciones de tipo Comunidad, Noticias o Cursos a `POST /estudiantes/publicaciones`, no se enviaba el parámetro obligatorio `categoria` en el cuerpo de la petición.
-3. **Categorías no soportadas en Post Estándar:** El backend no permite crear publicaciones de categoría `Venta` mediante el endpoint de estudiantes estándar (`POST /estudiantes/publicaciones`).
-4. **Flujo de Multimedia Incompatible:** El backend de ventas espera un flujo de carga de imágenes e información que difiere del flujo basado en Base64 tradicional para posts estándar.
-
----
-
-### 17.2 Solución y Correcciones Implementadas
-
-#### A. Reutilización del Servicio Global
-
-- Se modificó `AddPostScreen` para que obtenga e inyecte la instancia global y autenticada de `ApiService` a través de `Provider`:
-  ```dart
-  PostService(context.read<ApiService>())
-  ```
-  Esto garantiza que el encabezado `Authorization: Bearer <token>` se envíe de manera consistente en todas las peticiones de creación de posts y artículos.
-
-#### B. Separación de Rutas por Categoría (Estándar vs. Artículos de Venta)
-
-1. **Publicaciones Estándar (Comunidad, Noticias, Cursos)**
-   - **Endpoint:** `POST /estudiantes/publicaciones`
-   - **Campos enviados:** `titulo`, `contenido`, `categoria` (comunidad, noticias, cursos) y `comunidadId` (requerido únicamente si la categoría es Comunidad).
-   - Se removió la interfaz y el soporte de campos no estructurados (ventas/cursos de pago) en este endpoint.
-2. **Artículos de Venta**
-   - **Endpoint:** `POST /publicaciones/articulos`
-   - **Campos enviados:**
-     - `titulo`
-     - `descripcion`
-     - `precio` (campo numérico añadido dinámicamente en la UI al seleccionar la categoría "Venta")
-     - `comunidadId` (opcional)
-     - `imagen` (incluida automáticamente por `PostService` si se selecciona un archivo)
-     - `categoria`: `'venta'`
-
-#### C. Cambios en Archivos Clave
-
-| Archivo                                 | Rol de la Corrección                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lib/screens/post/add_post_screen.dart` | - Remoción de lógicas visuales de venta/cursos de pago no estructuradas del flujo estándar.<br>- Adición dinámica del campo **Precio** únicamente cuando la categoría seleccionada es **Venta**.<br>- Validación estricta de selección de comunidad para la categoría **Comunidad**.<br>- Gestión de estado de carga (`_isLoading`) para prevenir envíos duplicados.<br>- Manejo robusto de errores mediante `AppSnackbar` (incluyendo respuestas 400 y 401). |
-| `lib/services/post_service.dart`        | - Actualización del método `createPost` para incluir correctamente el campo `categoria` en el body de la petición HTTP.<br>- Implementación/Mapeo de `createArticle` para redirigir las publicaciones de venta a su endpoint dedicado (`POST /publicaciones/articulos`).                                                                                                                                                                                      |
-
----
-
-### 17.3 Validación Técnica y Resultados
-
-- **Análisis de Código:** Ejecución de validaciones de análisis estático:
-  ```bash
-  flutter analyze lib/screens/post/add_post_screen.dart lib/services/post_service.dart
-  ```
-  **Resultado:** `No issues found! ✅` sin advertencias de tipos, imports o sintaxis.
-- **Funcionamiento Real:** Las publicaciones de tipo Comunidad, Noticias y Cursos ahora persisten de forma inmediata en el backend real `BackendV2`. Las publicaciones de Venta se crean exitosamente en el módulo de artículos de venta utilizando su correspondiente tabla y validaciones, retornando respuestas estructuradas al cliente.
-
----
-
-_Documento actualizado progresivamente con cada fase del desarrollo._
-
----
-
-## Cambios recientes (16 mayo 2026)
-
-Se aplicaron mejoras para centralizar y endurecer el manejo de imágenes remotas en la aplicación móvil, con el objetivo de evitar fallos visibles, homogeneizar la UX de carga/errores y facilitar la interoperabilidad con `BackendV2`.
-
-- **Resumen técnico de cambios**:
-  - Nuevo helper `SafeNetworkImage` en `lib/widgets/safe_network_image.dart`.
-    - Soporta `url`, `width`, `height`, `fit`, `alignment`, `placeholder`, `errorWidget` y `borderRadius`.
-    - Muestra spinner durante la carga (`loadingBuilder`) y fallback consistente en errores o URL vacía.
-  - `CircularNetworkAvatar`: avatar circular reutilizable que usa internamente `SafeNetworkImage` y muestra iniciales cuando no hay imagen.
-  - Reemplazos aplicados en el frontend (renderizado de imágenes ahora seguro):
-    - `lib/widgets/network_avatar.dart` — ahora usa `SafeNetworkImage`.
-    - `lib/screens/messages/messages_screen.dart` — avatares y thumbnails migrados a `SafeNetworkImage`/`CircularNetworkAvatar`.
-    - `lib/screens/post/add_post_screen.dart` — selector/preview de redes usa `SafeNetworkImage`.
-    - `lib/screens/profile/profile_screen.dart` — avatar de perfil renderizado con `SafeNetworkImage`.
-
-- **Motivación y beneficios**:
-  - Evitar excepciones visibles o comportamiento inconsistente cuando `Image.network` fallaba.
-  - Centralizar la lógica de placeholders, carga y errores para facilitar mantenimiento y futuras mejoras (p. ej. caching).
-  - Mantener compatibilidad visual: los placeholders previos (iniciales, íconos de grupo) se pasaron como `errorWidget` para preservar la UX.
-
-- **Compatibilidad con BackendV2**:
-  - No se modificó la forma de envío de `fotoPerfil` desde la app: `PATCH /completar/perfil` sigue aceptando Base64 en `fotoPerfil` y/o multipart `files.imagen` (el backend prioriza el archivo cuando existe).
-  - Se actualizó la documentación (`README.md` y `BackendV2/README.md`) para describir la normalización de `mediaUrls` y la flexibilidad en `fotoPerfil`.
-
-- **Validación realizada y pasos sugeridos**:
-  1. Ejecutar análisis estático y resolver advertencias:
-
-     ```bash
-     cd polired
-     flutter pub get
-     flutter analyze
-     ```
-
-  2. Probar manualmente en emulador/dispositivo las pantallas afectadas:
-     - `Perfil`: avatar de usuario y edición de foto.
-     - `Mensajes`: lista de conversaciones y avatares.
-     - `Add Post` / `Stories`: vistas de redes y selector de imágenes.
-
-  3. Chequear casos límite:
-     - URL nula o vacía → muestra iniciales/placeholder.
-     - Imagen 404 o corrupta → muestra `errorWidget` configurado.
-     - Carga prolongada → aparece spinner y no rompe la UI.
-
-- **Próximos pasos recomendados**:
-  - Ejecutar `flutter analyze` y resolver avisos (tengo la tarea pendiente en la lista TODO).
-  - Opcional: migrar `SafeNetworkImage` a `cached_network_image` para caching y placeholders más avanzados.
-  - Revisar pantallas restantes si detectas imágenes directas residuales.
-
-- **Optimización de subida de imágenes (Frontend)**:
-  - `EditProfileScreen`, `CompleteProfileScreen` y `AddPostScreen` ahora procesan imágenes con `ImagePicker` usando `imageQuality`, `maxWidth` y `maxHeight` para reducir el peso inicial.
-  - Se agregó compresión secundaria en `lib/utils/image_compression.dart` con `flutter_image_compress` para asegurar tamaños menores sin cambiar el contrato multipart/form-data existente.
-  - La interfaz muestra estados de proceso (`Preparando imagen...`, `Comprimiendo imagen...`, `Subiendo...`) y bloquea envíos mientras se procesa la imagen.
-  - No se realizaron cambios en los endpoints ni en la forma de envío multipart: la comunicación con el backend permanece compatible.
-
-- **Validación completada**:
-  - Ejecutado `flutter analyze` en `app_polired` sin errores.
-
-> Nota: según tu preferencia guardada, actualizaré `polired/informe_tecnico_polired.md` cada vez que solicites "actualizar la documentación". Si quieres que documente otras modificaciones (logs de commits, pruebas ejecutadas, o capturas), dímelo y lo añado.
-
----
-
-## 18. Auditoría, Optimización y Unificación del Flujo de Imágenes (Fase 2 — 17 de mayo de 2026)
-
-Se realizó una revisión arquitectónica profunda del ciclo de vida multimedia en Polired, abordando la subida física de archivos a través de Cloudinary, el soporte de carrusel multi-imagen de hasta 3 fotos, y resolviendo una validación bloqueante crítica del backend.
-
-### 18.1 Diagnóstico de Inconsistencias y Limitaciones en el Backend
-
-1. **El Bug de Coma-Splitting en Base64:**
-   - La normalización del backend divide cualquier string que contenga una coma (`split(',')`). Al enviar avatares codificados en Base64 tradicional (`data:image/jpeg;base64,...`), el backend rompía el string por la mitad y guardaba un prefijo corrupto en MongoDB.
-2. **Validación Bloqueante en Noticias y Comunidades:**
-   - El endpoint de publicaciones estándar (`POST /estudiantes/publicaciones`) y de artículos (`POST /publicaciones/articulos`) bloquean de forma estricta la subida de imágenes si la publicación se clasifica como tipo `'texto'`.
-   - Si no se suministra el campo `tipoContenido` en la petición, el backend lo evalúa por defecto como `'texto'`. Al detectar imágenes en el request (`req.files.imagen`), arrojaba el error: `"No se permite media en publicaciones de tipo texto"`.
-   - **Solución del Frontend:** Se programó el servicio para inyectar automáticamente `'tipoContenido': 'imagen'` cuando existan archivos adjuntos o URLs multimedia.
-
-### 18.2 Mejoras y Correcciones Implementadas
-
-#### A. Motor de Transmisión Multipart en el Core (`ApiService`)
-Se desarrolló el método genérico `multipartRequest` en `ApiService` para enviar flujos de bytes físicos y campos de texto de forma paralela. Inyecta el token de seguridad `Authorization Bearer` y mapea los errores complejos de validación del backend automáticamente.
-
-#### B. Registro y Edición de Foto de Perfil Directa
-* **`CompleteProfileScreen`:** Migró exitosamente de Base64 a subida física directa por multipart, resolviendo el problema de las comas en base de datos.
-* **`EditProfileScreen`:** Sustituyó el placeholder por una interfaz de selección interactiva (tocar avatar o botón dedicado), permitiendo la subida física del nuevo avatar y la sincronización con el state en tiempo real.
-
-#### C. Publicador Multi-Imagen Adaptativo (`AddPostScreen`)
-* Agregó un selector horizontal estético en `AddPostScreen` que soporta de 1 a 3 imágenes físicas. Muestra una vista previa miniatura interactiva y un botón para desestimar imágenes.
-* Mapeó la subida física en publicaciones de Noticias y Comunidades a través de `createPost`, y de Venta o Cursos a través de `createArticle`.
-
-#### D. Carrusel de Visualización Premium (`PostImageCarousel`)
-* Diseñó el widget `PostImageCarousel` con soporte dinámico para imágenes simples y múltiples.
-* En publicaciones multi-imagen, el widget renderiza un `PageView` táctil con deslizamiento horizontal suave e indicadores de dot ("puntos de paginación") sincronizados.
-* Integró el carrusel en las tarjetas principales del feed: `PostCard` y `ExplorePostCard`.
-
-#### E. Refresco Automático de Feeds (UX Premium)
-* Al crear una publicación exitosa en `AddPostScreen`, la app detecta automáticamente la categoría e invoca el refresco del feed (`refreshFeed()`) en el provider respectivo (`CommunityFeedProvider` o `GlobalFeedProvider`).
-* Esto permite al usuario ver su publicación inmediatamente en la pantalla anterior sin requerir un deslizamiento manual.
-
-#### F. Blindaje en Memoria para Base64 Históricos
-* Robusteció `SafeNetworkImage` para detectar proactivamente prefijos Base64 (`data:image/...;base64,`). Al encontrarlos, los decodifica en bytes en memoria y los dibuja con `Image.memory`, previniendo crashes en la UI con registros de imágenes antiguos de la base de datos.
-
-
-### 18.3 Resultados de Calidad de Código (QA)
-* **Validación Estática:**
-  ```bash
-  flutter analyze
-  ```
-  **Resultado:** `No issues found!` sin advertencias, optimizando la confiabilidad de la aplicación en producción.
-
----
-
-## 19. Sistema Social Unificado — Polired (18 de mayo de 2026)
-
-Se implementó y corrigió el sistema social completo de Polired, unificando las interacciones (likes, comentarios, guardados y respuestas) para funcionar de forma idéntica en las tres secciones del feed: **Noticias** (`Publicacion`), **Marketplace** y **Cursos** (`Articulo`).
-
-### 19.1 Arquitectura del Store Global (`PostStoreProvider`)
-
-**Problema previo:** `PostStoreProvider` era importado por múltiples archivos pero su archivo físico (`lib/providers/post_store_provider.dart`) no existía, causando fallos de compilación en toda la rama de interacciones sociales.
-
-**Solución:** Se creó el archivo con el store normalizado completo.
-
-#### Diseño del Store
-
-El `PostStoreProvider` es el único punto de verdad para los `PostModel`. Los feeds (`CommunityFeedProvider`, `GlobalFeedProvider`) almacenan exclusivamente `List<String>` de IDs; las entidades reales viven en el store.
-
-```
-PostStoreProvider._postsById   Map<String, PostModel>
-       │
-       ├── getPost(id)           → O(1) lookup
-       ├── addPosts(List)        → ingesta sin duplicados, respeta estado social optimista
-       ├── addPost(single)       → agrega o reemplaza
-       ├── toggleLike(id)        → optimistic update + rollback automático en fallo de red
-       ├── toggleSave(id)        → optimistic update + rollback automático
-       ├── incrementCommentsCount(id)  → actualización atómica del contador
-       └── updateCommentsCount(id, n)  → sincronización desde backend
-```
-
-#### Flujo de optimistic update
-
-```
-toggleLike(id)
-  1. Mutación inmediata en _postsById → notifyListeners()
-  2. await PostService.toggleLike(id, wasLiked)
-  3. Si success → OK (la UI ya refleja el estado correcto)
-  4. Si !success → rollback a estado anterior → notifyListeners()
-```
-
-Los widgets usan `context.select<PostStoreProvider, PostModel?>()` para recibir únicamente los rebuilds relevantes al ID específico (O(1) por widget).
-
-#### Registro en `main.dart`
-
-```dart
-// PostService registrado como Provider para acceso global (CommentTreeSheet lo consume)
-Provider<PostService>.value(value: postService),
-
-// PostStoreProvider
-ChangeNotifierProvider(create: (_) => PostStoreProvider(postService)),
-
-// Feeds como ProxyProvider dependientes del store
-ChangeNotifierProxyProvider<PostStoreProvider, CommunityFeedProvider>(
-  create: (ctx) => CommunityFeedProvider(postService, ctx.read<PostStoreProvider>()),
-  update: (_, store, prev) => prev!..update(store),
-),
-ChangeNotifierProxyProvider<PostStoreProvider, GlobalFeedProvider>(
-  create: (ctx) => GlobalFeedProvider(postService, ctx.read<PostStoreProvider>()),
-  update: (_, store, prev) => prev!..update(store),
-),
-```
-
----
-
-### 19.2 Backend — Helper `_resolvePostDoc` (socialController.js)
-
-Para que los endpoints sociales funcionen sin duplicar lógica para `Publicacion` y `Articulo`, se añadió un helper de resolución dinámica al inicio del controlador:
-
-```js
-const _resolvePostDoc = async (id) => {
-  let doc = await Publicacion.findById(id)
-  if (doc) return { doc, autorId: doc.autorId, comunidadId: doc.comunidadId, isArticulo: false }
-  doc = await Articulo.findById(id)
-  if (doc) return { doc, autorId: doc.autorId, comunidadId: doc.redComunitaria, isArticulo: true }
-  return null
-}
-```
-
-Los controladores `darLikePublicacion`, `quitarLikePublicacion`, `crearComentarioPublicacion`, `responderComentario` y `guardarPublicacion` usan este helper en lugar de `Publicacion.findById(id)` directamente. La lógica de negocio no cambió; solo se generalizó el lookup del documento.
-
-También se añadieron los campos sociales al schema `Articulo`:
-
-```js
-likes: [{ type: ObjectId, ref: 'Estudiante' }],
-likesCount: { type: Number, default: 0 },
-commentsCount: { type: Number, default: 0 }
-```
-
-Los endpoints y rutas permanecen inalterados.
-
----
-
-### 19.3 Rediseño de `ExplorePostCard`
-
-La tarjeta del Explore Feed fue completamente rediseñada con un layout social moderno y unificado para las tres categorías.
-
-| Elemento | Implementación |
-|---|---|
-| **Header** | Avatar circular + nombre + ícono verificado + nombre de red + tiempo + menú `···` |
-| **Media** | `PostImageCarousel` (multi-imagen con swipe + indicadores de paginación) |
-| **Overlay de título** | Gradiente oscuro en la parte inferior de la imagen con el título en blanco |
-| **Badge de precio** | Píldora blanca en esquina superior derecha (solo Marketplace/Cursos con precio) |
-| **Acciones** | `❤️ 24` `💬 8` `🔗` alineados en fila izquierda; `🔖` en el extremo derecho |
-| **Caption** | Username en negrita + texto truncado a 120 caracteres + link "Ver N comentarios" |
-
-Sin estado local. Toda la información proviene de `PostStoreProvider` via `context.read`.
-
----
-
-### 19.4 `PostDetailScreen` (nuevo)
-
-Pantalla de detalle completa implementada en `lib/screens/post/post_detail_screen.dart`:
-
-- Lee el `PostModel` desde `PostStoreProvider` con `context.select` (sin re-fetch HTTP).
-- Muestra: header del autor, título, carrusel de multimedia, badge de precio para artículos, contenido completo, acciones sociales reales con contadores.
-- Abre `CommentTreeSheet` como modal para ver y publicar comentarios.
-- Todas las acciones (like, save, comment) activan el mismo flujo de optimistic update del store.
-
----
-
-### 19.5 Corrección del sistema de guardados (Bookmark) en Marketplace y Cursos
-
-**Problema:** `guardarPublicacion` en el backend buscaba el documento exclusivamente con `Publicacion.findById(id)`. Los IDs de artículos (`Articulo`) no existían en esa colección → HTTP 404 → el frontend (`PostStoreProvider.toggleSave`) recibía `success: false` → rollback automático → el ícono bookmark nunca se activaba.
-
-**Causa raíz:** Una sola línea en el backend.
-
-**Corrección (mínima):**
-
-```js
-// Antes:
-const [estudiante, publicacion] = await Promise.all([
-  Estudiante.findById(estudianteId),
-  Publicacion.findById(id)          // ← solo buscaba en Publicacion
-])
-if (!estudiante || !publicacion) return 404
-
-// Después:
-const resolved = await _resolvePostDoc(id)   // ← usa el helper ya existente
-const estudiante = await Estudiante.findById(estudianteId)
-if (!estudiante || !resolved) return 404
-const docId = resolved.doc._id
-```
-
-El ID guardado en `estudiante.publicacionesGuardadas` es simplemente un `ObjectId`, independiente de la colección de origen. `quitarGuardadoPublicacion` ya era correcto (solo filtra el array por ID, sin lookup).
-
-**Resultado:** Bookmark funciona de forma idéntica en Noticias, Marketplace y Cursos.
-
----
-
-### 19.6 Corrección del sistema de replies (comentarios anidados)
-
-Se corrigieron dos bugs independientes que impedían que las respuestas a comentarios funcionasen.
-
-#### Bug 1 — URL incorrecta (causa principal)
-
-| | URL |
-|---|---|
-| **Backend registra** | `POST /api/comentarios/:comentarioId/responder` |
-| **Frontend enviaba** | `POST /api/publicaciones/comentarios/:id/responder` |
-
-El prefijo `/publicaciones/` sobrante causaba un 404 en todas las respuestas. El frontend interpretaba el fallo como error de envío y hacía rollback silencioso.
-
-**Corrección en `PostService.replyComment`:**
-```dart
-// Antes:
-_api.post('/publicaciones/comentarios/$commentId/responder', ...)
-
-// Después:
-_api.post('/comentarios/$commentId/responder', ...)
-```
-
-#### Bug 2 — Sin redraw del árbol (causa secundaria)
-
-`_loadComments` en `CommentTreeSheet` asignaba `_comments = loaded` **fuera** del `setState`, por lo que Flutter nunca reconstruía el `ListView` con los nuevos datos.
-
-**Corrección:**
-```dart
-// Antes:
-_comments = result.data['comentarios'];  // fuera de setState
-setState(() { _isLoading = false; });    // solo cerraba el spinner
-
-// Después:
-setState(() {
-  _comments = loaded;   // ← dentro de setState: dispara rebuild
-  _isLoading = false;
-});
-```
-
-**Resultado:** Las respuestas se persisten en backend, aparecen anidadas bajo el comentario padre, y el árbol se actualiza automáticamente. El contador `commentsCount` se incrementa. Funciona en Noticias, Marketplace y Cursos.
-
----
-
-### 19.7 Resumen de archivos modificados (Sesión 18 mayo 2026)
-
-| Archivo | Tipo | Descripción |
-|---|---|---|
-| `lib/providers/post_store_provider.dart` | **CREADO** | Store global normalizado — el archivo físico que faltaba |
-| `lib/screens/post/post_detail_screen.dart` | **CREADO** | Pantalla de detalle funcional con todas las acciones sociales |
-| `lib/screens/explore/widgets/explore_post_card.dart` | **REDISEÑADO** | Layout social unificado para las 3 categorías del Explore |
-| `lib/widgets/comment_tree_sheet.dart` | **CORREGIDO** | Import de PostStoreProvider + fix BuildContext across async gap + fix redraw |
-| `lib/services/post_service.dart` | **CORREGIDO** | URL de `replyComment` alineada con el router del backend |
-| `lib/widgets/post_card.dart` | **SIMPLIFICADO** | Convertido de StatefulWidget a StatelessWidget (sin estado local) |
-| `lib/main.dart` | **ACTUALIZADO** | `Provider<PostService>` registrado globalmente |
-| `BackendV2/src/models/Articulos.js` | **ACTUALIZADO** | Campos `likes`, `likesCount`, `commentsCount` añadidos |
-| `BackendV2/src/controllers/socialController.js` | **ACTUALIZADO** | Helper `_resolvePostDoc` + controladores de like, comentario, guardar unificados |
-
-### 19.8 QA Final
-
-```bash
-flutter analyze
-# Resultado: No issues found! ✅
-```
-
----
-
-## 20. Rediseño de Hojas Inferiores (Mockup HTML Parity) — 18 de mayo de 2026
-
-Se rediseñó la estética de las tres hojas inferiores principales (`bottom sheets`) del sistema social para alinearlas de forma idéntica con el estilo visual minimalista y la estructura de los mockups HTML proporcionados:
-
-### 20.1 Hojas Inferiores Modificadas
-
-1. **`ReportPostBottomSheet` (Reportar)**:
-   - Se reemplazaron las tarjetas circulares por un listado de filas minimalistas con borde inferior (`border-neutral-100` / `AppTheme.surfaceContainerHigh`).
-   - Se simplificó el título superior a únicamente `"Reportar"`.
-   - Se cambió el control de selección a un check box cuadrado minimalista (`rounded`, 20x20px) con borde e ícono de marca de verificación blanco sobre fondo azul marino.
-   - El botón de envío se rediseñó como una barra plana de ancho completo con texto `"Enviar"`.
-   - Se configuró la curvatura superior de la hoja a `rounded-t-[20px]`.
-
-2. **`PostOptionsBottomSheet` (Menú de Opciones)**:
-   - Se rediseñó por completo eliminando íconos y contenedores sombreados.
-   - Se implementó como una pila vertical plana de dos botones de texto centrados:
-     - **Reportar**: en color rojo (`AppTheme.error`), con peso `FontWeight.w600` (semibold), separado por una línea divisoria inferior.
-     - **Guardar / Eliminar de guardados**: en color negro (`AppTheme.onSurface`), con peso `FontWeight.w500` (medium).
-   - Se ajustó el radio superior a `rounded-t-[20px]`.
-
-3. **`LikesBottomSheet` (Me gusta)**:
-   - Se cambió el título a `"Me gusta"` (anteriormente `"Likes"`), centrado con una línea de división inferior como en el diseño de referencia.
-   - El radio superior se configuró a `rounded-t-[2.5rem]` (`Radius.circular(40)`).
-   - Los avatares del listado se incrementaron a 48px (`w-12 h-12`).
-   - Se refinó la tipografía del username (`text-primary`, negrita, tracking-tight) y del nombre completo (`text-on-surface-variant`, 12px, font-medium) para que coincida exactamente con las clases CSS del mockup.
-
----
-
-## 21. Refactorización del Sistema de Respuestas Planas (Fin del Árbol Recursivo Infinito)
-
-Para mejorar la legibilidad y evitar el desplazamiento horizontal indefinido de las respuestas anidadas a la derecha de la pantalla (típico de estructuras en árbol infinito), se refactorizó por completo el renderizado y parsing del árbol de comentarios en la aplicación:
-
-### 21.1 Lógica de Respuestas Planas (Single-Level Replies)
-
-* **Eliminación de la Recursividad Visual**:
-  - Toda respuesta asociada a un comentario raíz se renderiza dentro de un único nivel plano de indentación fija (`left: 48`), sin importar la profundidad en el árbol de datos de MongoDB.
-  - Se eliminaron las sub-ramas de identación progresiva.
-
-* **Detección Dinámica de Menciones (`@username`)**:
-  - Al procesar recursivamente mediante DFS (`_flattenReplies`) la respuesta obtenida del backend, si el padre directo de una respuesta no es el comentario raíz, se extrae el nombre del autor del comentario padre y se asocia al campo `replyingToUsername`.
-  - En la UI, el texto de la respuesta se compone dinámicamente mediante `Text.rich`: prepende `@username ` en negrita con el color azul institucional (`AppTheme.primary`), seguido del texto del mensaje en una sola línea inline.
-
-* **UX del Input de Respuesta**:
-  - Al hacer clic en "Responder" en cualquier comentario o respuesta secundaria, la barra inferior de entrada de texto muestra el banner `"Respondiendo a @usuario"`.
-  - Sin embargo, para mantener la coherencia y estabilidad visual de la conversación, el envío de la respuesta se mantiene asociado directamente a la rama visual del comentario raíz.
-
-* **Optimización de Carga y Rebuilds**:
-  - Se utiliza `ListView.builder` de forma plana y eficiente en lugar de estructuras de widgets recursivos anidados.
-  - Se añadió la capacidad de colapsar o expandir el listado de respuestas por cada comentario raíz de manera limpia e instantánea.
-  - Se eliminó el botón de corazón de los comentarios/respuestas dentro del árbol de comentarios por requerimiento de diseño.
-
-* **Soporte Backend**:
-  - Se actualizó el controlador `listarComentariosArbol` en `socialController.js` para añadir el campo `username` al `populate` de la entidad de usuario (`userId`). Esto permite que el frontend obtenga los handles correctos de manera inmediata sin requerir llamadas HTTP adicionales.
-
-### 21.2 Archivos Afectados
-
-| Archivo | Rol en el Cambio |
-|---|---|
-| `polired/lib/widgets/comment_tree_sheet.dart` | Reescritura completa del parsing (DFS flattening), renderizado plano con indentación fija de 48px, menciones inline `@username` con `Text.rich`, toggle de expansión y remoción del ícono de corazón. |
-| `BackendV2/src/controllers/socialController.js` | Modificación de `listarComentariosArbol` para incluir `username` en el `populate` de `userId`. |
-
-_Documento actualizado progresivamente con cada fase del desarrollo._
-
----
-
-## 22. Rediseño Visual y Funcional de Perfil y Configuración (Polired V2.4.0)
-
-### 22.1 Objetivos de la Refactorización
-* **Rediseño del Perfil (Header Superior)**: Adaptar la cabecera a un estilo minimalista premium tipo Instagram/Threads. Se reorganizó la estructura del avatar y del nombre, ubicando el nombre a la derecha del avatar (en lugar de abajo), y se añadió el ícono de candado minimalista al lado izquierdo del nombre de usuario en la barra de navegación superior.
-* **Consumo de Datos Reales de Estadísticas**: Sustituir el contador local del perfil por el consumo directo del endpoint `GET /perfil-estudiante`, obteniendo el total de publicaciones reales del usuario (`publicacionesCount`) calculadas de forma dinámica en el backend.
-* **Integración del Rol Administrador**: Condicionar la aparición del botón **"Gestionar red"** únicamente a los usuarios con el rol `admin_red` (determinado desde el `AuthProvider`), alineado a la derecha de "Editar Perfil".
-* **Unificación de Vistas (Instagram-Style Grid)**: Eliminar el sistema redundante de múltiples pestañas y reemplazarlo por una sola pestaña visual ("Publicaciones") con un grid moderno de 4 columnas que muestra placeholders de imágenes correspondientes al número total de posts reales del usuario.
-* **Rebranding de la Sección de Configuración**: Eliminar la barra de búsqueda redundante, renombrar el título central a **"Configuración y actividad"** (bold, centrado), y estandarizar todos los íconos de los elementos del menú con estilo lineal/contorno (`_outlined`).
-* **Visibilidad Condicionada por Rol en Configuración**: Ocultar por completo la sección destacada **"Solicitar apertura de red"** si el usuario tiene asignado el rol de `admin_red`, previniendo que administradores existentes realicen solicitudes duplicadas de red.
-* **Módulo Completo de "Solicitar Apertura de Red"**: Implementar una pantalla stateful con validaciones estrictas y consumo directo del endpoint `POST /redes/solicitar-creacion`, manejando estados de carga, deshabilitación de doble envío y retroalimentación inmediata al usuario a través de snackbars flotantes.
-
-### 22.2 Estructura y Validaciones del Formulario de Solicitud
-El formulario de solicitud de red comunitaria se comunica directamente con el backend y valida las siguientes reglas de negocio antes del envío:
-* **Nombre de la red**: Campo requerido, longitud entre 3 y 80 caracteres.
-* **Descripción / Propósito**: Campo requerido, longitud entre 10 y 300 caracteres, con contador visual en tiempo real en formato `longitud/300`.
-* **Manejo de Respuestas del Backend**: Se controla el estado de carga bloqueando la interfaz e insertando un indicador circular de progreso. En caso de éxito (código 201), se muestra un snackbar verde de confirmación y se retorna a la pantalla anterior. En caso de conflicto o error (ej. nombre de red duplicado), se renderiza un snackbar de alerta con el color institucional de error.
-
-### 22.3 Resumen de Archivos Modificados
-
-| Archivo | Rol en el Cambio |
-|---|---|
-| `polired/lib/models/user_model.dart` | Añadido el campo `publicacionesCount` para mapear el número de publicaciones del usuario retornado por `GET /perfil-estudiante`. |
-| `polired/lib/services/network_service.dart` | Integración del método `solicitarCreacionRed` para enviar el body `{ nombre, descripcion }` mediante petición HTTP POST a `/redes/solicitar-creacion`. |
-| `polired/lib/screens/profile/profile_screen.dart` | Rediseño estructural total: lock icon, nombre al lado de la foto de perfil, consumo real de publicaciones y redes, renderizado reactivo del botón "Gestionar red" por rol, pestaña única de publicaciones y grid moderno de 4 columnas. |
-| `polired/lib/screens/profile/settings_screen.dart` | Eliminación de buscador, centrado de título principal, iconos en estilo outline lineal, e introducción del botón azul institucional para la solicitud de red, condicionado a no mostrarse si el usuario posee el rol `admin_red`. |
-| `polired/lib/screens/settings/request_network_screen.dart` | Reescritura funcional completa a `StatefulWidget` con validación estricta de campos, contador de caracteres interactivo, deshabilitación de controles durante envío, spinner de carga e integración completa con `NetworkService`. |
-
----
-
-## 23. Sincronización Social Reactiva Global y Normalización de Entidades (Polired V2.5.0)
-
-### 23.1 El Desafío de la Sincronización en Feeds Distribuidos
-En redes sociales, una misma publicación puede aparecer en múltiples contextos (Feed de Home, feed de categoría en Explorar, pantalla de detalle, listado de Guardados o listado de Me gusta).
-* **El Problema**: Anteriormente, cada feed descargaba sus propios modelos del backend. Al reconstruir los feeds o hacer un pull-to-refresh, las respuestas HTTP sobreescribían los estados locales de `likedByMe` y `savedByMe`. Esto producía inconsistencias visuales donde un post marcado como "Me gusta" o "Guardado" en una vista volvía a aparecer sin marcar al refrescar o cambiar de categoría.
-* **La Solución**: Implementación de una arquitectura **Source of Truth** centralizada y reactiva gestionada por `PostStoreProvider`.
-
-### 23.2 Arquitectura del Store Centralizado (`PostStoreProvider`)
-Se rediseñó el store global en `lib/providers/post_store_provider.dart` para actuar como base de datos en memoria local para todas las publicaciones:
-
-```
-        Pantalla / Widget (ej. PostCard, PostDetailScreen)
-                       │
-                       ▼  (context.select para rebuilds O(1))
-              ┌──────────────────┐
-              │PostStoreProvider │ ◄── [Set] _likedPostIds, _savedPostIds
-              └────────┬─────────┘     (Verdad autoritativa local)
-                       │
-         ┌─────────────┴─────────────┐
-         ▼                           ▼
-    mergePosts()             Mutación Optimista
-(Mezcla incremental      (toggleLike / toggleSave)
- preservando estados)                │
-                                     ▼
-                          Llamada HTTP (PostService)
-                          En caso de fallo: rollback automático
-```
-
-* **Sets Autoritativos Locales**: La clase mantiene los conjuntos `_likedPostIds` y `_savedPostIds` que representan el estado social real del usuario autenticado.
-* **Hidratación en Segundo Plano (`initializeSocialState`)**: Durante el montaje de la pantalla principal (`HomeScreen`), la aplicación inicia una consulta asíncrona al backend para obtener la totalidad de IDs que el usuario ha marcado con Like o Guardado, poblando los sets locales.
-* **Merge Inteligente (`mergePosts`)**: Al recibir nuevos datos de publicaciones desde cualquier feed o endpoint, el store mezcla los campos comunes de forma incremental. Prioriza la verdad local sobre las banderas visuales de la respuesta del servidor (`likedByMe` / `savedByMe`), protegiendo el estado contra respuestas desactualizadas o stale del backend.
-* **Mutaciones Optimistas con Fallback**: Las interacciones de "Me gusta" y "Guardado" actualizan el estado visual y los contadores en memoria de forma inmediata. Si la llamada HTTP correspondiente al backend falla, el store realiza un rollback del estado interno y notifica a los widgets para revertir la UI sin interrumpir al usuario.
-* **Política de Poda (`pruneCache`)**: Para evitar el consumo desmedido de memoria por persistir publicaciones indefinidamente, se implementó un recolector de basura simple que mantiene en el caché solo las publicaciones visualizadas recientemente o las que están guardadas/con like de forma activa.
-
-### 23.3 Normalización Polimórfica de IDs (MongoDB Compatibility)
-El backend maneja publicaciones en la colección `Publicacion` (Noticias y Comunidades) y artículos en la colección `Articulo` (Marketplace y Cursos). A nivel de base de datos, las llaves primarias pueden colisionar si ambas colecciones generan identificadores similares.
-* **Prefijos de ID en Ingesta**: Al instanciar un `PostModel` en la factoría `fromJson`, el cliente prepende automáticamente un prefijo unificado (`publicacion:` o `articulo:`) al campo de ID.
-* **Limpieza de ID en Comunicación (`cleanId`)**: Al realizar operaciones CRUD u operaciones sociales (likes, comentarios, reportes, guardados), `PostService` utiliza el método estático `cleanId` para eliminar el prefijo antes de enviar la petición HTTP al backend. Esto permite la coexistencia limpia de tipos polimórficos en la UI.
-
-### 23.4 UI Reactiva y Rendimiento
-* **Consumo Eficiente con Selectors**: Los widgets de tarjetas (`PostCard`), pantallas de detalle (`PostDetailScreen`) y modales de opciones (`PostOptionsBottomSheet`) se suscriben granularmente al store utilizando `context.select<PostStoreProvider, T>()`. Esto previene rebuilds de toda la lista y optimiza el refresco del widget específico al ID mutado.
-* **Listas Filtradas en Tiempo Real**: Las pantallas de `LikedPostsScreen` y `SavedPostsScreen` computan dinámicamente sus listas cruzando sus arreglos de IDs con los sets del store. Si el usuario remueve un bookmark o un like de un post desde el detalle o el bottom sheet de opciones, la publicación desaparece instantáneamente y de forma animada del listado respectivo.
-
-### 23.5 Archivos Involucrados en la Refactorización
-
-| Archivo | Rol de la Modificación |
-|---|---|
-| `polired/lib/models/post_model.dart` | Agregados getters reactivos `liked` y `saved`. Normalización de `id` con prefijo según categoría en la factoría `fromJson`. |
-| `polired/lib/services/post_service.dart` | Implementación de `cleanId`. Normalización y limpieza de parámetros de ID en métodos de me gusta, guardar, reportar y comentar. |
-| `polired/lib/providers/post_store_provider.dart` | Creación de sets autoritativos, hidratación asíncrona, merge incremental, mutaciones optimistas con rollback y estrategia de poda de caché. |
-| `polired/lib/widgets/post_card.dart` | Refactorizado a `StatelessWidget` y enlazado reactivamente al store global a través de selectores. |
-| `polired/lib/screens/post/post_detail_screen.dart` | Enlazado reactivamente al store global para acciones sociales e incrementos. |
-| `polired/lib/widgets/post_options_bottom_sheet.dart` | Selector dinámico del estado de guardado. |
-| `polired/lib/screens/profile/saved_posts_screen.dart` | Filtrado dinámico y reactivo basado en el store central. |
-| `polired/lib/screens/profile/liked_posts_screen.dart` | Filtrado dinámico y reactivo basado en el store central. |
-| `polired/lib/screens/home/home_screen.dart` | Inicia la hidratación de estado social en segundo plano (`initializeSocialState`). |
-| `polired/lib/providers/global_feed_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
-| `polired/lib/providers/community_feed_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
-| `polired/lib/providers/network_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
-| `polired/lib/providers/network_profile_provider.dart` | Migración de `addPosts` a `mergePosts` del store global. |
-
----
-
-## 24. Rediseño del Perfil Privado, Exclusión de la Red Global, Sincronización Social Corregida y Control de Selección de Redes (Polired V2.6.0)
-
-### 24.1 Exclusión de la Red Global en Listados
-* **Backend**: Se actualizaron los controladores `listarRedesDelEstudiante` y `obtenerPerfilPublicoInfo` en `estudiantesController.js` para utilizar la función de utilidad `populateExcludeGlobalMatch` y aplicar un filtrado estricto `.filter(Boolean)` sobre el arreglo de redes devuelto. Esto garantiza que la red global automática nunca se liste dentro de los listados de comunidades.
-* **Frontend**: Se modificó `NetworkService` y `NetworkProvider` para descargar la lista real completa de redes del estudiante (`getRedesDelEstudiante`) en lugar de depender de un conteo bruto, permitiendo calcular el contador y renderizar los chips comunitarios con datos reales del usuario.
-
-### 24.2 Rediseño Estructural del Perfil Privado
-* **Nueva Estructura de Cabecera**: En `profile_screen.dart`, se reestructuró la información de perfil para colocar el nombre y apellido al lado derecho del avatar, y debajo de este colocar los contadores y etiquetas de **Publicaciones** y **Redes** en formato vertical. La biografía se desplaza debajo del avatar, seguido de un carrusel horizontal con chips con el nombre de las redes comunitarias a las que el estudiante está unido (sin avatar/foto).
-* **Conteo Unificado de Publicaciones**: En el backend, el endpoint `/perfil-estudiante` ahora suma de forma paralela las publicaciones y los artículos del estudiante (`Promise.all` para `Publicacion.countDocuments` y `Articulo.countDocuments`), entregando el valor exacto en `publicacionesCount`.
-* **Soporte Multi-Tab y Grid de Contenido**: Implementación de un `NestedScrollView` con sticky `TabBar` y `TabBarView` que separa los contenidos del perfil en dos pestañas ("Publicaciones" y "Artículos") con soporte de refrescado vertical (`RefreshIndicator`) e ingesta directa en el store unificado mediante `MyProfileFeedProvider`.
-
-### 24.3 Sincronización Social Corregida (Likes/Saved)
-* **Ingesta de Banderas Positivas**: Modificada la lógica de sincronización en `PostStoreProvider` para que confíe en cualquier confirmación explícita `likedByMe: true` o `savedByMe: true` recibida de endpoints de consulta específicos (como los listados de likes y guardados). Al detectar estas banderas en posts entrantes, sus IDs se inyectan automáticamente en los conjuntos locales `_likedPostIds` y `_savedPostIds`.
-* **Inicialización Segura**: La bandera `_isSocialStateInitialized` en `PostStoreProvider` ahora solo se marca como activa si las peticiones iniciales para likes y guardados se completan con éxito.
-
-### 24.4 Control de Selección de Redes y Alineación en Creación de Publicaciones (`AddPostScreen`)
-* **Filtrado de Redes Unidas**: Se modificó `add_post_screen.dart` para filtrar la lista de redes comunitarias en el selector bajo la categoría "Comunidad" mediante el predicado `n.isJoined == true`. Esto previene que el usuario intente publicar en redes a las que no se ha unido.
-* **Mensaje de Advertencia Gris**: Si la lista de redes unidas está vacía, se muestra un mensaje informativo en color gris: *"No estás unido a ninguna red comunitaria. Únete a una red para poder publicar aquí."*, deshabilitando y controlando la publicación en dicha categoría.
-* **Alineación Superior del Selector**: Se eliminó el centrado vertical de la pantalla de selección del tipo de publicación, ubicando el contenido (el texto instructivo y las tarjetas selectoras) en la parte superior de la vista, justo debajo de la cabecera.
-
-### 24.5 Resumen de Archivos Modificados
-
-| Archivo | Rol en el Cambio |
-|---|---|
-| `BackendV2/src/controllers/estudiantesController.js` | Modificó `listarRedesDelEstudiante`, `obtenerPerfilPublicoInfo` (exclusión global) y `perfilEstudiante` (conteo unificado). |
-| `polired/lib/providers/post_store_provider.dart` | Sincronización de flags directas true y verificación en inicialización social. |
-| `polired/lib/providers/network_provider.dart` | Almacenamiento y cálculo reactivo del listado completo de redes del estudiante. |
-| `polired/lib/services/network_service.dart` | Devolución de listado completo de redes en `getRedesDelEstudiante`. |
-| `polired/lib/providers/my_profile_feed_provider.dart` | [NUEVO] Proveedor de feed paginado y aislado para publicaciones y artículos de perfil privado. |
-| `polired/lib/main.dart` | Registro de `MyProfileFeedProvider`. |
-| `polired/lib/screens/profile/profile_screen.dart` | Rediseño estructural, soporte multi-tab, carrusel horizontal e integración con providers de perfil. |
-| `polired/lib/screens/post/add_post_screen.dart` | Filtrado del selector de redes por estado univo (`isJoined`), auto-selección depurada y advertencia en gris. |
-| `polired/lib/screens/explore/network_profile_screen.dart` | Cambió el icono de opciones de 3 puntos en AppBar de vertical (`Icons.more_vert`) a horizontal (`Icons.more_horiz`). |
-| `polired/lib/screens/settings/privacy_screen.dart` | Redirección del botón "Contactar Soporte" para que navegue directamente a la pantalla de Asistencia (`SupportScreen`). |
-
----
-_Documento actualizado progresivamente con cada fase del desarrollo._
-
----
-
-## 25. Optimizaciones de Navegación, Caché y Mejoras en Publicaciones (Polired V2.7.0 - 21 de mayo de 2026)
-
-### 25.1 Navegación Persistente y UX de "Stories" (Home)
-* **Persistencia de Red Seleccionada**: El Home ahora mantiene en memoria la red seleccionada (`_selectedNetwork`) a pesar de hacer *Pull-to-refresh* o volver de otras pantallas, mitigando el reseteo involuntario del feed.
-* **Separación de Redes y Sugerencias**: En `NetworkProvider`, las redes comunitarias a las que el usuario está unido se agrupan al inicio del carrusel, seguidas consistentemente por una lista de sugerencias. Las sugerencias ya no desaparecen por completo cuando el usuario se une a una red.
-* **Auto-selección tras Unirse**: Se introdujo el concepto de `pendingAutoSelectNetworkId`. Al regresar al Home después de explorar y unirse a una comunidad sugerida, la app la auto-selecciona en el carrusel y carga inmediatamente su feed.
-* **Selección Aleatoria Inicial Estabilizada**: Si no hay ninguna red seleccionada al abrir la aplicación, el algoritmo escoge aleatoriamente una (`Random().nextInt()`) para mostrar su contenido como feed inicial, pero sin aplicar mezclas (shuffle) destructivas sobre el orden visual del UI.
-
-### 25.2 Sistema de Scroll Independiente y Caché en Explorar
-* **Reemplazo de CustomScrollView Global por IndexedStack**: La sección "Explorar" sufría de pérdida de posición de scroll y reseteo nativo de delegados al compartir un único `ScrollView`. Se refactorizó la vista (`explore_screen.dart`) empleando un `IndexedStack` y separando los feeds en múltiples `ExploreFeedList` con `AutomaticKeepAliveClientMixin`.
-* **Caché en `GlobalFeedProvider` con `CategoryState`**: Se modificó `GlobalFeedProvider` para gestionar un mapa de estados `Map<String, CategoryState>`. Esto permite que "Noticias", "Marketplace" y "Cursos" almacenen sus colecciones de posts y paginación de forma 100% aislada. Al rotar pestañas, la retención de datos y visualización de lista es instantánea y evita realizar peticiones HTTP innecesarias.
-* **Implementación de Scroll-to-Top Global y Local**: 
-  - Al hacer tap por segunda vez en la pestaña actualmente visible del `BottomNavigationBar` (Home o Explorar), se invoca al método `scrollToTop` a través de llaves globales (`GlobalKey`), retornando al tope de la lista.
-  - Lo mismo ocurre al presionar por segunda vez la pastilla activa dentro del menú superior de Explorar.
-
-### 25.3 Rediseño y Paridad Visual en Componentes de Publicación
-* **Unificación de Detalles de Post**: La vista detallada de la publicación (`post_detail_screen.dart`) ha unificado su interfaz reusando de forma nativa la misma arquitectura que `PostCard`. Esto garantiza paridad pixel-perfect (proporciones, diseño tipográfico y espaciados) respecto a los feeds estándar y soporta paneles nativos de comentarios (`BottomSheet`).
-* **Experiencia de Creación Especializada**: 
-  - **Categoría Imagen**: El selector de galería se posicionó de inmediato en primer lugar con una vista previa renderizada tal cual como saldrá publicada.
-  - **Categorías Monetizadas**: El campo dinámico "Precio" fue refinado visualmente e incluido obligatoriamente en publicaciones de Cursos/Ventas.
-* **Categoría Gratuita y Etiqueta Visual**: En publicaciones de tipo "Curso" se agregó un toggle interactivo de *"Es Gratis"*, el cual desactiva el input monetario y asume internamente `$0.00`. Tanto `PostCard` como vistas detalladas interceptan este monto y lo reemplazan estéticamente por un _badge_ oscuro indicando la palabra **"Gratis"**.
-* **Refinamiento del Carrusel de Imágenes**: Los indicadores de *paginación de puntos* (dots) del slider multi-imagen pasaron de flotar encima de la foto a situarse formalmente por debajo, teñidos de color azul institucional oscuro. Así mismo, se ancló un **contador numérico dinámico** estilo burbuja superpuesto en la esquina superior derecha (`2/3`).
-
-### 25.4 Resolución de Conflictos de Build en Android (Namespace)
-* **Error `Namespace not specified`**: El paquete obsoleto `flutter_image_compress` v1.1.3 ocasionaba roturas severas al momento de ensamblar el Gradle en las versiones modernas de Android Plugin (`AGP`).
-* **Actualización en Core**: Se elevó la dependencia en `pubspec.yaml` a la versión moderna `>=2.1.0`. Esta acción inyecta exitosamente las llaves de namespace válidas en el manifiesto interno sin requerir refactorización profunda en el contrato de compresión multipart.
-
----
-_Documento actualizado progresivamente con cada fase del desarrollo._
+PoliRed presenta una arquitectura de código sorprendentemente madura para una aplicación basada en Flutter. La correcta decisión de separar la lectura del modelo de la escritura (a través del acercamiento CQRS) previene los típicos problemas de inconsistencia visual en feeds paginados de redes sociales. Las integraciones clave (API, Websockets, Mapas, Storage) están debidamente segregadas en servicios, y el enrutamiento está centralizado con go_router. El sistema cumple con un estándar empresarial y su base de código facilita un futuro escalamiento a nuevas funcionalidades.

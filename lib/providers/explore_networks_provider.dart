@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 import '../models/suggested_network_model.dart';
 import '../services/network_service.dart';
 
+/// Responsabilidad principal:
+/// Mantiene el estado de la búsqueda y filtrado local de las redes globales (para sugerencias).
+///
+/// Flujo dentro de la app:
+/// Descarga todas las redes (sin paginar) a través de `NetworkService` y aplica un filtro de texto en memoria al vuelo.
+///
+/// Dependencias críticas:
+/// - `NetworkService` (HTTP).
+///
+/// Side Effects:
+/// - Ninguno fuera de este provider.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Alerta de Escalabilidad: Descarga TODAS las redes en un solo request (`_allNetworks`). Si el número de comunidades crece masivamente, la app podría sufrir OOM (Out of Memory); se requerirá migrar a paginación del lado del servidor.
 enum ExploreNetworksStatus { idle, loading, success, error }
 
 class ExploreNetworksProvider extends ChangeNotifier {

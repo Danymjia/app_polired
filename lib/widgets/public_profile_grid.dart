@@ -7,8 +7,21 @@ import '../models/post_model.dart';
 import '../providers/post_store_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-/// A **Sliver** widget that renders a grid of posts.
-/// Must be placed directly inside a [CustomScrollView]'s [slivers] list.
+/// Responsabilidad principal:
+/// Renderizar la cuadrícula de publicaciones/artículos en el Perfil, utilizando Slivers para integrarse fluidamente en un `CustomScrollView` principal.
+///
+/// Flujo dentro de la app:
+/// Componente tonto (Dumb Component) a nivel de lista: recibe un listado crudo de `String` (postIds). Delega la resolución final de la entidad a sus hijos `_GridCell`, los cuales consultan al `PostStoreProvider`.
+///
+/// Dependencias críticas:
+/// - `PostStoreProvider` (Entity Cache para hidratar los IDs).
+/// - `CachedNetworkImage` (Para manejo veloz de imágenes redimensionadas/recortadas en caché local).
+///
+/// Side Effects:
+/// - Loading Eterno: Si un ID pasado en `postIds` fue borrado del `PostStoreProvider` pero no de la lista del Feed, la celda hija girará un `CircularProgressIndicator` para siempre.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Alto Rendimiento: Separación excelente. Como la grilla solo mapea IDs y delega el `context.select` a los hijos directos (`_GridCell`), un "Like" o mutación en un Post solo reconstruye esa celda específica y no la grilla entera ni la pantalla de Perfil.
 class PublicProfileGrid extends StatelessWidget {
   final List<String> postIds;
   final bool isFetchingMore;

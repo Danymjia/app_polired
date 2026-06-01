@@ -1,8 +1,17 @@
-/// Normaliza identificadores Mongo / JSON genéricos a [String].
+/// Responsabilidad principal:
+/// Parsear y normalizar IDs y Fechas provenientes del backend (MongoDB). Maneja `$oid`, `_id`, `id`, fechas anidadas y enteros.
 ///
-/// Acepta: [String], [int] (algunas APIs serializan numérico), [Map] con
-/// `$oid`, o mapas que contengan anidados `_id` / `id`.
-/// Devuelve null si el valor es nulo, vacío o no reconocible como id.
+/// Flujo dentro de la app:
+/// Consumido transversalmente por TODAS las clases factoría `.fromJson()` en el directorio `/models`.
+///
+/// Dependencias críticas:
+/// - Ninguna.
+///
+/// Side Effects:
+/// - Ninguno. Funciones puras de transformación.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda técnica backend: Si el backend unificara su output a un formato estricto y plano (sin envoltorios `$oid`), este archivo sería redundante.
 String? parseMongoId(dynamic value) {
   if (value == null) return null;
   if (value is String) {

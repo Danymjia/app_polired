@@ -11,8 +11,23 @@ import '../utils/json_ids.dart';
 /// Estado de la lista de conversaciones (HTTP).
 enum InboxListStatus { loading, success, empty, error }
 
-/// Bandera de “no leído” sin backend de recibos: mensaje entrante por socket
-/// o último mensaje enviado por el otro participante.
+/// Responsabilidad principal:
+/// Mantiene la lista general de conversaciones (Inbox), calcula dinámicamente mensajes no leídos vía heurísticas, y curiosamente gestiona las sugerencias de Comunidades.
+///
+/// Flujo dentro de la app:
+/// Carga la bandeja de entrada vía `ConversationsRepository` y escucha eventos de socket (`nuevo_mensaje`) para alterar la última actividad de un chat.
+///
+/// Dependencias críticas:
+/// - `ConversationsRepository` (Inbox HTTP).
+/// - `NetworkService` (Sugerencias de redes mezcladas aquí).
+/// - `SocketService` (Reordenamiento de inbox en vivo).
+///
+/// Side Effects:
+/// - Reordena la lista y actualiza copias (`copyWith`) de los DTOs de conversación ante eventos de socket.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Violación SRP (Single Responsibility Principle): Mezcla la lógica de Mensajes 1:1 con lógica de descubrimiento de Comunidades (`_pickNewSuggestionBatch`). Deben ser providers separados.
+/// - Heurística frágil de lectura: El backend actual no reporta "mensajes no leídos" fiables; este provider utiliza un Set en memoria (`_localSeenConversations`) y adivina el estado basándose en el autor del último mensaje. Propenso a desincronizarse entre reinicios de la app.
 class MessagesInboxProvider extends ChangeNotifier {
   MessagesInboxProvider({
     required ConversationsRepository conversationsRepository,

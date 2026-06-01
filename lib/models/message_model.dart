@@ -1,3 +1,17 @@
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable que representa un mensaje individual dentro de un chat.
+///
+/// Flujo dentro de la app:
+/// Instanciado a través de respuestas HTTP (paginación en `ChatScreen`) o eventos de Socket en tiempo real vía `SocketService`.
+///
+/// Dependencias críticas:
+/// - Ninguna externa.
+///
+/// Side Effects:
+/// - Ninguno. Modelo puramente de lectura.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Las referencias `autor` y `destinatario` llegan como Strings planas o como Objetos (Map) dependiendo del evento o query que lo emita (inconsistencia del Backend mitigada en `fromJson`).
 class MessageModel {
   final String id;
   final String conversacionId;

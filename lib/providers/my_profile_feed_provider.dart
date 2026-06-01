@@ -4,6 +4,21 @@ import '../models/feed_context.dart';
 import '../services/public_profile_service.dart';
 import 'post_store_provider.dart';
 
+/// Responsabilidad principal:
+/// Controlador de paginación estrictamente para el Feed del perfil personal del usuario logueado.
+///
+/// Flujo dentro de la app:
+/// Utilizado en la pestaña "Perfil". Descarga posts paginados y los vuelca en el `PostStoreProvider`.
+///
+/// Dependencias críticas:
+/// - `PublicProfileService` (HTTP).
+/// - `PostStoreProvider` (Caché).
+///
+/// Side Effects:
+/// - Inyecta posts en el Store masivo con el contexto `FeedContext.profile(userId)`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Implementa mutadores síncronos (`prependPostId`, `removePostId`) para Optimistic Updates cuando el usuario crea o borra un post propio.
 class MyProfileFeedProvider extends ChangeNotifier {
   final PublicProfileService _publicProfileService;
   final PostStoreProvider _postStore;

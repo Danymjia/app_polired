@@ -15,13 +15,21 @@ import 'post_options_bottom_sheet.dart';
 import '../providers/auth_provider.dart';
 import '../providers/post_store_provider.dart';
 
-/// PostCard para el contexto global (Explorar).
+/// Responsabilidad principal:
+/// Variante de `PostCard` diseñada exclusivamente para Exploración Global. Incluye distintivos visuales adicionales (badges de Categoría y Precio).
 ///
-/// REGLAS:
-///   - Muestra price labels para artículos (marketplace/cursos).
-///   - Muestra categoría como badge visual.
-///   - Diseño editorial / discovery.
-///   - NUNCA usado en Home.
+/// Flujo dentro de la app:
+/// Escucha selectivamente a `PostStoreProvider`. Registra un `GlobalKey` en el `NavigationService` durante la inicialización para permitir el auto-scroll hacia este widget cuando una notificación externa invoca a la aplicación.
+///
+/// Dependencias críticas:
+/// - `NavigationService` (Registro/Desregistro de llaves para Deep Linking local).
+/// - `PostStoreProvider` y `CommandBus` (Infraestructura CQRS).
+///
+/// Side Effects:
+/// - Acumulación de Keys: Si `dispose` falla en llamarse (ej. crash), la llave global quedará flotando en `NavigationService`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - DRY (Don't Repeat Yourself) roto: `GlobalPostCard` y `PostCard` comparten ~90% del código de layout y lógica de estado. Esto es un foco de bugs de sincronización y deuda técnica evidente. Debe abstraerse en un widget base configurable.
 class GlobalPostCard extends StatefulWidget {
   final PostModel post;
 

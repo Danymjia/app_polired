@@ -6,7 +6,21 @@ import '../config/constants.dart';
 
 enum SocketConnectionPhase { disconnected, connecting, connected, reconnecting }
 
-/// Servicio Singleton de PusherChannels para tiempo real.
+/// Responsabilidad principal:
+/// Wrapper en formato Singleton de `PusherChannelsFlutter` para el manejo de WebSocket en tiempo real.
+///
+/// Flujo dentro de la app:
+/// Inicializado por `AuthProvider` al hacer login exitoso. Mantiene una conexión persistente autenticada al canal `private-user-$uid`. Otros Providers (`ChatProvider`, `NotificationProvider`) se suscriben usando el patrón Event Emitter (`on()`, `off()`).
+///
+/// Dependencias críticas:
+/// - `pusher_channels_flutter`.
+/// - `AppConstants.socketUrl` (Endpoint de autenticación).
+///
+/// Side Effects:
+/// - Sockets: Abre una conexión TCP bidireccional asíncrona persistente (hilo nativo en Android/iOS).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fugas de Memoria Potenciales: Usa un diccionario `_eventListeners` manual en memoria. Es imperativo que todo consumidor de eventos llame a `off()` en el método `dispose()` de su widget o provider, de lo contrario habrá callbacks fantasma (Ghost Listeners).
 class SocketService {
   static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;

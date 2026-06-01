@@ -15,9 +15,21 @@ import '../../utils/validators.dart';
 import 'package:flutter/gestures.dart';
 import '../settings/legal_document_screen.dart';
 
-/// Register Screen — reinterpretación del HTML de referencia.
-/// Campos: nombre, apellido, correo, contraseña, confirmar contraseña.
-/// El username se solicita en una pantalla posterior (primera vez tras login).
+/// Responsabilidad principal:
+/// Formulario de registro inicial para nuevos estudiantes. Captura datos de identidad base.
+///
+/// Flujo dentro de la app:
+/// Valida robustez de contraseñas y unicidad de correo antes del envío HTTP. Delega la creación en backend a `AuthProvider.register()`. En caso de éxito, notifica y fuerza una espera de 2 segundos antes de redirigir a Login para permitir al usuario leer el aviso de activación.
+///
+/// Dependencias críticas:
+/// - `AuthProvider` (Lógica transaccional con `/registro-estudiantes`).
+///
+/// Side Effects:
+/// - Navegación temporalizada: Usa `Future.delayed(2s)` para redirigir tras un registro exitoso.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Parseo visual inestable: Al igual que en Login, el parcheo de mensajes comprobando substrings (`lowerMsg.contains('registrado')`) debe corregirse.
+/// - Flujo fragmentado: El usuario debe confirmar su email, loguearse y luego ir forzosamente a `/complete-profile` para definir su *username*.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 

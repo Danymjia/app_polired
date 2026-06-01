@@ -7,6 +7,22 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'safe_network_image.dart';
 
+/// Responsabilidad principal:
+/// Renderizar y gestionar el árbol de comentarios de un Post dentro de un BottomSheet interactivo. Soporta hilos de respuestas aplanados visualmente.
+///
+/// Flujo dentro de la app:
+/// Llama a `PostService` para obtener el árbol anidado. Aplica un algoritmo DFS (Depth First Search) para aplanar la lista conservando el hilo lógico (Flattening). Tras enviar un comentario, despacha la orden hacia el `PostStoreProvider` para propagar el conteo al UI subyacente.
+///
+/// Dependencias críticas:
+/// - `PostService` (HTTP requests para lecturas y escrituras directas).
+/// - `PostStoreProvider` (Sincronización optimista del contador global).
+///
+/// Side Effects:
+/// - Acoplamiento JSON: El parseo `(userId['nombre'] ?? '')` se hace inline en lugar de usar factorías en modelos formales.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Riesgo de Escalabilidad (OOM): `getCommentsTree` descarga todo el árbol de comentarios en una sola petición. En un escenario de alta viralidad (miles de comentarios), colapsará la memoria de la aplicación. Urge implementar paginación cursiva o carga diferida por nodo padre.
+
 // ────────────────────────────────────────────────────────
 // Lightweight data models for in-memory use only
 // ────────────────────────────────────────────────────────

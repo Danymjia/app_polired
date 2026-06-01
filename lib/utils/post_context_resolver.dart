@@ -1,6 +1,21 @@
 import '../models/feed_context.dart';
 import '../models/post_model.dart';
 
+/// Responsabilidad principal:
+/// Lógica de dominio. Determina a qué contextos lógicos (Feeds) pertenece un Post recién creado.
+///
+/// Flujo dentro de la app:
+/// Consumido fuertemente por `CreatePostCommandHandler` y `NavigationBus` tras una creación exitosa para saber dónde indexar la vista y hacia dónde rutar al usuario.
+///
+/// Dependencias críticas:
+/// - Modelos `FeedContext` y `PostModel`.
+///
+/// Side Effects:
+/// - Ninguno directo, pero dicta qué mutaciones realizará `PostStoreProvider`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Regla de negocio crítica: Si cambian las políticas de visibilidad de publicaciones en el Backend, DEBE reflejarse aquí para evitar "Ghost Posts" locales (Inconsistencia Estado-API).
+
 class PostContextResolver {
   /// Devuelve TODOS los contextos en los que este post debe aparecer
   static List<FeedContext> resolveContexts(PostModel post) {

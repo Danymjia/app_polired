@@ -4,14 +4,22 @@ import '../models/post_model.dart';
 import '../models/events/post_event.dart';
 import '../models/feed_context.dart';
 
-/// PostStoreProvider (Snapshot-Safe CQRS Store)
-/// 
-/// Responsabilidades estrictas:
-/// - State Management (almacena PostModel)
-/// - Idempotencia global (Única fuente de verdad de eventos procesados)
-/// - Indexación O(1) de listas por contexto
-/// 
-/// NULA lógica de negocio o de red. Solo guarda estado y orquesta caché.
+/// Responsabilidad principal:
+/// Store central (State Management de CQRS) donde se cachean TODAS las publicaciones de la app. Funciona como una base de datos in-memory.
+///
+/// Flujo dentro de la app:
+/// Escucha Eventos (`StateEvent`, `UIEvent`) originados por los `CommandHandlers` o Sockets, y actualiza sus índices O(1). Los demás Providers de UI consumen de aquí vía selectores.
+///
+/// Dependencias críticas:
+/// - Event Sourcing (`post_event.dart`).
+/// - Notificador masivo (`ChangeNotifier`).
+///
+/// Side Effects:
+/// - Notifica a los listeners de Flutter usando versionamiento global y por contexto.
+///
+/// Recordatorios técnicos y CQRS:
+/// - `_globalVersion` y `_contextVersion` son vitales para forzar rebuilds eficientes de UI (Fingerprints) sin usar pesados `Streams` en cascada.
+/// - Riesgo de Memory Leak: `_postsById` crece indefinidamente en la sesión actual. Falta política de Eviction o LRU.
 class PostStoreProvider extends ChangeNotifier {
   // ─── Estado normalizado ────────────────────────────────────────────────────
   final Map<String, PostModel> _postsById = {};

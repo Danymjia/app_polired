@@ -5,6 +5,21 @@ import '../services/api_service.dart';
 import '../services/post_service.dart';
 import 'post_store_provider.dart';
 
+/// Responsabilidad principal:
+/// Controlador de la vista "Explorar" (Global). Mantiene el estado de paginación para las pestañas de categorías ('noticias', 'marketplace', 'cursos').
+///
+/// Flujo dentro de la app:
+/// Solicita páginas HTTP vía `PostService`, delega los objetos masivos al `PostStoreProvider` y retiene localmente solo una lista de IDs ordenados.
+///
+/// Dependencias críticas:
+/// - `PostStoreProvider` (Caché global donde se inyectan los resultados).
+/// - `PostService` (Red).
+///
+/// Side Effects:
+/// - Tras un fetch exitoso, muta el `PostStoreProvider` indexando posts bajo `FeedContext.exploreGlobal` o `FeedContext.exploreTab`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda técnica de Estado: Este provider mantiene listas de IDs propias en memoria (en `CategoryState`), duplicando parcialmente los índices de `PostStoreProvider`. Debe evitarse mutar estas listas localmente sin sincronizar el Store.
 class CategoryState {
   final List<String> postIds = [];
   bool isLoadingInitial = false;

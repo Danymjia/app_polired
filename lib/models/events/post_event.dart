@@ -2,6 +2,20 @@ import 'package:uuid/uuid.dart';
 import '../../models/post_model.dart';
 import '../../models/feed_context.dart';
 
+/// Responsabilidad principal:
+/// Definición formal de Eventos (Event Sourcing / CQRS). Representan acciones que YA OCURRIERON y notifican a los stores o a la UI.
+///
+/// Flujo dentro de la app:
+/// Emitidos por los `CommandHandlers` o WebSockets, y escuchados por `PostStoreProvider` (StateEvents), Widgets individuales (UIEvents) o `NavigationBus`.
+///
+/// Dependencias críticas:
+/// - `uuid` para trazabilidad y deduplicación de eventos en un stream global.
+///
+/// Side Effects:
+/// - Estos eventos INICIAN side effects locales (recálculo de listas, saltos de navegación, re-renders parciales).
+///
+/// Recordatorios técnicos y CQRS:
+/// - La división semántica (State vs UI vs Navigation) es vital para el control de granularidad de renders, evitando redibujar listas completas por un simple "Like".
 abstract class FeedEvent {
   final String eventId;
   final DateTime timestamp;

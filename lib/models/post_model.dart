@@ -1,10 +1,21 @@
 import 'dart:convert';
 
-/// Modelo de publicación que cubre tanto publicaciones regulares como artículos.
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable de dominio que agrupa propiedades de Publicaciones Regulares y Artículos/Marketplace.
 ///
-/// El backend devuelve publicaciones con campos distintos según el tipo:
-/// - Publicaciones: {_id, titulo, contenido, tipoContenido, categoria, mediaUrls, autorId, comunidadId, likesCount, commentsCount, timestamp }
-/// - Artículos: {_id, titulo, descripcion, precio, tipoContenido, categoria, mediaUrls, autorId, redComunitaria, creadoEn }
+/// Flujo dentro de la app:
+/// Instanciado masivamente vía `fromJson`. Es la única fuente de verdad para las vistas de contenido y se cachea centralizadamente en `PostStoreProvider`.
+///
+/// Dependencias críticas:
+/// - `dart:convert` (para corregir estructuras mal formadas en URLs de medios).
+///
+/// Side Effects:
+/// - Ninguno. Modelo puramente de lectura (DTO).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda Técnica de Dominio: Agrupa propiedades de "Posts" y "Artículos" en un solo DTO híbrido (`precio`, `hasImage`, `isArticle`). 
+///   Sería arquitectónicamente superior usar Herencia (PostBase, TextPost, MarketplacePost).
+/// - Implementa `operator ==` y `hashCode` usando métricas de interacciones (likes, comentarios) para forzar reconstrucciones precisas del UI.
 class PostModel {
   final String id;
   final String networkId;

@@ -5,17 +5,20 @@ import '../config/constants.dart';
 import 'api_service.dart';
 import '../models/post_model.dart';
 
-/// Servicio para interactuar con las publicaciones del backend.
-/// Endpoints utilizados:
-///   - GET  /publicaciones/global           → feed paginado (red global)
-///   - GET  /publicaciones/comunitarias     → feed de comunidades (paginado)
-///   - GET  /publicaciones/red/:redId       → feed filtrado por red
-///   - GET  /publicaciones/articulos/global → artículos globales (Marketplace/Cursos)
-///   - POST /estudiantes/publicaciones      → crear publicación simple (Comunidad/Noticias)
-///   - POST /publicaciones/articulos        → crear artículo/cursos (Venta/Cursos)
+/// Responsabilidad principal:
+/// Mega-Servicio (Data Layer) que orquesta TODAS las peticiones HTTP relacionadas con Publicaciones, Feeds e Interacciones Sociales.
 ///
-/// Nota: `fetchArticlesFeed` consume el endpoint de artículos globales y filtra
-/// por `categoria` para distinguir `venta` y `cursos`.
+/// Flujo dentro de la app:
+/// Usado transversalmente. `GlobalFeedProvider` y otros le piden Feeds (Queries), y los `CommandHandlers` le piden ejecutar creaciones/likes (Commands). Transforma las respuestas en `PostModel`.
+///
+/// Dependencias críticas:
+/// - `ApiService` (Cliente REST).
+///
+/// Side Effects:
+/// - Mutaciones HTTP: Creación de Posts (soporta uploads binarios vía `multipartRequest`), Borrado, Likes y Guardados.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Antipatrón God Object: Este servicio maneja demasiadas responsabilidades simultáneas (Lectura de Feeds, Escritura de Posts, Reportes, Comentarios). Para una arquitectura CQRS pura, debería dividirse en `PostQueryService` (Read) y `PostCommandService` (Write).
 class PostService {
   final ApiService _api;
 

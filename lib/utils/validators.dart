@@ -1,3 +1,17 @@
+/// Responsabilidad principal:
+/// Clase estática que provee funciones puras para validar inputs de formularios (RegEx para emails, contraseñas, etc).
+///
+/// Flujo dentro de la app:
+/// Utilizado directamente por los atributos `validator:` en TextFormField o variables de estado de UI.
+///
+/// Dependencias críticas:
+/// - Ninguna (puro Dart).
+///
+/// Side Effects:
+/// - Ninguno. Funciones 100% puras sin mutación.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mantener aislado de contexto y estado; ideal para Unit Testing.
 class Validators {
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {

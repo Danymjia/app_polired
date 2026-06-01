@@ -4,6 +4,21 @@ import '../models/post_model.dart';
 import '../services/network_service.dart';
 import 'post_store_provider.dart';
 
+/// Responsabilidad principal:
+/// Controlador de estado para la vista de Detalles de una Red/Comunidad (Perfil Público de la Comunidad).
+///
+/// Flujo dentro de la app:
+/// Solicita la cabecera de la red y su feed paginado, volcando los posts completos en el `PostStoreProvider` y reteniendo localmente una lista ordenada de IDs.
+///
+/// Dependencias críticas:
+/// - `NetworkService` (HTTP).
+/// - `PostStoreProvider` (Caché).
+///
+/// Side Effects:
+/// - Inyecta silenciosamente publicaciones en el Store global.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Restricción de Membresía: Las reglas limitan la paginación (`_hasMore = false`) si el usuario no es miembro (`isMember = false`). Si un Comando de Unirse a Red es exitoso, este provider debe recargarse explícitamente para desbloquear el feed.
 enum NetworkProfileStatus { idle, loading, success, error }
 
 class NetworkProfileProvider extends ChangeNotifier {

@@ -1,4 +1,17 @@
-/// Modelo de usuario autenticado deserializado desde el backend.
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable que representa la identidad y estado del perfil del usuario autenticado.
+///
+/// Flujo dentro de la app:
+/// Parseado desde `/perfil-estudiante` o tras un login, es mantenido centralizadamente por el `AuthProvider`.
+///
+/// Dependencias críticas:
+/// - Ninguna externa.
+///
+/// Side Effects:
+/// - Ninguno. Modelo puramente de lectura (DTO).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Este modelo no debe mutar directamente. Cualquier cambio (ej. completar perfil) emite un comando HTTP que provoca la recarga del modelo en `AuthProvider`, desencadenando la reactividad.
 class UserModel {
   final String id;
   final String nombre;

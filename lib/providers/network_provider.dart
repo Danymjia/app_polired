@@ -11,14 +11,22 @@ export '../models/feed_context.dart' show HomeFeedState;
 /// Estado del provider en general.
 enum FeedStatus { idle, loading, success, empty, error }
 
-/// Proveedor de estado para las comunidades (redes) y el feed Home.
+/// Responsabilidad principal:
+/// Orquestador masivo del Feed "Home". Maneja tanto la selección de la comunidad (Stories horizontales) como la paginación infinita de la comunidad activa.
 ///
-/// REGLAS ARQUITECTÓNICAS:
-///   - Es el ÚNICO dueño del feed de Home.
-///   - Mantiene un [HomeFeedState] por redId → cache multi-stream aislado.
-///   - Todos los posts se resuelven vía [PostStoreProvider] (solo IDs aquí).
-///   - NO contiene lógica de categorías globales.
-///   - NO hace fallback a feeds mixtos.
+/// Flujo dentro de la app:
+/// Descarga las redes a las que el usuario pertenece, auto-selecciona una, y pagina sus publicaciones mandándolas al `PostStoreProvider`.
+///
+/// Dependencias críticas:
+/// - `NetworkService` y `PostService` (HTTP).
+/// - `PostStoreProvider` (Fuente de la verdad de los datos).
+///
+/// Side Effects:
+/// - Muta el `PostStoreProvider` indexando posts bajo `FeedContext.home(communityId: redId)`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Complejidad alta: Implementa su propio caché de listas paginadas (`_feedByNetwork`) para no perder el scroll al cambiar entre burbujas de comunidades.
+/// - Contiene métodos de Optimistic UI (`prependPostId`, `removePostId`) para reaccionar inmediatamente a los Command Handlers antes de que el servidor responda.
 class NetworkProvider extends ChangeNotifier {
   final NetworkService _networkService;
   final PostService _postService;

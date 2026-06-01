@@ -1,14 +1,18 @@
-/// Modelo de notificación mapeado desde el backend.
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable para representar notificaciones del sistema agrupadas por emisor.
 ///
-/// El backend devuelve (GET /notificaciones):
-/// {
-///   notificaciones: [
-///     { _id, usuarioId, emisorId, tipo, publicacionId, comentarioId,
-///       conversacionId, mensaje, leida, createdAt, updatedAt }
-///   ]
-/// }
+/// Flujo dentro de la app:
+/// Parseado por `NotificationService` y listado en el `NotificationProvider` para su consumo en la UI.
 ///
-/// Tipos soportados: 'like' | 'comentario' | 'respuesta_comentario' | 'mensaje'
+/// Dependencias críticas:
+/// - Ninguna externa.
+///
+/// Side Effects:
+/// - Ninguno. Modelo puramente de lectura (DTO).
+///
+/// Recordatorios técnicos y CQRS:
+/// - El backend agrupa múltiples emisores (agregación) en una misma notificación (ej. "3 personas le dieron like").
+/// - La lógica de presentación de texto de la UI (ej. "y 2 más le dieron like") se resuelve en el getter de dominio `textoResumido`.
 class EmisorSnap {
   final String nombre;
   final String apellido;

@@ -2,6 +2,20 @@ import 'package:flutter/foundation.dart';
 import '../models/poi_model.dart';
 import '../services/poi_data.dart';
 
+/// Responsabilidad principal:
+/// Mantiene el estado interactivo de la UI del Mapa del Campus (puntos de interés, cámara, selección y filtros visuales).
+///
+/// Flujo dentro de la app:
+/// Actúa de capa intermedia síncrona entre los paneles interactivos (búsqueda, cajón lateral) y el controlador de Mapbox (`mapbox_maps_flutter`).
+///
+/// Dependencias críticas:
+/// - Estructura estática `PoiData`.
+///
+/// Side Effects:
+/// - Controla la visibilidad global de las etiquetas (`showMarkerLabels`) según el zoom de la cámara reportado.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Estado completamente síncrono. No hace llamadas a red, todo se lee de listas hardcodeadas localmente. 
 class MapProvider extends ChangeNotifier {
   // Estado de la cámara
   bool _showMarkerLabels = true;

@@ -1,7 +1,18 @@
-/// FeedContext es la ÚNICA fuente de decisión de destino de un post.
+/// Responsabilidad principal:
+/// Modelo de Dominio Crítico. Define estrictamente los contextos de visibilidad (Queries lógicas) en los que puede existir un Post localmente.
 ///
-/// PROHIBIDO: usar `categoria` para decidir destino.
-/// OBLIGATORIO: todo flujo de creación/sincronización usa [FeedContext].
+/// Flujo dentro de la app:
+/// Base de TODA la lógica de ruteo, indexado local de posts (`HomeFeedState`) y asignación CQRS de publicaciones en memoria.
+///
+/// Dependencias críticas:
+/// - Ninguna.
+///
+/// Side Effects:
+/// - Ninguno (pero RIGE cómo `PostStoreProvider` cachea y mapea la UI).
+///
+/// Recordatorios técnicos y CQRS:
+/// - El `FeedContext` garantiza que el `PostStoreProvider` separe lógicamente los IDs por pestañas (Home vs Explore vs Profile).
+/// - Si se agrega un nuevo Feed a la app, DEBE mapearse obligatoriamente como un nuevo `ContextType` aquí.
 enum ContextType { home, exploreGlobal, exploreTab, profile }
 
 class FeedContext {

@@ -7,8 +7,22 @@ import '../services/storage_service.dart';
 
 enum NotifStatus { idle, loading, success, empty, error }
 
-/// Provider de notificaciones.
-/// Consume GET /notificaciones y PATCH /notificaciones/:id/leida.
+/// Responsabilidad principal:
+/// Centraliza la bandeja de notificaciones globales, integrando llamadas REST (historial) y eventos Socket (en tiempo real).
+///
+/// Flujo dentro de la app:
+/// Al iniciar sesión (ChangeNotifierProxyProvider), carga el histórico e inicia la escucha de `nueva_notificacion`. Actualiza el badge (campanita) global.
+///
+/// Dependencias críticas:
+/// - `NotificationService` (REST).
+/// - `SocketService` (Sockets).
+/// - `StorageService` (Para ignorar eventos apagados en las preferencias).
+///
+/// Side Effects:
+/// - Mutación masiva del DTO local (`NotificationModel.copyWith`) al marcar como leída para no esperar al servidor.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Sobrecarga de Red Innecesaria: Filtra notificaciones en el cliente (`_isAllowed`) según configuración local. Si un usuario desactiva notificaciones de likes, el backend las sigue emitiendo y el cliente gasta batería recibiéndolas y descartándolas. El backend debería respetar estas preferencias antes de emitir.
 class NotificationProvider extends ChangeNotifier {
   final NotificationService _service;
   final SocketService _socketService;

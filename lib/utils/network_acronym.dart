@@ -1,5 +1,17 @@
-/// Genera siglas a partir del nombre de una red (mismas reglas que el home).
-/// Ej.: "Facultad de Ingeniería Eléctrica y Electrónica" → "FIEE"
+/// Responsabilidad principal:
+/// Generar siglas formateadas a partir del nombre de una red o comunidad.
+///
+/// Flujo dentro de la app:
+/// Utilizado por los componentes visuales de avatares como "Fallback" cuando una comunidad no tiene imagen propia.
+///
+/// Dependencias críticas:
+/// - Ninguna.
+///
+/// Side Effects:
+/// - Ninguno. Función 100% pura.
+///
+/// Recordatorios técnicos y CQRS:
+/// - `stopWords` están hardcodeadas en español. Vigilar escalabilidad de internacionalización.
 String buildNetworkAcronym(String name) {
   final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
   if (words.isEmpty) return '?';

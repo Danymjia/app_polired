@@ -7,10 +7,20 @@ import '../../config/theme.dart';
 import '../../models/notification_model.dart';
 import '../../providers/notification_provider.dart';
 
-/// Pantalla de Notificaciones.
-/// Accesible desde el ícono del búho en el AppBar del Home.
-/// Consume GET /notificaciones y PATCH /notificaciones/:id/leida.
-/// Agrupa las notificaciones en: Hoy / Esta semana / Anteriormente.
+/// Responsabilidad principal:
+/// Mostrar el historial de notificaciones. Agrupa visualmente los elementos en: Hoy, Esta semana y Anteriormente. Provee enlaces directos a las publicaciones relevantes.
+///
+/// Flujo dentro de la app:
+/// Llama a `loadNotifications` al iniciar y luego despacha la orden silenciosa de `markAllAsRead`. Escucha reactivamente a `NotificationProvider`.
+///
+/// Dependencias críticas:
+/// - `NotificationProvider` (Gestión centralizada del historial y conteo no leído global).
+///
+/// Side Effects:
+/// - Lectura Silenciosa: `provider.markAllAsRead()` muta el backend asíncronamente tan pronto la pantalla se abre, reseteando la "burbuja roja" en la barra de navegación del Home de inmediato.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Navegación Estática: La navegación hacia el contenido (`context.push('/post/id')`) viola ligeramente la separación de responsabilidades, asumiendo conocimiento directo del router local en vez de delegar en un `Command` o `NavigationService`.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 

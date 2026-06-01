@@ -1,3 +1,17 @@
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable, variante ultra-ligera de perfil de usuario para listas de exploración o sugerencias.
+///
+/// Flujo dentro de la app:
+/// Consumido masivamente por `ExploreUsersProvider` o vistas de listas (Buscador).
+///
+/// Dependencias críticas:
+/// - Ninguna externa.
+///
+/// Side Effects:
+/// - Ninguno. Modelo puro.
+///
+/// Recordatorios técnicos y CQRS:
+/// - DTO de lectura simple; evita sobrecarga de memoria en listas muy grandes de búsqueda.
 class PublicUserModel {
   final String id;
   final String nombre;

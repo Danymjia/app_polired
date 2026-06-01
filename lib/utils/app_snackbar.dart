@@ -3,6 +3,21 @@ import 'package:google_fonts/google_fonts.dart';
 
 enum SnackbarType { success, error, info }
 
+/// Responsabilidad principal:
+/// Utilería estática para mostrar notificaciones flotantes (Snackbars) de forma consistente en toda la UI.
+///
+/// Flujo dentro de la app:
+/// Llamado desde comandos CQRS, servicios o pantallas directamente cuando hay un éxito/error (ej. tras mutar estado).
+///
+/// Dependencias críticas:
+/// - Ninguna externa (solo Material).
+///
+/// Side Effects:
+/// - Manipula el `ScaffoldMessenger` global del contexto para sobreponer elementos UI.
+///
+/// Recordatorios técnicos y CQRS:
+/// - No contiene estado persistente.
+/// - Si el context proveído ya no está montado (mounted) al momento de ejecutarse, puede causar un crash. Precaución en comandos asíncronos.
 class AppSnackbar {
   static void show(
     BuildContext context, {

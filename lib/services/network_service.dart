@@ -4,11 +4,20 @@ import '../utils/json_ids.dart';
 import '../utils/network_acronym.dart';
 import 'api_service.dart';
 
-/// Servicio de redes comunitarias.
-/// Endpoints utilizados:
-///   - GET /redes/listar                 → todas las redes disponibles
-///   - GET /estudiantes/listar/redes     → redes del estudiante autenticado
-///   - POST /estudiantes/unirse/red      → suscribir al estudiante a una red
+/// Responsabilidad principal:
+/// Repositorio/Servicio para interactuar con el ecosistema de Comunidades/Redes del backend.
+///
+/// Flujo dentro de la app:
+/// Llamado por `NetworkProvider` y `ExploreNetworksProvider` para listar redes (queries) y unirse/salir (commands). Parsea respuestas JSON a DTOs.
+///
+/// Dependencias críticas:
+/// - `ApiService` (Red).
+///
+/// Side Effects:
+/// - Envía Commands HTTP (`unirseRed`, `salirseRed`) que alteran permanentemente el estado en el backend.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda técnica de Capas: Este archivo actúa como un "Service" (transporte HTTP) y como "Repository" (Parseo de JSON a `NetworkStoryModel`). Sería ideal separar la extracción de datos de su transformación a objetos de dominio.
 class NetworkService {
   final ApiService _api;
 

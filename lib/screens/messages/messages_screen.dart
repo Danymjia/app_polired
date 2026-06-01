@@ -13,8 +13,21 @@ import '../../providers/messages_inbox_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/socket_service.dart';
 
-/// Pantalla principal de mensajes: header, buscador (solo UI), historias de redes,
-/// lista de conversaciones y sugerencias para seguir.
+/// Responsabilidad principal:
+/// Pantalla Bandeja de Entrada (Inbox) para listar conversaciones activas, estado de la conexión en vivo y sugerencias de nuevas redes a seguir.
+///
+/// Flujo dentro de la app:
+/// Muestra dinámicamente un banner de estado del `SocketService`. Consume la lista de chats del `MessagesInboxProvider` y permite Forzar-Recarga mediante un `RefreshIndicator`.
+///
+/// Dependencias críticas:
+/// - `MessagesInboxProvider` (Manejo de estado de la bandeja).
+/// - `AuthProvider` (Extracción del userId actual para determinar el remitente/destinatario).
+///
+/// Side Effects:
+/// - Peticiones múltiples en inicialización: Renderiza carruseles secundarios (Sugerencias y Stories) que disparan peticiones extra.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Violación de Responsabilidad Única (SRP): Esta pantalla mezcla "Mis Conversaciones" con "Redes Sugeridas" y "Mis Redes (Historias)". El `MessagesInboxProvider` realiza peticiones a endpoints de *Redes* en lugar de enfocarse solo en *Chat*, creando duplicación de estado masiva con el `NetworkProvider` y el `ExploreNetworksProvider`.
 class MessagesScreen extends StatelessWidget {
   const MessagesScreen({super.key});
 

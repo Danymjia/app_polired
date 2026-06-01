@@ -5,7 +5,23 @@ import '../services/auth_service.dart';
 import '../services/socket_service.dart';
 import '../services/storage_service.dart';
 
-/// Estado de autenticación de la aplicación.
+/// Responsabilidad principal:
+/// Proveedor central del estado de Autenticación de la aplicación y perfil del usuario (`UserModel`).
+///
+/// Flujo dentro de la app:
+/// Nodo raíz de estado. Inicializa la sesión desde `StorageService`, y si hay éxito, inyecta el token y conecta el `SocketService`. Usado por GoRouter para proteger rutas (`/login` vs `/home`).
+///
+/// Dependencias críticas:
+/// - `AuthService` (Llamadas HTTP).
+/// - `StorageService` (Persistencia de JWT).
+/// - `SocketService` (Conexión de WS tras login).
+///
+/// Side Effects:
+/// - Login exitoso inyecta el token en memoria, graba en disco (`SharedPreferences`) y abre persistencia WebSocket.
+/// - Limpiar sesión (`_clearSession`) destruye el almacenamiento local.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda técnica de Estado: Las funciones de actualización de perfil mutan localmente y luego fuerzan una sincronización HTTP (`syncProfileFromServer`). Susceptible a *race conditions* con red lenta.
 enum AuthStatus { loading, authenticated, unauthenticated }
 
 /// Provider central de autenticación.

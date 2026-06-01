@@ -1,5 +1,20 @@
 import '../utils/json_ids.dart';
 
+/// Responsabilidad principal:
+/// DTO (Data Transfer Object) inmutable que encapsula una conversación de chat (bandeja de entrada) y el participante remoto.
+///
+/// Flujo dentro de la app:
+/// Parseado desde `/mensajes/conversaciones`. Consumido por `MessagesInboxProvider` para listar el inbox.
+///
+/// Dependencias críticas:
+/// - `json_ids.dart` para parseo seguro de identificadores de Mongo.
+///
+/// Side Effects:
+/// - Ninguno. Modelo puramente de lectura (DTO).
+///
+/// Recordatorios técnicos y CQRS:
+/// - `UltimoMensajeModel` es mutado clonándolo (`copyWith`) cuando llega un evento de WebSocket para actualizar optimísticamente el inbox (CQRS Event).
+
 /// Participante contrario en un chat 1:1.
 class ChatPeerModel {
   final String id;

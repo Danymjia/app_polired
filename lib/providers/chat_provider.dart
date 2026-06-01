@@ -6,6 +6,22 @@ import '../models/message_model.dart';
 import '../services/socket_service.dart';
 import '../services/storage_service.dart';
 
+/// Responsabilidad principal:
+/// Estado de una conversación individual (Chat 1:1), paginación de mensajes e integración bidireccional con Sockets.
+///
+/// Flujo dentro de la app:
+/// Se inicializa al entrar a la pantalla de chat. Carga el historial desde la API (`http.get`) y escucha activamente nuevos mensajes vía `SocketService`.
+///
+/// Dependencias críticas:
+/// - `SocketService` (Tiempo real).
+/// - `StorageService` (Token de sesión).
+///
+/// Side Effects:
+/// - Muta la lista local de mensajes insertando optimísticamente durante `sendMessage` antes de la confirmación HTTP/Socket.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Deuda técnica grave (Acoplamiento REST-UI): Este Provider realiza peticiones `http` directamente, violando la capa de Abstracción de Servicios y Repositorios.
+/// - Inconsistencia de ID temporal: La lógica de Optimistic UI distingue IDs temporales comparando la longitud del String (`m.id.length > 10`), asumiendo que MongoId es de 24 chars y el local es un Timestamp largo. Frágil y propenso a fallos.
 class ChatProvider extends ChangeNotifier {
   final SocketService _socketService;
   final String _conversationId;

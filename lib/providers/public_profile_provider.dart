@@ -4,6 +4,22 @@ import '../models/post_model.dart';
 import '../services/public_profile_service.dart';
 import 'post_store_provider.dart';
 
+/// Responsabilidad principal:
+/// Estado para el Perfil Público de OTRO estudiante, manejando un caché LRU (Least Recently Used) simplificado para navegación rápida sin re-fetching constante.
+///
+/// Flujo dentro de la app:
+/// Usado en la pantalla de Perfil Público. Carga info y feed y vuelca los posts al `PostStoreProvider`.
+///
+/// Dependencias críticas:
+/// - `PublicProfileService` (HTTP).
+/// - `PostStoreProvider` (Caché global).
+///
+/// Side Effects:
+/// - Almacena instancias masivas de perfiles en `_profileCache`.
+/// - Inyecta posts en el Store central.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Fuga de memoria (Memory Leak Alert): El diccionario `_profileCache` crece indefinidamente al visitar usuarios sin mecanismo de expiración ni límite de tamaño. Deuda técnica que impacta en sesiones largas.
 class PublicProfileCache {
   final PublicProfileModel info;
   final List<String> postIds;

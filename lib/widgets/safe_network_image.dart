@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 
-/// Widget helper para cargar imágenes remotas de forma segura.
+/// Responsabilidad principal:
+/// Envoltorio global para `Image.network` que estandariza el manejo de estados (loading, fallos, URLs inválidas).
 ///
-/// Maneja URLs vacías, carga, errores y permite reemplazo con un placeholder.
+/// Flujo dentro de la app:
+/// Componente hoja. Intercepta nulos o errores de red para prevenir fallos en la capa de renderizado y mostrar placeholders consistentes.
+///
+/// Dependencias críticas:
+/// Ninguna. Componente puro puramente presentacional.
+///
+/// Side Effects:
+/// Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Oportunidad de Optimización: Internamente delega en `Image.network` nativo, el cual usa un caché efímero en RAM. Para escalar y soportar Offline-first, este widget debe migrarse a envolver `cached_network_image` persistiendo en SQLite/Disco local.
 class SafeNetworkImage extends StatelessWidget {
   final String? url;
   final BoxFit fit;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,16 +54,36 @@ class _SplashScreenState extends State<SplashScreen>
     _scheduleNavigation();
   }
 
-  void _scheduleNavigation() {
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      if (!mounted) return;
-      final auth = context.read<AuthProvider>();
-      if (auth.isAuthenticated) {
-        context.go('/home');
-      } else {
-        context.go('/login');
+  Future<void> _waitForAuth() async {
+    final auth = context.read<AuthProvider>();
+    if (auth.status != AuthStatus.loading) return;
+
+    final completer = Completer<void>();
+    void listener() {
+      if (auth.status != AuthStatus.loading) {
+        auth.removeListener(listener);
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       }
-    });
+    }
+    auth.addListener(listener);
+    return completer.future;
+  }
+
+  Future<void> _scheduleNavigation() async {
+    await Future.wait([
+      Future.delayed(const Duration(milliseconds: 2000)),
+      _waitForAuth(),
+    ]);
+
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    if (auth.isAuthenticated) {
+      context.go('/home');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override

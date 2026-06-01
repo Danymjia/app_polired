@@ -1,70 +1,64 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/constants.dart';
 
 /// Responsabilidad principal:
-/// Capa de abstracción estática para la persistencia local de datos clave-valor usando `shared_preferences`.
+/// Capa de abstracción estática para la persistencia local de datos sensibles clave-valor.
+/// Utiliza `flutter_secure_storage` para proteger la sesión (JWT) y PII del usuario.
 ///
 /// Flujo dentro de la app:
-/// Inicializado de forma bloqueante en `main.dart`. Consumido globalmente por `AuthService`, `AuthProvider`, y `NotificationProvider` para persistir estado entre reinicios.
-///
-/// Dependencias críticas:
-/// - `shared_preferences`.
-///
-/// Side Effects:
-/// - Persistencia: Realiza I/O en disco (asíncrono).
-///
-/// Recordatorios técnicos y CQRS:
-/// - Riesgo de Seguridad: `SharedPreferences` guarda datos en texto plano. Almacenar el JWT (`saveToken`) directamente aquí expone la sesión en dispositivos rooteados. Deuda técnica: migrar a `flutter_secure_storage`.
+/// Inicializado de forma bloqueante en `main.dart`. Consumido globalmente por `AuthService`, `AuthProvider`, y `ChatProvider`.
 class StorageService {
-  static SharedPreferences? _prefs;
+  static const _secureStorage = FlutterSecureStorage();
+  
+  // Caché en memoria para mantener lecturas síncronas sin romper consumidores
+  static String? _cachedToken;
+  static Map<String, dynamic>? _cachedUser;
 
   static Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
-  }
-
-  // ─── Token ───────────────────────────────────────────────────────────────
-  static Future<void> saveToken(String token) async {
-    await _prefs?.setString(AppConstants.tokenKey, token);
-  }
-
-  static String? getToken() => _prefs?.getString(AppConstants.tokenKey);
-
-  static Future<void> removeToken() async {
-    await _prefs?.remove(AppConstants.tokenKey);
-  }
-
-  // ─── Usuario ─────────────────────────────────────────────────────────────
-  static Future<void> saveUser(Map<String, dynamic> user) async {
-    await _prefs?.setString(AppConstants.userKey, jsonEncode(user));
-  }
-
-  static Map<String, dynamic>? getUser() {
-    final raw = _prefs?.getString(AppConstants.userKey);
-    if (raw == null) return null;
-    try {
-      return jsonDecode(raw) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
+    // Pre-cargar datos sensibles en memoria desde Secure Storage
+    _cachedToken = await _secureStorage.read(key: AppConstants.tokenKey);
+    
+    final rawUser = await _secureStorage.read(key: AppConstants.userKey);
+    if (rawUser != null) {
+      try {
+        _cachedUser = jsonDecode(rawUser) as Map<String, dynamic>;
+      } catch (_) {
+        _cachedUser = null;
+      }
     }
   }
 
-  static Future<void> removeUser() async {
-    await _prefs?.remove(AppConstants.userKey);
+  // ─── Token (Secure) ──────────────────────────────────────────────────────
+  static Future<void> saveToken(String token) async {
+    _cachedToken = token; // Update cache
+    await _secureStorage.write(key: AppConstants.tokenKey, value: token);
   }
 
-  // ─── Preferencias de Notificaciones ────────────────────────────────────────
-  static bool getNotifLikes() => _prefs?.getBool('notif_likes') ?? true;
-  static Future<void> setNotifLikes(bool value) async => await _prefs?.setBool('notif_likes', value);
+  static String? getToken() => _cachedToken; // Lectura síncrona
 
-  static bool getNotifComments() => _prefs?.getBool('notif_comments') ?? true;
-  static Future<void> setNotifComments(bool value) async => await _prefs?.setBool('notif_comments', value);
+  static Future<void> removeToken() async {
+    _cachedToken = null;
+    await _secureStorage.delete(key: AppConstants.tokenKey);
+  }
 
-  static bool getNotifMessages() => _prefs?.getBool('notif_messages') ?? true;
-  static Future<void> setNotifMessages(bool value) async => await _prefs?.setBool('notif_messages', value);
+  // ─── Usuario (Secure) ────────────────────────────────────────────────────
+  static Future<void> saveUser(Map<String, dynamic> user) async {
+    _cachedUser = user; // Update cache
+    await _secureStorage.write(key: AppConstants.userKey, value: jsonEncode(user));
+  }
+
+  static Map<String, dynamic>? getUser() => _cachedUser; // Lectura síncrona
+
+  static Future<void> removeUser() async {
+    _cachedUser = null;
+    await _secureStorage.delete(key: AppConstants.userKey);
+  }
 
   // ─── Clear all ───────────────────────────────────────────────────────────
   static Future<void> clear() async {
-    await _prefs?.clear();
+    _cachedToken = null;
+    _cachedUser = null;
+    await _secureStorage.deleteAll();
   }
 }

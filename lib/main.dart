@@ -44,7 +44,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// Dependencias críticas:
 /// - flutter_dotenv
 /// - mapbox_maps_flutter
-/// - shared_preferences (vía StorageService)
+/// - flutter_secure_storage (vía StorageService)
 /// - Provider (MultiProvider, ChangeNotifierProxyProvider)
 ///
 /// Side Effects:

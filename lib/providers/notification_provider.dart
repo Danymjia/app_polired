@@ -3,7 +3,6 @@ import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../models/user_model.dart';
 import '../services/socket_service.dart';
-import '../services/storage_service.dart';
 
 enum NotifStatus { idle, loading, success, empty, error }
 
@@ -76,7 +75,6 @@ class NotificationProvider extends ChangeNotifier {
     final map = Map<String, dynamic>.from(raw);
     try {
       final notif = NotificationModel.fromJson(map);
-      if (!_isAllowed(notif)) return;
       
       _notifications.insert(0, notif);
       if (_status == NotifStatus.empty) {
@@ -110,7 +108,7 @@ class NotificationProvider extends ChangeNotifier {
     final result = await _service.getNotificaciones();
 
     if (result.success && result.data != null) {
-      _notifications = result.data!.where(_isAllowed).toList();
+      _notifications = result.data!;
       _status = _notifications.isEmpty ? NotifStatus.empty : NotifStatus.success;
     } else {
       _status = NotifStatus.error;
@@ -177,12 +175,4 @@ class NotificationProvider extends ChangeNotifier {
 
   // ─── Refresh ──────────────────────────────────────────────────────────────
   Future<void> refresh() => loadNotifications();
-  
-  // ─── Filtro de preferencias ────────────────────────────────────────────────
-  bool _isAllowed(NotificationModel n) {
-    if (n.tipo == 'like') return StorageService.getNotifLikes();
-    if (n.tipo == 'comentario' || n.tipo == 'respuesta_comentario') return StorageService.getNotifComments();
-    if (n.tipo == 'mensaje') return StorageService.getNotifMessages();
-    return true;
-  }
 }

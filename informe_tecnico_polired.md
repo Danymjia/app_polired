@@ -275,6 +275,7 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
 
 - Usa un archivo theme.dart centralizado para tipografías (Google Fonts) y colores consistentes.
 - Existen gran variedad de BottomSheets modulares: comment_tree_sheet.dart, likes_bottom_sheet.dart, network_options_bottom_sheet.dart, report_post_bottom_sheet.dart.
+  - **Nota Técnica (`comment_tree_sheet.dart`)**: Análisis técnico confirma un riesgo potencial de OOM (Out of Memory) en este componente, ya que el árbol de comentarios se descarga y procesa completamente en una sola petición. La solución requiere cambios en el backend para soportar un endpoint paginado (con cursor y `limit`). Se tomó la decisión consciente de postergar esta optimización para una fase posterior al lanzamiento inicial. La propuesta arquitectónica de integrar un `CommentQueryProvider` queda registrada como plan de implementación futuro.
 - Utiliza carruseles de imágenes interactivos (post_image_carousel.dart) y un visualizador en pantalla completa (fullscreen_image_viewer.dart).
 - Avatares de red seguros (network_avatar.dart, safe_network_image.dart) previenen crashes por URLs inválidas.
 

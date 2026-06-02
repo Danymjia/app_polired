@@ -7,6 +7,7 @@ import '../../providers/chat_provider.dart';
 import '../../services/socket_service.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../providers/messages_inbox_provider.dart';
+import '../../widgets/chat_options_bottom_sheet.dart';
 
 /// Responsabilidad principal:
 /// Pantalla de conversación 1:1. Renderiza el historial de mensajes e integra una caja de texto para el envío bidireccional vía WebSockets.
@@ -77,6 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
         contactName: widget.contactName,
         contactAvatar: widget.contactAvatar,
         currentUserId: context.read<AuthProvider>().user?.id ?? '',
+        contactId: widget.contactId,
       ),
     );
   }
@@ -87,12 +89,14 @@ class _ChatScreenContent extends StatefulWidget {
   final String contactName;
   final String? contactAvatar;
   final String currentUserId;
+  final String contactId;
 
   const _ChatScreenContent({
     required this.conversationId,
     required this.contactName,
     this.contactAvatar,
     required this.currentUserId,
+    required this.contactId,
   });
 
   @override
@@ -183,7 +187,17 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
         actions: [
           IconButton(
             icon: const Icon(Icons.more_horiz, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => ChatOptionsBottomSheet(
+                  contactId: widget.contactId,
+                  contactName: widget.contactName,
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],

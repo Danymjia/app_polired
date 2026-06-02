@@ -52,4 +52,22 @@ class PublicProfileService {
     }
     return ApiResult.error(result.message ?? 'Error al cargar publicaciones del perfil público');
   }
+
+  // ─── Reportar usuario ─────────────────────────────────────────────────────
+  /// POST /reportes/usuario
+  /// Permite reportar a un usuario. El backend espera un motivo y un usuario destino.
+  Future<ApiResult<dynamic>> reportUser({
+    required String reportadoUsuarioId,
+    required String motivo,
+    String? detalles,
+  }) async {
+    final body = {
+      'reportadoUsuarioId': reportadoUsuarioId,
+      'motivo': motivo,
+    };
+    if (detalles != null && detalles.isNotEmpty) {
+      body['detalles'] = detalles;
+    }
+    return await _apiService.post('/reportes/usuario', body);
+  }
 }

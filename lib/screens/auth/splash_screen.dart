@@ -21,7 +21,7 @@ import '../../widgets/polired_logo.dart';
 /// - Ninguno propio.
 ///
 /// Recordatorios técnicos y CQRS:
-/// - Race Condition Potencial: El enrutamiento depende de un `Future.delayed` de 2000ms. Si la lectura del Disco (StorageService) en `AuthProvider` toma más de 2 segundos, mandará al usuario a Login incorrectamente. Se debe escuchar reactivamente al estado "inicializado" en lugar de adivinar el tiempo.
+/// - Arranque Seguro Sincronizado: El enrutamiento espera concurrentemente (`Future.wait`) a que finalice la lectura de disco local en `AuthProvider` y la animación visual, previniendo condiciones de carrera al inicio.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

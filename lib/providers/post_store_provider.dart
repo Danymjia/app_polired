@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/post_model.dart';
 import '../models/events/post_event.dart';
 import '../models/feed_context.dart';
@@ -83,10 +83,12 @@ class PostStoreProvider extends ChangeNotifier {
 
   // ─── Hidratación Social Base ───────────────────────────────────────────────
   void setSocialHydration(List<String> likedIds, List<String> savedIds) {
-    debugPrint('--- SOCIAL HYDRATION LOGS ---');
-    debugPrint('Liked IDs from backend: $likedIds');
-    debugPrint('Saved IDs from backend: $savedIds');
-    debugPrint('Posts currently in store keys: ${_postsById.keys.take(5).toList()}...');
+    if (kDebugMode) {
+      debugPrint('--- SOCIAL HYDRATION LOGS ---');
+      debugPrint('Liked IDs from backend: $likedIds');
+      debugPrint('Saved IDs from backend: $savedIds');
+      debugPrint('Posts currently in store keys: ${_postsById.keys.take(5).toList()}...');
+    }
 
     _likedPostIds.clear();
     _savedPostIds.clear();

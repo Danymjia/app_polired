@@ -117,24 +117,63 @@ class PoiDetailSheet extends StatelessWidget {
                         children: [
                           // Galería de fotos
                           if (poi.photoAssets.isNotEmpty)
-                            SizedBox(
-                              height: 160,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(20)),
-                                child: PageView.builder(
-                                  itemCount: poi.photoAssets.length,
-                                  itemBuilder: (_, index) => Image.asset(
-                                    poi.photoAssets[index],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => Container(
-                                      color: const Color(0xFF1D3557).withValues(alpha: 0.08),
-                                      child: const Icon(Icons.image_not_supported_rounded,
-                                          color: Colors.grey),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            Builder(
+                              builder: (context) {
+                                int currentImageIndex = 0;
+                                return StatefulBuilder(
+                                  builder: (context, setState) {
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          height: 160,
+                                          child: ClipRRect(
+                                            borderRadius: const BorderRadius.vertical(
+                                                top: Radius.circular(20)),
+                                            child: PageView.builder(
+                                              itemCount: poi.photoAssets.length,
+                                              onPageChanged: (index) {
+                                                setState(() {
+                                                  currentImageIndex = index;
+                                                });
+                                              },
+                                              itemBuilder: (_, index) => Image.asset(
+                                                poi.photoAssets[index],
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, _, _) => Container(
+                                                  color: const Color(0xFF1D3557).withValues(alpha: 0.08),
+                                                  child: const Icon(Icons.image_not_supported_rounded,
+                                                      color: Colors.grey),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        if (poi.photoAssets.length > 1) ...[
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: List.generate(poi.photoAssets.length, (index) {
+                                              return AnimatedContainer(
+                                                duration: const Duration(milliseconds: 200),
+                                                width: currentImageIndex == index ? 8 : 6,
+                                                height: currentImageIndex == index ? 8 : 6,
+                                                margin: const EdgeInsets.symmetric(horizontal: 3),
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: currentImageIndex == index
+                                                      ? const Color(0xFF1D3557)
+                                                      : const Color(0xFF1D3557).withValues(alpha: 0.3),
+                                                ),
+                                              );
+                                            }),
+                                          ),
+                                        ],
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
                             )
                           else
                             const SizedBox(height: 8),

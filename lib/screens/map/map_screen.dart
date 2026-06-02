@@ -296,6 +296,12 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   void _onMapCreated(MapboxMap map) async {
     _mapboxMap = map;
 
+    // 1. Aplicar configuración de estilo primero
+    // Esto asegura que la orden se envíe al motor nativo antes de que termine
+    // de cargar el estilo, evitando el "flash" de etiquetas genéricas.
+    await map.style.setStyleImportConfigProperty("basemap", "showPointOfInterestLabels", false);
+    await map.style.setStyleImportConfigProperty("basemap", "showPlaceLabels", false);
+
     await map.setBounds(CameraBoundsOptions(
       bounds: _campusBounds,
       minZoom: _minZoom,
@@ -310,9 +316,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       bearing: 0.0,
       padding: MbxEdgeInsets(top: 80, left: 0, bottom: 0, right: 0),
     ));
-
-    await map.style.setStyleImportConfigProperty("basemap", "showPointOfInterestLabels", false);
-    await map.style.setStyleImportConfigProperty("basemap", "showPlaceLabels", false);
 
     _annotationManager = await map.annotations.createPointAnnotationManager();
     _annotationManager!.tapEvents(onTap: (annotation) async {

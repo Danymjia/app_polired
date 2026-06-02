@@ -31,6 +31,7 @@ class PoiData {
         longitude: (coords[0] as num).toDouble(),
         schedule: props['schedule'] != null ? [props['schedule'] as String] : [],
         howToGet: props['howToGet'] as String? ?? 'Indicaciones no disponibles.',
+        photoAssets: (props['images'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
         floor: props['floor'] as String?,
         building: props['building'] as String?,
         phone: props['phone'] as String?,

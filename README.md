@@ -1,147 +1,87 @@
-# Polired Mobile App
+<div align="center">
+  <h1>PoliRed Mobile App</h1>
+  <p><strong>Red Social Universitaria para Comunidades Académicas</strong></p>
 
-Aplicación móvil de la red social universitaria **Polired**, desarrollada en Flutter para Android e iOS.
+  ![Flutter](https://img.shields.io/badge/Flutter-%5E3.10.1-02569B?style=flat&logo=flutter&logoColor=white)
+  ![Dart](https://img.shields.io/badge/Dart-Enabled-0175C2?style=flat&logo=dart&logoColor=white)
+  ![Plataformas](https://img.shields.io/badge/Plataformas-Android%20%7C%20iOS-lightgrey)
+  ![Arquitectura](https://img.shields.io/badge/Arquitectura-CQRS%20%2B%20Provider-success)
+</div>
 
-## Descripción
+---
 
-Polired es una aplicación de interacción social dirigida a comunidades universitarias. El frontend está diseñado para consumir el backend `BackendV2`, que expone APIs de autenticación, feeds, publicaciones, artículos, redes comunitarias y mensajería.
+## 📖 Descripción
 
-## Documentación técnica
+**PoliRed** es una aplicación móvil desarrollada en Flutter diseñada para transformar la manera en la que los estudiantes interactúan en su ecosistema universitario. El objetivo de la plataforma es crear redes académicas y sociales seguras, permitiendo a los usuarios descubrir comunidades, consumir noticias relevantes, acceder a cursos y participar en un marketplace exclusivo.
 
-La documentación de implementación y las decisiones de arquitectura están en:
+El cliente (Frontend) consume los servicios del `BackendV2`, el cual provee un robusto ecosistema de APIs para autenticación, mensajería en tiempo real, feeds dinámicos y publicaciones.
 
-- `polired/informe_tecnico_polired.md`
+## ✨ Características Principales
 
-## Características principales
+- 🔐 **Autenticación Segura:** Manejo de sesiones persistentes con JWT.
+- 🌐 **Feeds Dinámicos:** Feed global y feeds segregados por comunidad/red.
+- 🔍 **Módulo Explore:** Categorización inteligente en Noticias, Marketplace y Cursos.
+- 📝 **Gestión de Contenido:** Creación de publicaciones estándar y artículos transaccionales.
+- 👤 **Perfiles Personalizables:** Biografía, foto de perfil y métricas.
+- 💬 **Mensajería en Tiempo Real:** Integración con WebSocket (Pusher) para actualización síncrona de chats y notificaciones.
+- 🗺️ **Geolocalización:** Despliegue de mapas interactivos utilizando Mapbox.
 
-- Autenticación JWT y persistencia de sesión
-- Feed global y feed por comunidad
-- Explore con categorías reales: Noticias, Marketplace y Cursos
-- Creación de publicaciones estándar y artículos pagados
-- Perfil de usuario con biografía y foto
-- Bandeja de mensajes y notificaciones informativas
-- Integración con WebSocket / Socket.IO para actualización de conversaciones
+## 🏗️ Arquitectura del Proyecto
 
-## Arquitectura
+El proyecto sigue una arquitectura limpia orientada por capas y hace uso de patrones de diseño empresariales:
 
-El proyecto utiliza un patrón de estado simple basado en `provider` con los siguientes componentes clave:
+- **Manejo de Estado (`provider`)**: Uso extensivo de `ChangeNotifierProxyProvider` para componer dependencias reactivas.
+- **Patrón CQRS**: Separación de las operaciones de lectura (Query) y escritura (Command) a través de un `CommandBus` (`PostStoreProvider`), garantizando un estado atómico sin renders innecesarios.
+- **Inyección de Dependencias**: Inicialización centralizada de servicios en `main.dart`.
+- **Enrutamiento Seguro**: Uso de `go_router` con guards de autenticación que interceptan y redirigen flujos no autorizados.
 
-- `ApiService` — capa HTTP con manejo de errores centralizado
-- `AuthProvider` — gestión de sesión y token JWT
-- `NetworkProvider` — control de redes comunitarias / historias
-- `GlobalFeedProvider` — carga del feed de Explore por categoría
-- `PostService` — orquesta los endpoints de publicaciones y artículos
+### Estructura de Capas
+- **`ApiService`**: Wrapper HTTP con manejo centralizado de excepciones y headers.
+- **`AuthProvider`**: Gestión del ciclo de vida de la sesión de usuario.
+- **`PostService`**: Orquestador principal de publicaciones.
+- **`SocketService`**: Conexiones Pub/Sub para chat y notificaciones.
 
-## Endpoints principales
+## 🚀 Guía de Inicio Rápido (Local)
 
-El frontend consume las siguientes rutas del backend:
+### Requisitos Previos
+- SDK de Flutter compatible (`^3.10.1`).
+- Dispositivo físico o emulador (Android SDK / iOS Simulator).
+- Acceso a `BackendV2` (ya sea localmente o mediante la URL de producción).
 
-- `POST /auth/login` — autenticación
-- `POST /registro-estudiantes` — registro de usuario
-- `GET /perfil-estudiante` — perfil completo del usuario
-- `PATCH /completar/perfil` — completar perfil inicial
-- `PATCH /perfil/username` — cambiar username
-- `PATCH /estudiante/:id` — actualizar datos del perfil
-- `GET /redes/listar` — redes disponibles
-- `GET /estudiantes/listar/redes` — redes del usuario
-- `POST /estudiantes/unirse/red` — unirse a una red
-- `GET /publicaciones/red/:redId` — feed de una red específica
-- `GET /publicaciones/global` — feed global para Explore Noticias
-- `GET /publicaciones/articulos/global` — feed global de artículos para Marketplace/Cursos
-- `POST /estudiantes/publicaciones` — crear publicación estándar
-- `POST /publicaciones/articulos` — crear artículo de Venta o Cursos
-
-> El backend espera JWT en el header `Authorization: Bearer <token>` para la mayoría de operaciones protegidas.
-
-## Requisitos
-
-- Flutter SDK compatible con el proyecto
-- Android SDK / emulador o dispositivo iOS
-- Backend `BackendV2` corriendo localmente o accesible desde la red
-
-## Configuración local
-
-1. Abre la carpeta `polired`.
-2. Ejecuta:
+### Instalación
+1. Abre tu terminal en la carpeta principal del proyecto:
+   ```bash
+   cd app_polired
+   ```
+2. Instala las dependencias de Flutter:
    ```bash
    flutter pub get
    ```
-3. Asegúrate de que el backend esté activo en `BackendV2` y que la URL base en `lib/config/constants.dart` apunte al servidor correcto.
+3. Verifica la configuración en `lib/config/constants.dart`.
+   - *Nota:* Para emuladores Android usando un backend local, utiliza `http://10.0.2.2:3000/api`. En dispositivos físicos, usa tu IP de red local o la de producción.
 
-## Ejecución
-
-En la carpeta `polired`:
-
+### Ejecución
+Para compilar y correr el proyecto en el dispositivo activo:
 ```bash
 flutter run
 ```
-
-Para analizar el proyecto:
-
+Para ejecutar el analizador estático y verificar la calidad del código:
 ```bash
 flutter analyze
 ```
 
-## Notas de despliegue
+## 📚 Documentación Técnica
 
-- En emulador Android se usa `http://10.0.2.2:3000/api`
-- En dispositivo físico, sustituye la URL por la IP local del servidor
+Para conocer a fondo las decisiones arquitectónicas, estructura de archivos y análisis del código, consulta el reporte técnico oficial:
+👉 **[Informe Técnico de PoliRed](informe_tecnico_polired.md)**
 
-## Buenas prácticas
+## 📡 Endpoints Destacados
 
-- Mantén el token JWT actualizado en `ApiService`
-- Usa `flutter analyze` antes de cada compilación
-- Consulta `informe_tecnico_polired.md` para los detalles de arquitectura, endpoint y flujo de datos
+PoliRed interactúa con diversas rutas del servidor. Todas las rutas protegidas requieren enviar el token JWT en el header (`Authorization: Bearer <token>`):
 
-## Estado actual
+- `POST /auth/login` | `GET /perfil-estudiante`
+- `GET /redes/listar` | `POST /estudiantes/unirse/red`
+- `GET /publicaciones/global` | `GET /publicaciones/articulos/global`
+- `POST /estudiantes/publicaciones` | `POST /publicaciones/articulos`
 
-- `Home` y `Explore` consumen datos reales del backend
-- `Explore` soporta categorías: `Noticias`, `Marketplace`, `Cursos`
-- Las publicaciones de `Venta` y `Cursos` usan el endpoint de artículos correcto
-- `flutter analyze` se ejecuta sin errores
-
-## Cambios recientes: manejo de imágenes remotas
-
-Se centralizó y endureció el renderizado de imágenes remotas para evitar fallos visibles y unificar la UX de carga/errores.
-
-- Nuevo helper: `SafeNetworkImage` en `lib/widgets/safe_network_image.dart`.
-  - Maneja URL vacías, estado de carga (spinner), errores y placeholders.
-  - Soporta `borderRadius`, `width`, `height`, `fit` y `errorWidget` personalizado.
-
-- Reemplazos aplicados (renderizado ahora usa `SafeNetworkImage` o `CircularNetworkAvatar`):
-  - `lib/widgets/network_avatar.dart`
-  - `lib/screens/messages/messages_screen.dart`
-  - `lib/screens/post/add_post_screen.dart`
-  - `lib/screens/profile/profile_screen.dart`
-
-- Comportamiento conservado:
-  - Los placeholders previos (iniciales, iconos de grupo) se mantienen pasando widgets como `errorWidget`.
-  - La subida de `fotoPerfil` desde la app sigue siendo la misma (payload Base64); sólo se cambió la forma de renderizar la imagen.
-
-### Cómo validar localmente
-
-1. Instala dependencias y ejecuta análisis estático:
-
-```bash
-cd polired
-flutter pub get
-flutter analyze
-```
-
-2. Ejecuta la app en emulador/dispositivo y revisa estas pantallas principales:
-   - Perfil: avatar de usuario y edición de foto.
-   - Mensajes: lista de conversaciones y avatar en cada conversación.
-   - Selección de redes en `Add Post` y `Stories`: imágenes de redes.
-
-3. Qué verificar:
-   - Avatares muestran iniciales si no hay URL.
-   - Durante carga aparece un spinner pequeño y no se generan excepciones visibles.
-   - En error (imagen 404/corrupta) aparece el placeholder configurado.
-
-### Próximos pasos recomendados
-
-- Ejecutar `flutter analyze` y resolver avisos si aparecen (tarea pendiente en el TODO).
-- Opcional: migrar `SafeNetworkImage` para usar `cached_network_image` si deseas caching automático y placeholders más avanzados.
-- Revisar pantallas adicionales (mensajes, notificaciones, listas de posts) si detectas alguna imagen directa residual.
-
-Si quieres, puedo ejecutar `flutter analyze` ahora y corregir avisos directamente desde el repo.
+---

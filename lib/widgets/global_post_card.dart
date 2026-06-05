@@ -8,6 +8,7 @@ import '../../models/commands/feed_command.dart';
 import 'safe_network_image.dart';
 import 'post_image_carousel.dart';
 import 'comment_tree_sheet.dart';
+import 'package:go_router/go_router.dart';
 
 import '../services/navigation_service.dart';
 import 'likes_bottom_sheet.dart';
@@ -112,24 +113,30 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
               children: [
-                _AuthorAvatar(
-                  imageUrl: post.authorImageUrl,
-                  name: post.authorUsername,
+                GestureDetector(
+                  onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                  child: _AuthorAvatar(
+                    imageUrl: post.authorImageUrl,
+                    name: post.authorUsername,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        post.authorUsername,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.onSurface,
+                      GestureDetector(
+                        onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                        child: Text(
+                          post.authorUsername,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       _buildCategoryText(post),
                     ],
@@ -228,24 +235,30 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _AuthorAvatar(
-                imageUrl: post.authorImageUrl,
-                name: post.authorUsername,
+              GestureDetector(
+                onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                child: _AuthorAvatar(
+                  imageUrl: post.authorImageUrl,
+                  name: post.authorUsername,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      post.authorUsername,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.onSurface,
+                    GestureDetector(
+                      onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                      child: Text(
+                        post.authorUsername,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     Row(
                       children: [

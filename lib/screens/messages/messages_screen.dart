@@ -12,6 +12,9 @@ import '../../providers/auth_provider.dart';
 import '../../providers/messages_inbox_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/socket_service.dart';
+import '../../services/navigation_bus.dart';
+import '../../models/events/post_event.dart';
+import '../../models/feed_context.dart';
 
 /// Responsabilidad principal:
 /// Pantalla Bandeja de Entrada (Inbox) para listar conversaciones activas, estado de la conexión en vivo y sugerencias de nuevas redes a seguir.
@@ -276,7 +279,12 @@ class _NetworkStoriesRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         children: [
-          if (currentUser != null) _UserStoryChip(user: currentUser),
+          if (currentUser != null) 
+            InkWell(
+              borderRadius: BorderRadius.circular(32),
+              onTap: () => context.read<NavigationBus>().dispatch(FocusPostEvent(postId: '', context: FeedContext.profile(userId: currentUser.id))),
+              child: _UserStoryChip(user: currentUser),
+            ),
           if (networks.isEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 16, top: 20),

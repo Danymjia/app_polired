@@ -58,15 +58,15 @@ class PublicProfileService {
   /// Permite reportar a un usuario. El backend espera un motivo y un usuario destino.
   Future<ApiResult<dynamic>> reportUser({
     required String reportadoUsuarioId,
-    required String motivo,
-    String? detalles,
+    required String tipo,
+    String? descripcion,
   }) async {
     final body = {
       'reportadoUsuarioId': reportadoUsuarioId,
-      'motivo': motivo,
+      'tipo': tipo,
     };
-    if (detalles != null && detalles.isNotEmpty) {
-      body['detalles'] = detalles;
+    if (descripcion != null && descripcion.isNotEmpty) {
+      body['descripcion'] = descripcion;
     }
     return await _apiService.post('/reportes/usuario', body);
   }

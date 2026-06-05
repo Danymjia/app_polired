@@ -175,6 +175,44 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceContainerLowest,
+      appBar: AppBar(
+        backgroundColor: AppTheme.surfaceContainerLowest,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.add, color: AppTheme.primaryText, size: 26),
+          tooltip: 'Nueva publicación',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddPostScreen()),
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline, size: 14, color: AppTheme.primaryText),
+            const SizedBox(width: 4),
+            Text(
+              user?.username ?? 'Perfil',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.primaryText,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_horiz, color: AppTheme.primaryText, size: 26),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           if (user != null) {
@@ -187,53 +225,14 @@ class _ProfileScreenState extends State<ProfileScreen>
           }
         },
         color: AppTheme.primary,
-        child: CustomScrollView(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
-          slivers: [
-            // ── AppBar ──────────────────────────────────────────────
-            SliverAppBar(
-              backgroundColor: AppTheme.surfaceContainerLowest,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              pinned: true,
-              leading: IconButton(
-                icon: const Icon(Icons.add, color: AppTheme.primaryText, size: 26),
-                tooltip: 'Nueva publicación',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddPostScreen()),
-                ),
-              ),
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.lock_outline, size: 14, color: AppTheme.primaryText),
-                  const SizedBox(width: 4),
-                  Text(
-                    user?.username ?? 'Perfil',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryText,
-                    ),
-                  ),
-                ],
-              ),
-              centerTitle: true,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.more_horiz, color: AppTheme.primaryText, size: 26),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
-                ),
-              ],
-            ),
-
-            // ── Header: Avatar + Stats + Bio + Botones ──────────────
-            SliverToBoxAdapter(
-              child: Padding(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Header: Avatar + Stats + Bio + Botones ──────────────
+              Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,73 +355,69 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-            ),
 
-            // ── Divider ─────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Divider(
+              // ── Divider ─────────────────────────────────────────────
+              Divider(
                 height: 1,
                 thickness: 1,
                 color: AppTheme.outlineVariant.withValues(alpha: 0.3),
               ),
-            ),
 
-            // ── TabBar pinned ────────────────────────────────────────
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _SliverTabBarDelegate(
-                TabBar(
-                  controller: _tabController,
-                  indicatorColor: Colors.black,
-                  labelColor: Colors.black,
-                  unselectedLabelColor: AppTheme.onSurfaceVariant,
-                  labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-                  unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
-                  tabs: const [
-                    Tab(icon: Icon(Icons.grid_on_rounded, size: 20), text: 'Publicaciones'),
-                    Tab(icon: Icon(Icons.shopping_bag_rounded, size: 20), text: 'Artículos'),
-                  ],
-                ),
+              // ── TabBar ────────────────────────────────────────
+              TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.black,
+                labelColor: Colors.black,
+                unselectedLabelColor: AppTheme.onSurfaceVariant,
+                labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                tabs: const [
+                  Tab(icon: Icon(Icons.grid_on_rounded, size: 20), text: 'Publicaciones'),
+                  Tab(icon: Icon(Icons.shopping_bag_rounded, size: 20), text: 'Artículos'),
+                ],
               ),
-            ),
 
-            // ── Contenido del tab activo (loading / error / grid) ────
-            if (myProfileFeedProvider.isLoadingFeed && allIds.isEmpty)
-              const SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(color: AppTheme.primary),
-                ),
-              )
-            else if (myProfileFeedProvider.feedError != null && allIds.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        myProfileFeedProvider.feedError ?? 'Error al cargar feed',
-                        style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (user != null) {
-                            myProfileFeedProvider.fetchInitialFeed(user.id);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
+              // ── Contenido del tab activo (loading / error / grid) ────
+              if (myProfileFeedProvider.isLoadingFeed && allIds.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary),
                   ),
+                )
+              else if (myProfileFeedProvider.feedError != null && allIds.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          myProfileFeedProvider.feedError ?? 'Error al cargar feed',
+                          style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (user != null) {
+                              myProfileFeedProvider.fetchInitialFeed(user.id);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                PublicProfileGrid(
+                  postIds: _tabController.index == 0 ? publicationIds : articleIds,
+                  isFetchingMore: myProfileFeedProvider.isLoadingMoreFeed,
                 ),
-              )
-            else
-              PublicProfileGrid(
-                postIds: _tabController.index == 0 ? publicationIds : articleIds,
-                isFetchingMore: myProfileFeedProvider.isLoadingMoreFeed,
-              ),
-          ],
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );
@@ -581,28 +576,3 @@ class _ProfileScreenState extends State<ProfileScreen>
 }
 
 
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-
-  _SliverTabBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(color: AppTheme.surfaceContainerLowest, child: tabBar);
-  }
-
-  @override
-  bool shouldRebuild(covariant _SliverTabBarDelegate oldDelegate) {
-    return false;
-  }
-}

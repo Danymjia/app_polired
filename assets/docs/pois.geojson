@@ -12,9 +12,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector norte del campus",
         "images": [
-          "assets/pois/poi_01_1.jpg",
-          "assets/pois/poi_01_2.jpg",
-          "assets/pois/poi_01_3.jpg"
+          "assets/pois/poi_01_1.jpeg",
+          "assets/pois/poi_01_2.jpeg",
+          "assets/pois/poi_01_3.jpeg"
         ]
       },
       "geometry": {
@@ -36,9 +36,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector norte del campus",
         "images": [
-          "assets/pois/poi_02_1.jpg",
-          "assets/pois/poi_02_2.jpg",
-          "assets/pois/poi_02_3.jpg"
+          "assets/pois/poi_02_1.jpeg",
+          "assets/pois/poi_02_2.jpeg",
+          "assets/pois/poi_02_3.jpeg"
         ]
       },
       "geometry": {
@@ -60,9 +60,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector occidental del campus",
         "images": [
-          "assets/pois/poi_03_1.jpg",
-          "assets/pois/poi_03_2.jpg",
-          "assets/pois/poi_03_3.jpg"
+          "assets/pois/poi_03_1.jpeg",
+          "assets/pois/poi_03_2.jpeg",
+          "assets/pois/poi_03_3.jpeg"
         ]
       },
       "geometry": {
@@ -84,9 +84,9 @@
         "schedule": "Abierto durante el horario del campus",
         "howToGet": "Zona central del campus",
         "images": [
-          "assets/pois/poi_04_1.jpg",
-          "assets/pois/poi_04_2.jpg",
-          "assets/pois/poi_04_3.jpg"
+          "assets/pois/poi_04_1.jpeg",
+          "assets/pois/poi_04_2.jpeg",
+          "assets/pois/poi_04_3.jpeg"
         ]
       },
       "geometry": {
@@ -108,9 +108,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Entrada por la calle Isabel la Católica y Veintimilla",
         "images": [
-          "assets/pois/poi_05_1.jpg",
-          "assets/pois/poi_05_2.jpg",
-          "assets/pois/poi_05_3.jpg"
+          "assets/pois/poi_05_1.jpeg",
+          "assets/pois/poi_05_2.jpeg",
+          "assets/pois/poi_05_3.jpeg"
         ]
       },
       "geometry": {
@@ -132,9 +132,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector central del campus",
         "images": [
-          "assets/pois/poi_06_1.jpg",
-          "assets/pois/poi_06_2.jpg",
-          "assets/pois/poi_06_3.jpg"
+          "assets/pois/poi_06_1.jpeg",
+          "assets/pois/poi_06_2.jpeg",
+          "assets/pois/poi_06_3.jpeg"
         ]
       },
       "geometry": {
@@ -156,9 +156,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Acceso por la calle Alfredo Mena Caamaño y Andalucía",
         "images": [
-          "assets/pois/poi_07_1.jpg",
-          "assets/pois/poi_07_2.jpg",
-          "assets/pois/poi_07_3.jpg"
+          "assets/pois/poi_07_1.jpeg",
+          "assets/pois/poi_07_2.jpeg",
+          "assets/pois/poi_07_3.jpeg"
         ]
       },
       "geometry": {
@@ -180,9 +180,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_08_1.jpg",
-          "assets/pois/poi_08_2.jpg",
-          "assets/pois/poi_08_3.jpg"
+          "assets/pois/poi_08_1.jpeg",
+          "assets/pois/poi_08_2.jpeg",
+          "assets/pois/poi_08_3.jpeg"
         ]
       },
       "geometry": {
@@ -204,9 +204,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector central del campus, junto a los laboratorios de manufactura",
         "images": [
-          "assets/pois/poi_09_1.jpg",
-          "assets/pois/poi_09_2.jpg",
-          "assets/pois/poi_09_3.jpg"
+          "assets/pois/poi_09_1.jpeg",
+          "assets/pois/poi_09_2.jpeg",
+          "assets/pois/poi_09_3.jpeg"
         ]
       },
       "geometry": {
@@ -228,9 +228,9 @@
         "schedule": "Lun–Vie 07:00–18:00",
         "howToGet": "Edificio central del campus",
         "images": [
-          "assets/pois/poi_10_1.jpg",
-          "assets/pois/poi_10_2.jpg",
-          "assets/pois/poi_10_3.jpg"
+          "assets/pois/poi_10_1.jpeg",
+          "assets/pois/poi_10_2.jpeg",
+          "assets/pois/poi_10_3.jpeg"
         ]
       },
       "geometry": {
@@ -245,16 +245,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_11",
-        "name": "Polipasto",
+        "name": "Polipasto A",
         "category": "services",
         "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto · Servicios",
+        "shortDescription": "Polipasto A · Servicios",
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_11_1.jpg",
-          "assets/pois/poi_11_2.jpg",
-          "assets/pois/poi_11_3.jpg"
+          "assets/pois/poi_11_1.jpeg",
+          "assets/pois/poi_11_2.jpeg",
+          "assets/pois/poi_11_3.jpeg"
         ]
       },
       "geometry": {
@@ -276,9 +276,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector central del campus",
         "images": [
-          "assets/pois/poi_12_1.jpg",
-          "assets/pois/poi_12_2.jpg",
-          "assets/pois/poi_12_3.jpg"
+          "assets/pois/poi_12_1.jpeg",
+          "assets/pois/poi_12_2.jpeg",
+          "assets/pois/poi_12_3.jpeg"
         ]
       },
       "geometry": {
@@ -300,9 +300,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_13_1.jpg",
-          "assets/pois/poi_13_2.jpg",
-          "assets/pois/poi_13_3.jpg"
+          "assets/pois/poi_13_1.jpeg",
+          "assets/pois/poi_13_2.jpeg",
+          "assets/pois/poi_13_3.jpeg"
         ]
       },
       "geometry": {
@@ -317,16 +317,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_14",
-        "name": "Polipasto",
+        "name": "Polipasto B",
         "category": "services",
         "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto · Servicios",
+        "shortDescription": "Polipasto B · Servicios",
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_14_1.jpg",
-          "assets/pois/poi_14_2.jpg",
-          "assets/pois/poi_14_3.jpg"
+          "assets/pois/poi_14_1.jpeg",
+          "assets/pois/poi_14_2.jpeg",
+          "assets/pois/poi_14_3.jpeg"
         ]
       },
       "geometry": {
@@ -348,9 +348,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_15_1.jpg",
-          "assets/pois/poi_15_2.jpg",
-          "assets/pois/poi_15_3.jpg"
+          "assets/pois/poi_15_1.jpeg",
+          "assets/pois/poi_15_2.jpeg",
+          "assets/pois/poi_15_3.jpeg"
         ]
       },
       "geometry": {
@@ -372,9 +372,9 @@
         "schedule": "Lun–Vie 07:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_16_1.jpg",
-          "assets/pois/poi_16_2.jpg",
-          "assets/pois/poi_16_3.jpg"
+          "assets/pois/poi_16_1.jpeg",
+          "assets/pois/poi_16_2.jpeg",
+          "assets/pois/poi_16_3.jpeg"
         ]
       },
       "geometry": {
@@ -396,9 +396,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_17_1.jpg",
-          "assets/pois/poi_17_2.jpg",
-          "assets/pois/poi_17_3.jpg"
+          "assets/pois/poi_17_1.jpeg",
+          "assets/pois/poi_17_2.jpeg",
+          "assets/pois/poi_17_3.jpeg"
         ]
       },
       "geometry": {
@@ -420,9 +420,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_18_1.jpg",
-          "assets/pois/poi_18_2.jpg",
-          "assets/pois/poi_18_3.jpg"
+          "assets/pois/poi_18_1.jpeg",
+          "assets/pois/poi_18_2.jpeg",
+          "assets/pois/poi_18_3.jpeg"
         ]
       },
       "geometry": {
@@ -430,30 +430,6 @@
         "coordinates": [
           -78.4916527,
           -0.2118163
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_19",
-        "name": "Centro de Investigación de la Vivienda",
-        "category": "academic",
-        "description": "Centro de investigación enfocado en arquitectura, construcción sostenible y soluciones habitacionales para el contexto ecuatoriano.",
-        "shortDescription": "Inv. Vivienda · Investigación",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_19_1.jpg",
-          "assets/pois/poi_19_2.jpg",
-          "assets/pois/poi_19_3.jpg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4916643,
-          -0.2121663
         ]
       }
     },
@@ -468,9 +444,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Acceso principal desde la entrada de Ladrón de Guevara",
         "images": [
-          "assets/pois/poi_20_1.jpg",
-          "assets/pois/poi_20_2.jpg",
-          "assets/pois/poi_20_3.jpg"
+          "assets/pois/poi_20_1.jpeg",
+          "assets/pois/poi_20_2.jpeg",
+          "assets/pois/poi_20_3.jpeg"
         ]
       },
       "geometry": {
@@ -492,9 +468,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector norte del campus",
         "images": [
-          "assets/pois/poi_21_1.jpg",
-          "assets/pois/poi_21_2.jpg",
-          "assets/pois/poi_21_3.jpg"
+          "assets/pois/poi_21_1.jpeg",
+          "assets/pois/poi_21_2.jpeg",
+          "assets/pois/poi_21_3.jpeg"
         ]
       },
       "geometry": {
@@ -516,9 +492,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_22_1.jpg",
-          "assets/pois/poi_22_2.jpg",
-          "assets/pois/poi_22_3.jpg"
+          "assets/pois/poi_22_1.jpeg",
+          "assets/pois/poi_22_2.jpeg",
+          "assets/pois/poi_22_3.jpeg"
         ]
       },
       "geometry": {
@@ -540,9 +516,9 @@
         "schedule": "Lun–Vie 06:30–19:00 · Sáb 08:00–14:00",
         "howToGet": "Edificio polideportivo, planta baja",
         "images": [
-          "assets/pois/poi_23_1.jpg",
-          "assets/pois/poi_23_2.jpg",
-          "assets/pois/poi_23_3.jpg"
+          "assets/pois/poi_23_1.jpeg",
+          "assets/pois/poi_23_2.jpeg",
+          "assets/pois/poi_23_3.jpeg"
         ]
       },
       "geometry": {
@@ -564,9 +540,9 @@
         "schedule": "Según programación de eventos",
         "howToGet": "Sector central del campus",
         "images": [
-          "assets/pois/poi_24_1.jpg",
-          "assets/pois/poi_24_2.jpg",
-          "assets/pois/poi_24_3.jpg"
+          "assets/pois/poi_24_1.jpeg",
+          "assets/pois/poi_24_2.jpeg",
+          "assets/pois/poi_24_3.jpeg"
         ]
       },
       "geometry": {
@@ -588,9 +564,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_25_1.jpg",
-          "assets/pois/poi_25_2.jpg",
-          "assets/pois/poi_25_3.jpg"
+          "assets/pois/poi_25_1.jpeg",
+          "assets/pois/poi_25_2.jpeg",
+          "assets/pois/poi_25_3.jpeg"
         ]
       },
       "geometry": {
@@ -612,9 +588,9 @@
         "schedule": "Lun–Vie 09:00–16:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_26_1.jpg",
-          "assets/pois/poi_26_2.jpg",
-          "assets/pois/poi_26_3.jpg"
+          "assets/pois/poi_26_1.jpeg",
+          "assets/pois/poi_26_2.jpeg",
+          "assets/pois/poi_26_3.jpeg"
         ]
       },
       "geometry": {
@@ -636,9 +612,9 @@
         "schedule": "Según programación de eventos",
         "howToGet": "Sector central del campus",
         "images": [
-          "assets/pois/poi_27_1.jpg",
-          "assets/pois/poi_27_2.jpg",
-          "assets/pois/poi_27_3.jpg"
+          "assets/pois/poi_27_1.jpeg",
+          "assets/pois/poi_27_2.jpeg",
+          "assets/pois/poi_27_3.jpeg"
         ]
       },
       "geometry": {
@@ -660,9 +636,9 @@
         "schedule": "Lun–Vie 07:30–19:30 · Sáb 08:00–14:00",
         "howToGet": "Centro del campus",
         "images": [
-          "assets/pois/poi_28_1.jpg",
-          "assets/pois/poi_28_2.jpg",
-          "assets/pois/poi_28_3.jpg"
+          "assets/pois/poi_28_1.jpeg",
+          "assets/pois/poi_28_2.jpeg",
+          "assets/pois/poi_28_3.jpeg"
         ]
       },
       "geometry": {
@@ -684,9 +660,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Acceso por entrada de Ladrón de Guevara y Andalucía",
         "images": [
-          "assets/pois/poi_29_1.jpg",
-          "assets/pois/poi_29_2.jpg",
-          "assets/pois/poi_29_3.jpg"
+          "assets/pois/poi_29_1.jpeg",
+          "assets/pois/poi_29_2.jpeg",
+          "assets/pois/poi_29_3.jpeg"
         ]
       },
       "geometry": {
@@ -708,9 +684,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Sector deportivo del campus",
         "images": [
-          "assets/pois/poi_30_1.jpg",
-          "assets/pois/poi_30_2.jpg",
-          "assets/pois/poi_30_3.jpg"
+          "assets/pois/poi_30_1.jpeg",
+          "assets/pois/poi_30_2.jpeg",
+          "assets/pois/poi_30_3.jpeg"
         ]
       },
       "geometry": {
@@ -732,9 +708,9 @@
         "schedule": "Abierto durante el horario del campus",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_31_1.jpg",
-          "assets/pois/poi_31_2.jpg",
-          "assets/pois/poi_31_3.jpg"
+          "assets/pois/poi_31_1.jpeg",
+          "assets/pois/poi_31_2.jpeg",
+          "assets/pois/poi_31_3.jpeg"
         ]
       },
       "geometry": {
@@ -749,16 +725,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_32",
-        "name": "Polipasto",
+        "name": "Polipasto C",
         "category": "services",
         "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto · Servicios",
+        "shortDescription": "Polipasto C · Servicios",
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_32_1.jpg",
-          "assets/pois/poi_32_2.jpg",
-          "assets/pois/poi_32_3.jpg"
+          "assets/pois/poi_32_1.jpeg",
+          "assets/pois/poi_32_2.jpeg",
+          "assets/pois/poi_32_3.jpeg"
         ]
       },
       "geometry": {
@@ -773,16 +749,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_33",
-        "name": "Bodega",
+        "name": "Baños y Camerinos",
         "category": "services",
-        "description": "Bodega de almacenamiento de materiales e insumos del campus.",
-        "shortDescription": "Bodega · Almacenamiento",
+        "description": "Baños y Camerinos del campus.",
+        "shortDescription": "Baños y Camerinos · Servicios",
         "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
+        "howToGet": "Polideportivo EPN",
         "images": [
-          "assets/pois/poi_33_1.jpg",
-          "assets/pois/poi_33_2.jpg",
-          "assets/pois/poi_33_3.jpg"
+          "assets/pois/poi_33_1.jpeg",
+          "assets/pois/poi_33_2.jpeg",
+          "assets/pois/poi_33_3.jpeg"
         ]
       },
       "geometry": {
@@ -804,9 +780,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_34_1.jpg",
-          "assets/pois/poi_34_2.jpg",
-          "assets/pois/poi_34_3.jpg"
+          "assets/pois/poi_34_1.jpeg",
+          "assets/pois/poi_34_2.jpeg",
+          "assets/pois/poi_34_3.jpeg"
         ]
       },
       "geometry": {
@@ -828,9 +804,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_35_1.jpg",
-          "assets/pois/poi_35_2.jpg",
-          "assets/pois/poi_35_3.jpg"
+          "assets/pois/poi_35_1.jpeg",
+          "assets/pois/poi_35_2.jpeg",
+          "assets/pois/poi_35_3.jpeg"
         ]
       },
       "geometry": {
@@ -852,9 +828,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_36_1.jpg",
-          "assets/pois/poi_36_2.jpg",
-          "assets/pois/poi_36_3.jpg"
+          "assets/pois/poi_36_1.jpeg",
+          "assets/pois/poi_36_2.jpeg",
+          "assets/pois/poi_36_3.jpeg"
         ]
       },
       "geometry": {
@@ -876,9 +852,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_37_1.jpg",
-          "assets/pois/poi_37_2.jpg",
-          "assets/pois/poi_37_3.jpg"
+          "assets/pois/poi_37_1.jpeg",
+          "assets/pois/poi_37_2.jpeg",
+          "assets/pois/poi_37_3.jpeg"
         ]
       },
       "geometry": {
@@ -900,9 +876,9 @@
         "schedule": "Lun–Sáb 07:00–19:00",
         "howToGet": "Área deportiva del campus",
         "images": [
-          "assets/pois/poi_38_1.jpg",
-          "assets/pois/poi_38_2.jpg",
-          "assets/pois/poi_38_3.jpg"
+          "assets/pois/poi_38_1.jpeg",
+          "assets/pois/poi_38_2.jpeg",
+          "assets/pois/poi_38_3.jpeg"
         ]
       },
       "geometry": {
@@ -924,9 +900,9 @@
         "schedule": "Abierto durante el horario del campus",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_39_1.jpg",
-          "assets/pois/poi_39_2.jpg",
-          "assets/pois/poi_39_3.jpg"
+          "assets/pois/poi_39_1.jpeg",
+          "assets/pois/poi_39_2.jpeg",
+          "assets/pois/poi_39_3.jpeg"
         ]
       },
       "geometry": {
@@ -948,9 +924,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_40_1.jpg",
-          "assets/pois/poi_40_2.jpg",
-          "assets/pois/poi_40_3.jpg"
+          "assets/pois/poi_40_1.jpeg",
+          "assets/pois/poi_40_2.jpeg",
+          "assets/pois/poi_40_3.jpeg"
         ]
       },
       "geometry": {
@@ -972,9 +948,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector occidental del campus",
         "images": [
-          "assets/pois/poi_41_1.jpg",
-          "assets/pois/poi_41_2.jpg",
-          "assets/pois/poi_41_3.jpg"
+          "assets/pois/poi_41_1.jpeg",
+          "assets/pois/poi_41_2.jpeg",
+          "assets/pois/poi_41_3.jpeg"
         ]
       },
       "geometry": {
@@ -996,9 +972,9 @@
         "schedule": "Abierto durante el horario del campus",
         "howToGet": "Zona central visible del campus",
         "images": [
-          "assets/pois/poi_42_1.jpg",
-          "assets/pois/poi_42_2.jpg",
-          "assets/pois/poi_42_3.jpg"
+          "assets/pois/poi_42_1.jpeg",
+          "assets/pois/poi_42_2.jpeg",
+          "assets/pois/poi_42_3.jpeg"
         ]
       },
       "geometry": {
@@ -1013,16 +989,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_43",
-        "name": "Polipasto",
+        "name": "Polipasto D",
         "category": "services",
         "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto · Servicios",
+        "shortDescription": "Polipasto D · Servicios",
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_43_1.jpg",
-          "assets/pois/poi_43_2.jpg",
-          "assets/pois/poi_43_3.jpg"
+          "assets/pois/poi_43_1.jpeg",
+          "assets/pois/poi_43_2.jpeg",
+          "assets/pois/poi_43_3.jpeg"
         ]
       },
       "geometry": {
@@ -1044,9 +1020,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_44_1.jpg",
-          "assets/pois/poi_44_2.jpg",
-          "assets/pois/poi_44_3.jpg"
+          "assets/pois/poi_44_1.jpeg",
+          "assets/pois/poi_44_2.jpeg",
+          "assets/pois/poi_44_3.jpeg"
         ]
       },
       "geometry": {
@@ -1068,9 +1044,9 @@
         "schedule": "Lun–Vie 07:30–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_45_1.jpg",
-          "assets/pois/poi_45_2.jpg",
-          "assets/pois/poi_45_3.jpg"
+          "assets/pois/poi_45_1.jpeg",
+          "assets/pois/poi_45_2.jpeg",
+          "assets/pois/poi_45_3.jpeg"
         ]
       },
       "geometry": {
@@ -1092,9 +1068,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_46_1.jpg",
-          "assets/pois/poi_46_2.jpg",
-          "assets/pois/poi_46_3.jpg"
+          "assets/pois/poi_46_1.jpeg",
+          "assets/pois/poi_46_2.jpeg",
+          "assets/pois/poi_46_3.jpeg"
         ]
       },
       "geometry": {
@@ -1116,9 +1092,9 @@
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_47_1.jpg",
-          "assets/pois/poi_47_2.jpg",
-          "assets/pois/poi_47_3.jpg"
+          "assets/pois/poi_47_1.jpeg",
+          "assets/pois/poi_47_2.jpeg",
+          "assets/pois/poi_47_3.jpeg"
         ]
       },
       "geometry": {
@@ -1133,10 +1109,10 @@
       "type": "Feature",
       "properties": {
         "id": "poi_48",
-        "name": "Polipasto",
+        "name": "Polipasto E",
         "category": "services",
         "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto · Servicios",
+        "shortDescription": "Polipasto E · Servicios",
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
@@ -1164,9 +1140,9 @@
         "schedule": "Lun–Vie 07:30–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_49_1.jpg",
-          "assets/pois/poi_49_2.jpg",
-          "assets/pois/poi_49_3.jpg"
+          "assets/pois/poi_49_1.jpeg",
+          "assets/pois/poi_49_2.jpeg",
+          "assets/pois/poi_49_3.jpeg"
         ]
       },
       "geometry": {
@@ -1188,9 +1164,9 @@
         "schedule": "Lun–Vie 07:30–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_50_1.jpg",
-          "assets/pois/poi_50_2.jpg",
-          "assets/pois/poi_50_3.jpg"
+          "assets/pois/poi_50_1.jpeg",
+          "assets/pois/poi_50_2.jpeg",
+          "assets/pois/poi_50_3.jpeg"
         ]
       },
       "geometry": {
@@ -1212,9 +1188,9 @@
         "schedule": "Lun–Vie 07:30–15:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_51_1.jpg",
-          "assets/pois/poi_51_2.jpg",
-          "assets/pois/poi_51_3.jpg"
+          "assets/pois/poi_51_1.jpeg",
+          "assets/pois/poi_51_2.jpeg",
+          "assets/pois/poi_51_3.jpeg"
         ]
       },
       "geometry": {
@@ -1236,9 +1212,9 @@
         "schedule": "Lun–Vie 07:30–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_53_1.jpg",
-          "assets/pois/poi_53_2.jpg",
-          "assets/pois/poi_53_3.jpg"
+          "assets/pois/poi_53_1.jpeg",
+          "assets/pois/poi_53_2.jpeg",
+          "assets/pois/poi_53_3.jpeg"
         ]
       },
       "geometry": {
@@ -1253,16 +1229,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_54",
-        "name": "Enfermería",
+        "name": "Dirección de Bienestar Politécnico",
         "category": "services",
         "description": "Servicio médico de primeros auxilios y atención básica de salud para la comunidad politécnica.",
-        "shortDescription": "Enfermería · Salud",
+        "shortDescription": "Dirección de Bienestar Politécnico · Salud",
         "schedule": "Lun–Vie 07:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_54_1.jpg",
-          "assets/pois/poi_54_2.jpg",
-          "assets/pois/poi_54_3.jpg"
+          "assets/pois/poi_54_1.jpeg",
+          "assets/pois/poi_54_2.jpeg",
+          "assets/pois/poi_54_3.jpeg"
         ]
       },
       "geometry": {
@@ -1284,9 +1260,9 @@
         "schedule": "Lun–Vie 09:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_55_1.jpg",
-          "assets/pois/poi_55_2.jpg",
-          "assets/pois/poi_55_3.jpg"
+          "assets/pois/poi_55_1.jpeg",
+          "assets/pois/poi_55_2.jpeg",
+          "assets/pois/poi_55_3.jpeg"
         ]
       },
       "geometry": {
@@ -1308,9 +1284,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector norte del campus",
         "images": [
-          "assets/pois/poi_56_1.jpg",
-          "assets/pois/poi_56_2.jpg",
-          "assets/pois/poi_56_3.jpg"
+          "assets/pois/poi_56_1.jpeg",
+          "assets/pois/poi_56_2.jpeg",
+          "assets/pois/poi_56_3.jpeg"
         ]
       },
       "geometry": {
@@ -1332,9 +1308,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector central del campus",
         "images": [
-          "assets/pois/poi_57_1.jpg",
-          "assets/pois/poi_57_2.jpg",
-          "assets/pois/poi_57_3.jpg"
+          "assets/pois/poi_57_1.jpeg",
+          "assets/pois/poi_57_2.jpeg",
+          "assets/pois/poi_57_3.jpeg"
         ]
       },
       "geometry": {
@@ -1356,9 +1332,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Junto al edificio principal de ESFOT",
         "images": [
-          "assets/pois/poi_58_1.jpg",
-          "assets/pois/poi_58_2.jpg",
-          "assets/pois/poi_58_3.jpg"
+          "assets/pois/poi_58_1.jpeg",
+          "assets/pois/poi_58_2.jpeg",
+          "assets/pois/poi_58_3.jpeg"
         ]
       },
       "geometry": {
@@ -1374,15 +1350,15 @@
       "properties": {
         "id": "poi_59",
         "name": "Bombonera",
-        "category": "services",
-        "description": "Espacio de venta de alimentos y snacks dentro del campus. Popular punto de encuentro entre estudiantes.",
-        "shortDescription": "Bombonera · Alimentación",
+        "category": "sports",
+        "description": "Lugar para practicar deportes dentro del campus. Popular punto de encuentro entre estudiantes.",
+        "shortDescription": "Bombonera · Deporte",
         "schedule": "Lun–Vie 07:30–18:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_59_1.jpg",
-          "assets/pois/poi_59_2.jpg",
-          "assets/pois/poi_59_3.jpg"
+          "assets/pois/poi_59_1.jpeg",
+          "assets/pois/poi_59_2.jpeg",
+          "assets/pois/poi_59_3.jpeg"
         ]
       },
       "geometry": {
@@ -1404,9 +1380,9 @@
         "schedule": "Abierto durante el horario del campus",
         "howToGet": "Sector noroccidental del campus",
         "images": [
-          "assets/pois/poi_60_1.jpg",
-          "assets/pois/poi_60_2.jpg",
-          "assets/pois/poi_60_3.jpg"
+          "assets/pois/poi_60_1.jpeg",
+          "assets/pois/poi_60_2.jpeg",
+          "assets/pois/poi_60_3.jpeg"
         ]
       },
       "geometry": {
@@ -1428,9 +1404,9 @@
         "schedule": "24 horas",
         "howToGet": "Entradas del campus",
         "images": [
-          "assets/pois/poi_61_1.jpg",
-          "assets/pois/poi_61_2.jpg",
-          "assets/pois/poi_61_3.jpg"
+          "assets/pois/poi_61_1.jpeg",
+          "assets/pois/poi_61_2.jpeg",
+          "assets/pois/poi_61_3.jpeg"
         ]
       },
       "geometry": {
@@ -1445,16 +1421,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_62",
-        "name": "Parqueadero G",
+        "name": "Parqueadero H",
         "category": "other",
         "description": "Parqueadero para docentes y personal del campus.",
-        "shortDescription": "Parqueadero G · Vehículos",
+        "shortDescription": "Parqueadero H · Vehículos",
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_62_1.jpg",
-          "assets/pois/poi_62_2.jpg",
-          "assets/pois/poi_62_3.jpg"
+          "assets/pois/poi_62_1.jpeg",
+          "assets/pois/poi_62_2.jpeg",
+          "assets/pois/poi_62_3.jpeg"
         ]
       },
       "geometry": {
@@ -1476,9 +1452,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_63_1.jpg",
-          "assets/pois/poi_63_2.jpg",
-          "assets/pois/poi_63_3.jpg"
+          "assets/pois/poi_63_1.jpeg",
+          "assets/pois/poi_63_2.jpeg",
+          "assets/pois/poi_63_3.jpeg"
         ]
       },
       "geometry": {
@@ -1500,9 +1476,9 @@
         "schedule": "Lun–Vie 08:00–17:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_64_1.jpg",
-          "assets/pois/poi_64_2.jpg",
-          "assets/pois/poi_64_3.jpg"
+          "assets/pois/poi_64_1.jpeg",
+          "assets/pois/poi_64_2.jpeg",
+          "assets/pois/poi_64_3.jpeg"
         ]
       },
       "geometry": {
@@ -1524,9 +1500,9 @@
         "schedule": "Lun–Vie 07:00–20:00 · Sáb 08:00–14:00",
         "howToGet": "Av. Toledo N23-55 y Madrid",
         "images": [
-          "assets/pois/poi_65_1.jpg",
-          "assets/pois/poi_65_2.jpg",
-          "assets/pois/poi_65_3.jpg"
+          "assets/pois/poi_65_1.jpeg",
+          "assets/pois/poi_65_2.jpeg",
+          "assets/pois/poi_65_3.jpeg"
         ]
       },
       "geometry": {
@@ -1548,9 +1524,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_66_1.jpg",
-          "assets/pois/poi_66_2.jpg",
-          "assets/pois/poi_66_3.jpg"
+          "assets/pois/poi_66_1.jpeg",
+          "assets/pois/poi_66_2.jpeg",
+          "assets/pois/poi_66_3.jpeg"
         ]
       },
       "geometry": {
@@ -1572,9 +1548,9 @@
         "schedule": "Lun–Vie 07:00–17:00 · Sáb 08:00–13:00",
         "howToGet": "Av. Toledo N23-55",
         "images": [
-          "assets/pois/poi_67_1.jpg",
-          "assets/pois/poi_67_2.jpg",
-          "assets/pois/poi_67_3.jpg"
+          "assets/pois/poi_67_1.jpeg",
+          "assets/pois/poi_67_2.jpeg",
+          "assets/pois/poi_67_3.jpeg"
         ]
       },
       "geometry": {
@@ -1588,89 +1564,17 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_68",
-        "name": "Edificio Henry Guy – CEC-EPN",
-        "category": "services",
-        "description": "Edificio principal del Centro de Educación Continua de la EPN. Nombrado en honor al ingeniero Henry Guy, pionero de la ingeniería en Ecuador.",
-        "shortDescription": "Henry Guy · CEC-EPN",
-        "schedule": "Lun–Vie 07:00–17:00 · Sáb 08:00–13:00",
-        "howToGet": "Sector CEC del campus",
-        "images": [
-          "assets/pois/poi_68_1.jpg",
-          "assets/pois/poi_68_2.jpg",
-          "assets/pois/poi_68_3.jpg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4864521,
-          -0.2087689
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_69",
-        "name": "Centro de Investigación en Control de Emisiones Vehiculares",
-        "category": "academic",
-        "description": "Centro especializado en investigación y control de emisiones vehiculares. Referente nacional en diagnóstico y certificación de emisiones.",
-        "shortDescription": "Emisiones Vehiculares · Investigación",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_69_1.jpg",
-          "assets/pois/poi_69_2.jpg",
-          "assets/pois/poi_69_3.jpg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4866765,
-          -0.2088493
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_70",
-        "name": "Laboratorio de Energía",
-        "category": "academic",
-        "description": "Laboratorio de investigación en energías renovables, eficiencia energética y sistemas de generación eléctrica.",
-        "shortDescription": "Lab. Energía · Investigación",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_70_1.jpg",
-          "assets/pois/poi_70_2.jpg",
-          "assets/pois/poi_70_3.jpg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4868892,
-          -0.208587
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_71",
-        "name": "Entrada Principal",
+        "name": "Entradas y Salidas",
         "category": "other",
         "description": "Acceso principal del campus EPN. Ubicado frente al Coliseo Rumiñahui en la calle Ladrón de Guevara E11-253.",
-        "shortDescription": "Entrada Principal · Acceso",
+        "shortDescription": "Entradas y Salidas · Acceso",
         "schedule": "Lun–Sáb 06:00–22:00",
         "howToGet": "Av. Ladrón de Guevara E11-253",
         "images": [
-          "assets/pois/poi_71_1.jpg",
-          "assets/pois/poi_71_2.jpg",
-          "assets/pois/poi_71_3.jpg"
+          "assets/pois/poi_71_1.jpeg",
+          "assets/pois/poi_71_2.jpeg",
+          "assets/pois/poi_71_3.jpeg"
         ]
       },
       "geometry": {
@@ -1685,16 +1589,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_72",
-        "name": "Entrada CEC 2",
+        "name": "Entradas y Salidas",
         "category": "other",
         "description": "Acceso secundario al sector del Centro de Educación Continua de la EPN.",
-        "shortDescription": "Entrada CEC 2 · Acceso",
+        "shortDescription": "Entradas y Salidas · Acceso",
         "schedule": "Lun–Sáb 06:30–21:00",
         "howToGet": "Sector CEC del campus",
         "images": [
-          "assets/pois/poi_72_1.jpg",
-          "assets/pois/poi_72_2.jpg",
-          "assets/pois/poi_72_3.jpg"
+          "assets/pois/poi_72_1.jpeg",
+          "assets/pois/poi_72_2.jpeg",
+          "assets/pois/poi_72_3.jpeg"
         ]
       },
       "geometry": {
@@ -1709,16 +1613,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_73",
-        "name": "Entrada CEC 1",
+        "name": "Entradas y Salidas",
         "category": "other",
         "description": "Acceso principal al sector del Centro de Educación Continua de la EPN.",
-        "shortDescription": "Entrada CEC 1 · Acceso",
+        "shortDescription": "Entradas y Salidas · Acceso",
         "schedule": "Lun–Sáb 06:30–21:00",
         "howToGet": "Sector CEC del campus",
         "images": [
-          "assets/pois/poi_73_1.jpg",
-          "assets/pois/poi_73_2.jpg",
-          "assets/pois/poi_73_3.jpg"
+          "assets/pois/poi_73_1.jpeg",
+          "assets/pois/poi_73_2.jpeg",
+          "assets/pois/poi_73_3.jpeg"
         ]
       },
       "geometry": {
@@ -1733,16 +1637,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_74",
-        "name": "Entrada ESFOT",
+        "name": "Entradas y Salidas",
         "category": "other",
         "description": "Acceso directo a la Escuela de Formación de Tecnólogos.",
-        "shortDescription": "Entrada ESFOT · Acceso",
+        "shortDescription": "Entradas y Salidas · Acceso",
         "schedule": "Lun–Vie 06:30–21:00",
         "howToGet": "Sector ESFOT del campus",
         "images": [
-          "assets/pois/poi_74_1.jpg",
-          "assets/pois/poi_74_2.jpg",
-          "assets/pois/poi_74_3.jpg"
+          "assets/pois/poi_74_1.jpeg",
+          "assets/pois/poi_74_2.jpeg",
+          "assets/pois/poi_74_3.jpeg"
         ]
       },
       "geometry": {
@@ -1757,16 +1661,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_75",
-        "name": "Entrada Principal 2",
+        "name": "Entradas y Salidas",
         "category": "other",
         "description": "Segundo acceso principal del campus EPN.",
-        "shortDescription": "Entrada Principal 2 · Acceso",
+        "shortDescription": "Entradas y Salidas · Acceso",
         "schedule": "Lun–Sáb 06:00–22:00",
         "howToGet": "Sector sur del campus",
         "images": [
-          "assets/pois/poi_75_1.jpg",
-          "assets/pois/poi_75_2.jpg",
-          "assets/pois/poi_75_3.jpg"
+          "assets/pois/poi_75_1.jpeg",
+          "assets/pois/poi_75_2.jpeg",
+          "assets/pois/poi_75_3.jpeg"
         ]
       },
       "geometry": {
@@ -1781,16 +1685,16 @@
       "type": "Feature",
       "properties": {
         "id": "poi_76",
-        "name": "Entrada A",
+        "name": "Entradas y Salidas",
         "category": "other",
         "description": "Acceso adicional al campus politécnico.",
-        "shortDescription": "Entrada A · Acceso",
+        "shortDescription": "Entradas y Salidas · Acceso",
         "schedule": "Lun–Vie 06:30–21:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_76_1.jpg",
-          "assets/pois/poi_76_2.jpg",
-          "assets/pois/poi_76_3.jpg"
+          "assets/pois/poi_76_1.jpeg",
+          "assets/pois/poi_76_2.jpeg",
+          "assets/pois/poi_76_3.jpeg"
         ]
       },
       "geometry": {
@@ -1812,9 +1716,9 @@
         "schedule": "Según programación de eventos",
         "howToGet": "Sector deportivo del campus",
         "images": [
-          "assets/pois/poi_77_1.jpg",
-          "assets/pois/poi_77_2.jpg",
-          "assets/pois/poi_77_3.jpg"
+          "assets/pois/poi_77_1.jpeg",
+          "assets/pois/poi_77_2.jpeg",
+          "assets/pois/poi_77_3.jpeg"
         ]
       },
       "geometry": {
@@ -1822,30 +1726,6 @@
         "coordinates": [
           -78.4871638,
           -0.2097786
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_78",
-        "name": "Ajedrez Gigante",
-        "category": "other",
-        "description": "Tablero de ajedrez gigante al aire libre para uso recreativo y cultural de la comunidad politécnica.",
-        "shortDescription": "Ajedrez Gigante · Recreación",
-        "schedule": "Abierto durante el horario del campus",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_78_1.jpg",
-          "assets/pois/poi_78_2.jpg",
-          "assets/pois/poi_78_3.jpg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4869785,
-          -0.2094662
         ]
       }
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
@@ -31,7 +32,9 @@ import '../providers/post_store_provider.dart';
 class PostCard extends StatefulWidget {
   final PostModel post;
 
-  const PostCard({super.key, required this.post});
+  final bool enableNetworkNavigation;
+
+  const PostCard({super.key, required this.post, this.enableNetworkNavigation = true});
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -70,15 +73,23 @@ class _PostCardState extends State<PostCard> {
 
     if (subtitle.isEmpty) return const SizedBox.shrink();
 
-    return Text(
-      subtitle,
-      style: GoogleFonts.inter(
-        fontSize: 11,
-        color: AppTheme.primary.withValues(alpha: 0.85),
-        fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: () {
+
+        if (widget.enableNetworkNavigation && post.networkName.isNotEmpty && post.networkId.isNotEmpty) {
+          context.push('/explore/networks/${post.networkId}');
+        }
+      },
+      child: Text(
+        subtitle,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          color: AppTheme.primary.withValues(alpha: 0.85),
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -106,24 +117,30 @@ class _PostCardState extends State<PostCard> {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
               children: [
-                _AuthorAvatar(
-                  imageUrl: post.authorImageUrl,
-                  name: post.authorUsername,
+                GestureDetector(
+                  onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                  child: _AuthorAvatar(
+                    imageUrl: post.authorImageUrl,
+                    name: post.authorUsername,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        post.authorUsername,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.onSurface,
+                      GestureDetector(
+                        onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                        child: Text(
+                          post.authorUsername,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       _buildSubtitle(post),
                     ],
@@ -223,24 +240,30 @@ class _PostCardState extends State<PostCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _AuthorAvatar(
-                imageUrl: post.authorImageUrl,
-                name: post.authorUsername,
+              GestureDetector(
+                onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                child: _AuthorAvatar(
+                  imageUrl: post.authorImageUrl,
+                  name: post.authorUsername,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      post.authorUsername,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.onSurface,
+                    GestureDetector(
+                      onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                      child: Text(
+                        post.authorUsername,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     _buildSubtitle(post),
                     Text(

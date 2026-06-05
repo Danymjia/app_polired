@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import '../models/post_model.dart';
@@ -82,33 +83,42 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: Row(
               children: [
-                _AuthorAvatar(
-                    imageUrl: post.authorImageUrl, name: post.authorUsername),
+                GestureDetector(
+                  onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                  child: _AuthorAvatar(
+                      imageUrl: post.authorImageUrl, name: post.authorUsername),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        post.authorUsername,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (post.networkName.isNotEmpty)
-                        Text(
-                          post.networkName,
+                      GestureDetector(
+                        onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                        child: Text(
+                          post.authorUsername,
                           style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: AppTheme.primary.withValues(alpha: 0.85),
-                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (post.networkName.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => context.push('/explore/networks/${post.networkId}'),
+                          child: Text(
+                            post.networkName,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: AppTheme.primary.withValues(alpha: 0.85),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                   ),
@@ -174,30 +184,39 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _AuthorAvatar(
-                  imageUrl: post.authorImageUrl, name: post.authorUsername),
+              GestureDetector(
+                onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                child: _AuthorAvatar(
+                    imageUrl: post.authorImageUrl, name: post.authorUsername),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      post.authorUsername,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.onSurface,
+                    GestureDetector(
+                      onTap: () => context.push('/explore/public-profile/${post.authorId}'),
+                      child: Text(
+                        post.authorUsername,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     if (post.networkName.isNotEmpty)
-                      Text(
-                        post.networkName,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppTheme.primary.withValues(alpha: 0.85),
-                          fontWeight: FontWeight.w600,
+                      GestureDetector(
+                        onTap: () => context.push('/explore/networks/${post.networkId}'),
+                        child: Text(
+                          post.networkName,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppTheme.primary.withValues(alpha: 0.85),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     Text(

@@ -5,8 +5,9 @@ import '../../../models/poi_model.dart';
 
 class PoiSearchBar extends StatefulWidget {
   final Future<void> Function(PoiModel poi)? onPoiSelected;
+  final VoidCallback? onSearchTap;
 
-  const PoiSearchBar({super.key, this.onPoiSelected});
+  const PoiSearchBar({super.key, this.onPoiSelected, this.onSearchTap});
 
   @override
   State<PoiSearchBar> createState() => _PoiSearchBarState();
@@ -16,6 +17,16 @@ class _PoiSearchBarState extends State<PoiSearchBar> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   bool _isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        widget.onSearchTap?.call();
+      }
+    });
+  }
 
   @override
   void dispose() {

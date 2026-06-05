@@ -152,15 +152,15 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  profile.nombre,
-                                  style: AppTheme.headlineMedium.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    height: 1.1,
-                                    letterSpacing: -0.5,
+                                  Text(
+                                    profile.nombre,
+                                    style: AppTheme.headlineMedium.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      height: 1.1,
+                                      letterSpacing: -0.5,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
+                                  const SizedBox(height: 12),
                                 Row(
                                   children: [
                                     _buildStat(profile.cantidadMiembros.toString(), 'miembros'),
@@ -173,6 +173,17 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                           ),
                         ],
                       ),
+                      if (profile.descripcion.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          profile.descripcion,
+                          style: AppTheme.bodyMedium.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -246,7 +257,10 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                                       child: OverflowBox(
                                         maxHeight: double.infinity,
                                         alignment: Alignment.topCenter,
-                                        child: PostCard(post: post),
+                                          child: PostCard(
+                                            post: post,
+                                            enableNetworkNavigation: false,
+                                          ),
                                       ),
                                     ),
                                   ),
@@ -255,7 +269,10 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                             );
                           }
                           
-                          return IgnorePointer(child: PostCard(post: post));
+                          return IgnorePointer(child: PostCard(
+                            post: post,
+                            enableNetworkNavigation: false,
+                          ));
                         },
                       );
                     }
@@ -277,7 +294,10 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                           (store) => store.getPost(postId)
                         );
                         if (post == null) return const SizedBox.shrink();
-                        return PostCard(post: post);
+                        return PostCard(
+                          post: post,
+                          enableNetworkNavigation: false,
+                        );
                       },
                     );
                   },

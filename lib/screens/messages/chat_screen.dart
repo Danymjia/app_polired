@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -145,44 +146,46 @@ class _ChatScreenContentState extends State<_ChatScreenContent> {
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFF4F4F5),
+        title: GestureDetector(
+          onTap: () => context.push('/explore/public-profile/${widget.contactId}'),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFF4F4F5),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: widget.contactAvatar != null && widget.contactAvatar!.isNotEmpty
+                    ? SafeNetworkImage(
+                        url: widget.contactAvatar!,
+                        fit: BoxFit.cover,
+                        errorWidget: _initialsAvatar(widget.contactName),
+                      )
+                    : _initialsAvatar(widget.contactName),
               ),
-              clipBehavior: Clip.hardEdge,
-              child: widget.contactAvatar != null && widget.contactAvatar!.isNotEmpty
-                  ? SafeNetworkImage(
-                      url: widget.contactAvatar!,
-                      fit: BoxFit.cover,
-                      errorWidget: _initialsAvatar(widget.contactName),
-                    )
-                  : _initialsAvatar(widget.contactName),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.contactName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.contactName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           IconButton(

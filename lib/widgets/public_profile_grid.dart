@@ -38,11 +38,11 @@ class PublicProfileGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Empty state — must be a Sliver
+    // Empty state
     if (postIds.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -62,30 +62,31 @@ class PublicProfileGrid extends StatelessWidget {
       );
     }
 
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverGrid.builder(
+    return Column(
+      children: [
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             mainAxisSpacing: 1.5,
             crossAxisSpacing: 1.5,
-            childAspectRatio: 0.8, // ← más alto que ancho, como Instagram
+            childAspectRatio: 0.8,
           ),
           itemCount: postIds.length,
           itemBuilder: (context, index) => _GridCell(postId: postIds[index]),
         ),
         if (isFetchingMore)
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: AppTheme.primary,
-                    strokeWidth: 2,
-                  ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: AppTheme.primary,
+                  strokeWidth: 2,
                 ),
               ),
             ),

@@ -62,50 +62,48 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.surface,
-      body: Consumer2<PublicProfileProvider, PostStoreProvider>(
-        builder: (context, profileProvider, postStore, child) {
-          final info = profileProvider.currentInfo;
+    return Consumer2<PublicProfileProvider, PostStoreProvider>(
+      builder: (context, profileProvider, postStore, child) {
+        final info = profileProvider.currentInfo;
 
-          if (profileProvider.isLoadingInfo && info == null) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
-            );
-          }
+        if (profileProvider.isLoadingInfo && info == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+          );
+        }
 
-          if (profileProvider.infoError != null && info == null) {
-            return Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                  onPressed: () => context.pop(),
-                ),
-                elevation: 0,
-                backgroundColor: Colors.transparent,
+        if (profileProvider.infoError != null && info == null) {
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                onPressed: () => context.pop(),
               ),
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      profileProvider.infoError ?? 'Error al cargar perfil',
-                      style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        profileProvider.fetchProfileInfo();
-                        profileProvider.fetchInitialFeed();
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    profileProvider.infoError ?? 'Error al cargar perfil',
+                    style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      profileProvider.fetchProfileInfo();
+                      profileProvider.fetchInitialFeed();
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                    child: const Text('Reintentar'),
+                  ),
+                ],
               ),
-            );
-          }
+            ),
+          );
+        }
 
           final allIds = profileProvider.currentPostIds;
           
@@ -119,164 +117,135 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> with SingleTi
             return post != null && post.isArticle;
           }).toList();
 
-          return CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // ── AppBar ──────────────────────────────────────────────
-              SliverAppBar(
-                backgroundColor: AppTheme.surfaceContainerLowest,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                pinned: true,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.onSurface, size: 20),
-                  onPressed: () => context.pop(),
-                ),
-                title: Text(
-                  info != null ? '@${info.username}' : 'Perfil',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.onSurface,
-                  ),
-                ),
-                centerTitle: true,
-                actions: [
-                  _isLoadingChat
-                      ? const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primary,
-                            ),
-                          ),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
-                          onPressed: () async {
-                            if (_isLoadingChat) return;
-                            setState(() => _isLoadingChat = true);
-                            final repo = context.read<ConversationsRepository>();
-                            final result = await repo.getOrCreateConversation(widget.userId);
-                            if (!mounted || !context.mounted) return;
-                            setState(() => _isLoadingChat = false);
-                            if (result.success && result.data != null) {
-                              context.push(
-                                '/chat/${result.data}',
-                                extra: {
-                                  'contactId': widget.userId,
-                                  'contactName': info?.nombreCompleto ?? 'Usuario',
-                                  'contactAvatar': info?.fotoPerfil,
-                                },
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(result.message ?? 'Error al iniciar conversación')),
-                              );
-                            }
-                          },
-                        ),
-                ],
+        return Scaffold(
+          backgroundColor: AppTheme.surface,
+          appBar: AppBar(
+            backgroundColor: AppTheme.surfaceContainerLowest,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.onSurface, size: 20),
+              onPressed: () => context.pop(),
+            ),
+            title: Text(
+              info != null ? '@${info.username}' : 'Perfil',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.onSurface,
               ),
+            ),
+            centerTitle: true,
+            actions: [
+              _isLoadingChat
+                  ? const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.onSurface, size: 24),
+                      onPressed: () async {
+                        if (_isLoadingChat) return;
+                        setState(() => _isLoadingChat = true);
+                        final repo = context.read<ConversationsRepository>();
+                        final result = await repo.getOrCreateConversation(widget.userId);
+                        if (!mounted || !context.mounted) return;
+                        setState(() => _isLoadingChat = false);
+                        if (result.success && result.data != null) {
+                          context.push(
+                            '/chat/${result.data}',
+                            extra: {
+                              'contactId': widget.userId,
+                              'contactName': info?.nombreCompleto ?? 'Usuario',
+                              'contactAvatar': info?.fotoPerfil,
+                            },
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(result.message ?? 'Error al iniciar conversación')),
+                          );
+                        }
+                      },
+                    ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Header del perfil ────────────────────────────────────
+                if (info != null) PublicProfileHeader(profile: info),
 
-              // ── Header del perfil ────────────────────────────────────
-              if (info != null)
-                SliverToBoxAdapter(
-                  child: PublicProfileHeader(profile: info),
-                ),
-
-              // ── Divider ──────────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: Divider(
+                // ── Divider ──────────────────────────────────────────────
+                Divider(
                   height: 1,
                   thickness: 1,
                   color: AppTheme.outlineVariant.withValues(alpha: 0.3),
                 ),
-              ),
 
-              // ── TabBar pinned ────────────────────────────────────────
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _SliverTabBarDelegate(
-                  TabBar(
-                    controller: _tabController,
-                    indicatorColor: Colors.black,
-                    labelColor: Colors.black,
-                    unselectedLabelColor: AppTheme.onSurfaceVariant,
-                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-                    unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
-                    tabs: const [
-                      Tab(icon: Icon(Icons.grid_on_rounded, size: 20), text: 'Publicaciones'),
-                      Tab(icon: Icon(Icons.shopping_bag_rounded, size: 20), text: 'Artículos'),
-                    ],
-                  ),
+                // ── TabBar ────────────────────────────────────────
+                TabBar(
+                  controller: _tabController,
+                  indicatorColor: Colors.black,
+                  labelColor: Colors.black,
+                  unselectedLabelColor: AppTheme.onSurfaceVariant,
+                  labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                  unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                  tabs: const [
+                    Tab(icon: Icon(Icons.grid_on_rounded, size: 20), text: 'Publicaciones'),
+                    Tab(icon: Icon(Icons.shopping_bag_rounded, size: 20), text: 'Artículos'),
+                  ],
                 ),
-              ),
 
-              // ── Grid del tab activo ──────────────────────────────────
-              if (profileProvider.isLoadingFeed && allIds.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppTheme.primary),
-                  ),
-                )
-              else if (profileProvider.feedError != null && allIds.isEmpty)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          profileProvider.feedError ?? 'Error al cargar feed',
-                          style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () => profileProvider.fetchInitialFeed(),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
+                // ── Grid del tab activo ──────────────────────────────────
+                if (profileProvider.isLoadingFeed && allIds.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppTheme.primary),
                     ),
+                  )
+                else if (profileProvider.feedError != null && allIds.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            profileProvider.feedError ?? 'Error al cargar feed',
+                            style: GoogleFonts.inter(color: AppTheme.error, fontSize: 14),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () => profileProvider.fetchInitialFeed(),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  PublicProfileGrid(
+                    postIds: _tabController.index == 0 ? publicationIds : articleIds,
+                    isFetchingMore: profileProvider.isLoadingMoreFeed,
                   ),
-                )
-              else
-                PublicProfileGrid(
-                  postIds: _tabController.index == 0 ? publicationIds : articleIds,
-                  isFetchingMore: profileProvider.isLoadingMoreFeed,
-                ),
-            ],
-          );
-        },
-      ),
+                const SizedBox(height: 80),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-
-  _SliverTabBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppTheme.surface,
-      child: tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _SliverTabBarDelegate oldDelegate) {
-    return false;
-  }
-}

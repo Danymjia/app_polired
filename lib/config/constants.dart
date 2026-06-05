@@ -17,8 +17,11 @@ class AppConstants {
   AppConstants._();
 
   // ─── Backend ────────────────────────────────────────────────────────────────
-  static const String baseUrl = 'https://polired-api.vercel.app/api';
-  static const String socketUrl = 'https://polired-api.vercel.app';
+  // static const String baseUrl = 'https://polired-api.vercel.app/api';
+  // static const String socketUrl = 'https://polired-api.vercel.app';
+
+  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String socketUrl = 'http://10.0.2.2:3000';
 
   // ─── Auth endpoints ─────────────────────────────────────────────────────────
   static const String loginEndpoint = '/auth/login';

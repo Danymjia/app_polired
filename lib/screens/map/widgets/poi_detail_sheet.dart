@@ -117,64 +117,7 @@ class PoiDetailSheet extends StatelessWidget {
                         children: [
                           // Galería de fotos
                           if (poi.photoAssets.isNotEmpty)
-                            Builder(
-                              builder: (context) {
-                                int currentImageIndex = 0;
-                                return StatefulBuilder(
-                                  builder: (context, setState) {
-                                    return Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          height: 160,
-                                          child: ClipRRect(
-                                            borderRadius: const BorderRadius.vertical(
-                                                top: Radius.circular(20)),
-                                            child: PageView.builder(
-                                              itemCount: poi.photoAssets.length,
-                                              onPageChanged: (index) {
-                                                setState(() {
-                                                  currentImageIndex = index;
-                                                });
-                                              },
-                                              itemBuilder: (_, index) => Image.asset(
-                                                poi.photoAssets[index],
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (_, _, _) => Container(
-                                                  color: const Color(0xFF1D3557).withValues(alpha: 0.08),
-                                                  child: const Icon(Icons.image_not_supported_rounded,
-                                                      color: Colors.grey),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        if (poi.photoAssets.length > 1) ...[
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: List.generate(poi.photoAssets.length, (index) {
-                                              return AnimatedContainer(
-                                                duration: const Duration(milliseconds: 200),
-                                                width: currentImageIndex == index ? 8 : 6,
-                                                height: currentImageIndex == index ? 8 : 6,
-                                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                                decoration: BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  color: currentImageIndex == index
-                                                      ? const Color(0xFF1D3557)
-                                                      : const Color(0xFF1D3557).withValues(alpha: 0.3),
-                                                ),
-                                              );
-                                            }),
-                                          ),
-                                        ],
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            )
+                            _PoiImageCarousel(photoAssets: poi.photoAssets)
                           else
                             const SizedBox(height: 8),
 
@@ -298,6 +241,87 @@ class _SectionTitle extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1D3557))),
+      ],
+    );
+  }
+}
+
+class _PoiImageCarousel extends StatefulWidget {
+  final List<String> photoAssets;
+
+  const _PoiImageCarousel({required this.photoAssets});
+
+  @override
+  State<_PoiImageCarousel> createState() => _PoiImageCarouselState();
+}
+
+class _PoiImageCarouselState extends State<_PoiImageCarousel> {
+  late final PageController _pageController;
+  int _currentImageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(keepPage: false);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AspectRatio(
+          aspectRatio: 4 / 3,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: Container(
+              color: Colors.black87,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.photoAssets.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentImageIndex = index;
+                  });
+                },
+                itemBuilder: (_, index) => Image.asset(
+                  widget.photoAssets[index],
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Container(
+                    color: const Color(0xFF1D3557).withValues(alpha: 0.08),
+                    child: const Icon(Icons.image_not_supported_rounded, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (widget.photoAssets.length > 1) ...[
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.photoAssets.length, (index) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: _currentImageIndex == index ? 8 : 6,
+                height: _currentImageIndex == index ? 8 : 6,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _currentImageIndex == index
+                      ? const Color(0xFF1D3557)
+                      : const Color(0xFF1D3557).withValues(alpha: 0.3),
+                ),
+              );
+            }),
+          ),
+        ],
       ],
     );
   }

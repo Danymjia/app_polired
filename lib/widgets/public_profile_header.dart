@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../config/theme.dart';
 import '../models/public_profile_model.dart';
 import 'safe_network_image.dart';
+import 'fullscreen_image_viewer.dart';
 
 class PublicProfileHeader extends StatelessWidget {
   final PublicProfileModel profile;
@@ -22,21 +23,28 @@ class PublicProfileHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.5), width: 1),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: CircularNetworkAvatar(
-                  imageUrl: profile.fotoPerfil,
-                  initials: initials,
-                  size: 77,
-                  backgroundColor: AppTheme.surfaceContainerHighest,
-                  initialsStyle: GoogleFonts.inter(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 28,
+              GestureDetector(
+                onTap: () {
+                  if (profile.fotoPerfil != null && profile.fotoPerfil!.isNotEmpty) {
+                    FullscreenImageViewer.show(context, [profile.fotoPerfil!], isCircular: true);
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.5), width: 1),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: CircularNetworkAvatar(
+                    imageUrl: profile.fotoPerfil,
+                    initials: initials,
+                    size: 77,
+                    backgroundColor: AppTheme.surfaceContainerHighest,
+                    initialsStyle: GoogleFonts.inter(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 28,
+                    ),
                   ),
                 ),
               ),

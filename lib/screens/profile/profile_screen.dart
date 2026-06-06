@@ -12,6 +12,7 @@ import '../../providers/my_profile_feed_provider.dart';
 import '../../providers/post_store_provider.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/public_profile_grid.dart';
+import '../../widgets/fullscreen_image_viewer.dart';
 
 /// Responsabilidad principal:
 /// Pantalla principal del Perfil de Usuario ("Mi Perfil"). Muestra estadísticas (número de redes, posts), biografía, y un feed personal dividido entre Publicaciones y Artículos.
@@ -83,26 +84,33 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildAvatar(String? url, String initials) {
-    return Container(
-      width: 86,
-      height: 86,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppTheme.outlineVariant.withValues(alpha: 0.5),
-          width: 1.5,
+    return GestureDetector(
+      onTap: () {
+        if (url != null && url.isNotEmpty) {
+          FullscreenImageViewer.show(context, [url], isCircular: true);
+        }
+      },
+      child: Container(
+        width: 86,
+        height: 86,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppTheme.outlineVariant.withValues(alpha: 0.5),
+            width: 1.5,
+          ),
         ),
-      ),
-      padding: const EdgeInsets.all(2),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(43),
-        child: url != null && url.isNotEmpty
-            ? SafeNetworkImage(
-                url: url,
-                fit: BoxFit.cover,
-                errorWidget: _buildInitialsWidget(initials),
-              )
-            : _buildInitialsWidget(initials),
+        padding: const EdgeInsets.all(2),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(43),
+          child: url != null && url.isNotEmpty
+              ? SafeNetworkImage(
+                  url: url,
+                  fit: BoxFit.cover,
+                  errorWidget: _buildInitialsWidget(initials),
+                )
+              : _buildInitialsWidget(initials),
+        ),
       ),
     );
   }

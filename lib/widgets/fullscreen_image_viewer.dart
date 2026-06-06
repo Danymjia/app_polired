@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 class FullscreenImageViewer extends StatefulWidget {
   final List<String> imageUrls;
   final int initialIndex;
+  final bool isCircular;
 
   const FullscreenImageViewer({
     required this.imageUrls,
     this.initialIndex = 0,
+    this.isCircular = false,
     super.key,
   });
 
@@ -15,6 +17,7 @@ class FullscreenImageViewer extends StatefulWidget {
     BuildContext context,
     List<String> urls, {
     int initialIndex = 0,
+    bool isCircular = false,
   }) {
     return Navigator.push(
       context,
@@ -24,6 +27,7 @@ class FullscreenImageViewer extends StatefulWidget {
         pageBuilder: (context, animation, secondaryAnimation) => FullscreenImageViewer(
           imageUrls: urls,
           initialIndex: initialIndex,
+          isCircular: isCircular,
         ),
       ),
     );
@@ -48,25 +52,16 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        title: widget.imageUrls.length > 1
-            ? Text('${_current + 1} / ${widget.imageUrls.length}')
-            : null,
-      ),
-      body: PageView.builder(
-        controller: _controller,
-        itemCount: widget.imageUrls.length,
-        onPageChanged: (i) => setState(() => _current = i),
-        itemBuilder: (context, index) {
-          return InteractiveViewer(
-            minScale: 0.8,
-            maxScale: 4.0,
-            child: Center(
-              child: CachedNetworkImage(
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: widget.imageUrls.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (context, index) {
+              Widget imageWidget = CachedNetworkImage(
                 imageUrl: widget.imageUrls[index],
-                fit: BoxFit.contain, // imagen completa, sin recortar
+                fit: BoxFit.cover,
                 placeholder: (context, url) => const CircularProgressIndicator(
                   color: Colors.white,
                 ),
@@ -75,10 +70,60 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
                   color: Colors.white54,
                   size: 48,
                 ),
+              );
+
+              if (widget.isCircular) {
+                // Determine a fixed size for the circle, e.g. width of screen minus some margin
+                final size = MediaQuery.of(context).size.width - 32;
+                imageWidget = SizedBox(
+                  width: size,
+                  height: size,
+                  child: ClipOval(
+                    child: imageWidget,
+                  ),
+                );
+              }
+
+              return InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4.0,
+                child: Center(
+                  child: imageWidget,
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: 48,
+            left: 16,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.15),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
-          );
-        },
+          ),
+          if (widget.imageUrls.length > 1)
+            Positioned(
+              top: 48,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${_current + 1} / ${widget.imageUrls.length}',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

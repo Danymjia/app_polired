@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'fullscreen_image_viewer.dart';
 import '../config/theme.dart';
 
 /// Carousel or single image renderer for posts.
@@ -12,7 +11,7 @@ class PostImageCarousel extends StatefulWidget {
   final List<File>? localFiles;
   final double aspectRatio;
   final BorderRadius? borderRadius;
-  final VoidCallback? onTap;
+  final VoidCallback? onDoubleTap;
 
   const PostImageCarousel({
     super.key,
@@ -20,15 +19,53 @@ class PostImageCarousel extends StatefulWidget {
     this.localFiles,
     this.aspectRatio = 1.0,
     this.borderRadius,
-    this.onTap,
+    this.onDoubleTap,
   });
 
   @override
   State<PostImageCarousel> createState() => _PostImageCarouselState();
 }
 
-class _PostImageCarouselState extends State<PostImageCarousel> {
+class _PostImageCarouselState extends State<PostImageCarousel> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+
+  late AnimationController _heartAnimationController;
+  late Animation<double> _heartScaleAnimation;
+  late Animation<double> _heartOpacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _heartAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _heartScaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.2).chain(CurveTween(curve: Curves.elasticOut)), weight: 30),
+      TweenSequenceItem(tween: ConstantTween<double>(1.2), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 0.0).chain(CurveTween(curve: Curves.easeIn)), weight: 40),
+    ]).animate(_heartAnimationController);
+
+    _heartOpacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.9).chain(CurveTween(curve: Curves.easeIn)), weight: 10),
+      TweenSequenceItem(tween: ConstantTween<double>(0.9), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 0.9, end: 0.0).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
+    ]).animate(_heartAnimationController);
+  }
+
+  @override
+  void dispose() {
+    _heartAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTap() {
+    if (widget.onDoubleTap != null) {
+      widget.onDoubleTap!();
+    }
+    _heartAnimationController.forward(from: 0.0);
+  }
 
   bool get _hasLocalFiles => widget.localFiles != null && widget.localFiles!.isNotEmpty;
   int get _itemCount => _hasLocalFiles ? widget.localFiles!.length : widget.mediaUrls.length;
@@ -40,31 +77,32 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
     Widget content;
     if (_itemCount == 1) {
       content = GestureDetector(
-        onTap: widget.onTap ?? () {
-          if (!_hasLocalFiles) {
-            FullscreenImageViewer.show(context, widget.mediaUrls, initialIndex: 0);
-          }
-        },
+        onDoubleTap: _handleDoubleTap,
         child: AspectRatio(
           aspectRatio: widget.aspectRatio,
-          child: _hasLocalFiles 
-            ? _buildLocalImage(widget.localFiles!.first)
-            : _buildImage(widget.mediaUrls.first),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox.expand(
+                child: _hasLocalFiles 
+                  ? _buildLocalImage(widget.localFiles!.first)
+                  : _buildImage(widget.mediaUrls.first),
+              ),
+              _buildAnimatedHeart(),
+            ],
+          ),
         ),
       );
     } else {
       content = GestureDetector(
-        onTap: widget.onTap ?? () {
-          if (!_hasLocalFiles) {
-            FullscreenImageViewer.show(context, widget.mediaUrls, initialIndex: _currentIndex);
-          }
-        },
+        onDoubleTap: _handleDoubleTap,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AspectRatio(
               aspectRatio: widget.aspectRatio,
               child: Stack(
+                alignment: Alignment.center,
                 children: [
                   PageView.builder(
                     itemCount: _itemCount,
@@ -98,6 +136,7 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
                       ),
                     ),
                   ),
+                  _buildAnimatedHeart(),
                 ],
               ),
             ),
@@ -137,6 +176,31 @@ class _PostImageCarouselState extends State<PostImageCarousel> {
     return SizedBox(
       width: double.infinity,
       child: content,
+    );
+  }
+
+  Widget _buildAnimatedHeart() {
+    return AnimatedBuilder(
+      animation: _heartAnimationController,
+      builder: (context, child) {
+        if (_heartAnimationController.isDismissed) {
+          return const SizedBox.shrink();
+        }
+        return Opacity(
+          opacity: _heartOpacityAnimation.value,
+          child: Transform.scale(
+            scale: _heartScaleAnimation.value,
+            child: const Icon(
+              Icons.favorite,
+              color: Colors.white,
+              size: 100,
+              shadows: [
+                Shadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, 5)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

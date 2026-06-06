@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import 'safe_network_image.dart';
 import '../../models/network_story_model.dart';
+import 'network_badge.dart';
 
 class NetworkAvatar extends StatelessWidget {
   final NetworkStoryModel network;
@@ -87,26 +88,40 @@ class NetworkAvatar extends StatelessWidget {
                 ),
               ),
               if (!network.isJoined)
-                Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.surface,
-                  ),
-                  padding: const EdgeInsets.all(2),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
                   child: Container(
-                    width: 22,
-                    height: 22,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFF001B3C),
+                      color: AppTheme.surface,
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.add,
-                        size: 14,
-                        color: Colors.white,
+                    padding: const EdgeInsets.all(2),
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF001B3C),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.add,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
+                  ),
+                ),
+              if (network.esVerificada || network.esOficial)
+                Positioned(
+                  bottom: 0,
+                  right: network.isJoined ? 0 : null,
+                  left: network.isJoined ? null : 0,
+                  child: NetworkBadge(
+                    esVerificada: network.esVerificada,
+                    esOficial: network.esOficial,
                   ),
                 ),
             ],

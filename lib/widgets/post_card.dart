@@ -171,6 +171,11 @@ class _PostCardState extends State<PostCard> {
               PostImageCarousel(
                 mediaUrls: post.mediaUrls,
                 aspectRatio: post.aspectRatio,
+                onDoubleTap: () {
+                  if (!post.liked) {
+                    context.read<CommandBus>().dispatch(ToggleLikeCommand(postId: post.id));
+                  }
+                },
               ),
               if (post.isArticle && post.priceLabel.isNotEmpty)
                 Positioned(

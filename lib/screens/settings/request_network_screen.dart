@@ -15,12 +15,14 @@ class _RequestNetworkScreenState extends State<RequestNetworkScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreCtrl = TextEditingController();
   final _descripcionCtrl = TextEditingController();
+  final _propositoCtrl = TextEditingController();
   bool _isSubmitting = false;
 
   @override
   void dispose() {
     _nombreCtrl.dispose();
     _descripcionCtrl.dispose();
+    _propositoCtrl.dispose();
     super.dispose();
   }
 
@@ -42,6 +44,14 @@ class _RequestNetworkScreenState extends State<RequestNetworkScreen> {
     return null;
   }
 
+  String? _validateProposito(String? v) {
+    final val = v?.trim() ?? '';
+    if (val.isEmpty) return 'El propósito es requerido';
+    if (val.length < 10) return 'Mínimo 10 caracteres';
+    if (val.length > 300) return 'Máximo 300 caracteres';
+    return null;
+  }
+
   // ── Submission ───────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
@@ -56,6 +66,7 @@ class _RequestNetworkScreenState extends State<RequestNetworkScreen> {
       final result = await networkService.solicitarCreacionRed(
         nombre: _nombreCtrl.text.trim(),
         descripcion: _descripcionCtrl.text.trim(),
+        proposito: _propositoCtrl.text.trim(),
       );
 
       if (!mounted) return;
@@ -193,7 +204,7 @@ class _RequestNetworkScreenState extends State<RequestNetworkScreen> {
                   const SizedBox(height: 20),
 
                   // ── Campo: Descripción ──────────────────────────────────
-                  _buildLabel('Descripción / Propósito *'),
+                  _buildLabel('Descripción*'),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _descripcionCtrl,
@@ -202,7 +213,7 @@ class _RequestNetworkScreenState extends State<RequestNetworkScreen> {
                     textInputAction: TextInputAction.done,
                     validator: _validateDescripcion,
                     style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurface),
-                    decoration: _inputDecoration('Describe brevemente el objetivo académico de esta red...'),
+                    decoration: _inputDecoration('Describe tu red...'),
                   ),
                   const SizedBox(height: 8),
 
@@ -210,6 +221,38 @@ class _RequestNetworkScreenState extends State<RequestNetworkScreen> {
                     alignment: Alignment.centerRight,
                     child: ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _descripcionCtrl,
+                      builder: (context, value, child) => Text(
+                        '${value.text.trim().length}/300',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: value.text.trim().length > 280
+                              ? AppTheme.error
+                              : AppTheme.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Campo: Propósito ──────────────────────────────────
+                  _buildLabel('Propósito académico *'),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _propositoCtrl,
+                    enabled: !_isSubmitting,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.done,
+                    validator: _validateProposito,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurface),
+                    decoration: _inputDecoration('Describe cómo esta red aportará a la comunidad...'),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _propositoCtrl,
                       builder: (context, value, child) => Text(
                         '${value.text.trim().length}/300',
                         style: GoogleFonts.inter(

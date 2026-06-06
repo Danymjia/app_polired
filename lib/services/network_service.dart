@@ -60,6 +60,8 @@ class NetworkService {
               acronym: buildNetworkAcronym(r['nombre'] as String? ?? ''),
               imageUrl: (r['fotoPerfil'] as String?) ?? '',
               isJoined: true,
+              esVerificada: r['esVerificada'] == true,
+              esOficial: r['esOficial'] == true,
             ),
           );
         }
@@ -90,6 +92,8 @@ class NetworkService {
             acronym: buildNetworkAcronym(r['nombre'] as String? ?? ''),
             imageUrl: (r['fotoPerfil'] as String?) ?? '',
             isJoined: false,
+            esVerificada: r['esVerificada'] == true,
+            esOficial: r['esOficial'] == true,
           ),
         );
       }
@@ -150,16 +154,64 @@ class NetworkService {
 
   // ─── Solicitar creación de nueva red ─────────────────────────────────────
   /// POST /redes/solicitar-creacion
-  /// Body: { nombre, descripcion }
+  /// Body: { nombre, descripcion, proposito, fotoPerfil }
   Future<ApiResult<dynamic>> solicitarCreacionRed({
     required String nombre,
     required String descripcion,
+    required String proposito,
+    String? fotoPerfil,
   }) async {
     final body = {
       'nombre': nombre.trim(),
       'descripcion': descripcion.trim(),
+      'proposito': proposito.trim(),
     };
+    if (fotoPerfil != null && fotoPerfil.trim().isNotEmpty) {
+      body['fotoPerfil'] = fotoPerfil.trim();
+    }
     return await _api.post('/redes/solicitar-creacion', body);
+  }
+
+  // ─── Solicitar verificación de red ────────────────────────────────────────
+  Future<ApiResult<dynamic>> solicitarVerificacionRed({
+    required String redId,
+    required String nombreRed,
+    required String fechaCreacionRed,
+    required int cantidadMiembros,
+    required String correoInstitucional,
+  }) async {
+    final body = {
+      'redId': redId.trim(),
+      'nombreRed': nombreRed.trim(),
+      'fechaCreacionRed': fechaCreacionRed.trim(),
+      'cantidadMiembros': cantidadMiembros,
+      'correoInstitucional': correoInstitucional.trim(),
+    };
+    return await _api.post('/admin-red/redes/solicitar-verificacion', body);
+  }
+
+  // ─── Solicitar oficialización de red ──────────────────────────────────────
+  Future<ApiResult<dynamic>> solicitarOficializacionRed({
+    required String redId,
+    required String nombreRed,
+    required String fechaCreacionRed,
+    required int cantidadMiembros,
+    required String dependencia,
+    required String cargo,
+    required String correoInstitucional,
+    required String justificacion,
+  }) async {
+    final body = {
+      'redId': redId.trim(),
+      'nombreRed': nombreRed.trim(),
+      'fechaCreacionRed': fechaCreacionRed.trim(),
+      'cantidadMiembros': cantidadMiembros,
+      'dependencia': dependencia.trim(),
+      'cargo': cargo.trim(),
+      'correoInstitucional': correoInstitucional.trim(),
+      'justificacion': justificacion.trim(),
+    };
+    return await _api.post('/admin-red/redes/solicitar-oficializacion', body);
   }
 
   // ─── Reportar red ─────────────────────────────────────────────────────────

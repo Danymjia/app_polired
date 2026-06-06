@@ -131,8 +131,11 @@ class _RegisterScreenState extends State<RegisterScreen>
       body: FadeTransition(
         opacity: _fadeAnim,
         child: KeyboardAwareLayout(
-          child: Column(
-            children: [
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
               const SizedBox(height: AppSpacing.lg),
               
               // ── Contenido central ────────────────────────────────────
@@ -357,6 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
+          ),
           ),
         ),
       ),

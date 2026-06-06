@@ -4,12 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/network_provider.dart';
 import '../../services/read_model_cache_service.dart';
 import '../settings/help_screen.dart';
 import '../settings/support_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/legal_document_screen.dart';
 import '../settings/request_network_screen.dart';
+import '../settings/network_verification_screen.dart';
+import '../settings/network_officialization_screen.dart';
 import 'saved_posts_screen.dart';
 import 'liked_posts_screen.dart';
 
@@ -144,6 +147,65 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
 
+            // Featured Actions for Admin Red
+            if (isAdmin) ...[
+              const SizedBox(height: 28),
+              _buildSectionTitle('Gestión de Red'),
+              _buildMenuItem(
+                context,
+                'Mi Red',
+                Icons.group_outlined,
+                onTap: () {
+                  //Implementar navegación a "Mi Red" al igual que el botón del perfil privado
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Próximamente')),
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final np = context.watch<NetworkProvider>();
+                  final isVerifiedOrOfficial = (np.selectedNetwork?.esVerificada ?? false) || (np.selectedNetwork?.esOficial ?? false);
+                  if (isVerifiedOrOfficial) return const SizedBox.shrink();
+
+                  return _buildMenuItem(
+                    context,
+                    'Solicitar Verificación',
+                    Icons.verified_user_outlined,
+                    onTap: () {
+                      final redId = np.selectedNetwork?.id ?? '';
+                      if (redId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una red primero')));
+                        return;
+                      }
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => NetworkVerificationScreen(redId: redId)));
+                    },
+                  );
+                }
+              ),
+              Builder(
+                builder: (context) {
+                  final np = context.watch<NetworkProvider>();
+                  final isVerifiedOrOfficial = (np.selectedNetwork?.esVerificada ?? false) || (np.selectedNetwork?.esOficial ?? false);
+                  if (isVerifiedOrOfficial) return const SizedBox.shrink();
+
+                  return _buildMenuItem(
+                    context,
+                    'Solicitar Oficialización',
+                    Icons.account_balance_outlined,
+                    onTap: () {
+                      final redId = np.selectedNetwork?.id ?? '';
+                      if (redId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una red primero')));
+                        return;
+                      }
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => NetworkOfficializationScreen(redId: redId)));
+                    },
+                  );
+                }
+              ),
+            ],
+
             const SizedBox(height: 36),
 
             // Divider
@@ -220,13 +282,14 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, String title, IconData icon, {Widget? screen}) {
+  Widget _buildMenuItem(BuildContext context, String title, IconData icon, {Widget? screen, VoidCallback? onTap}) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => screen ?? DummyScreen(title: title)),
-        );
+      onTap: onTap ?? () {
+        if (screen != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => DummyScreen(title: title)));
+        }
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),

@@ -25,6 +25,7 @@ class NetworkProfileModel {
   final bool esVerificada;
   final String creadaPor;
   final int publicacionesCount;
+  final String? createdAt;
 
   NetworkProfileModel({
     required this.id,
@@ -36,6 +37,7 @@ class NetworkProfileModel {
     required this.esVerificada,
     required this.creadaPor,
     required this.publicacionesCount,
+    this.createdAt,
   });
 
   factory NetworkProfileModel.fromApiMap(Map<String, dynamic> json) {
@@ -49,6 +51,7 @@ class NetworkProfileModel {
       esVerificada: json['esVerificada'] == true,
       creadaPor: json['creadaPor'] as String? ?? '',
       publicacionesCount: (json['publicacionesCount'] as num?)?.toInt() ?? 0,
+      createdAt: json['createdAt']?.toString() ?? json['fechaCreacion']?.toString(),
     );
   }
 }

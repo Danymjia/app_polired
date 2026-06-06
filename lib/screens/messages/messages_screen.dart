@@ -53,7 +53,6 @@ class MessagesScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: _MessagesHeader(username: user?.username),
             ),
-            SliverToBoxAdapter(child: _SearchFieldPlaceholder()),
             SliverToBoxAdapter(child: _SocketBanner(phase: inbox.socketPhase)),
             SliverToBoxAdapter(
               child: _NetworkStoriesRow(user: user, networks: inbox.myNetworks),
@@ -179,36 +178,7 @@ class _MessagesHeader extends StatelessWidget {
   }
 }
 
-class _SearchFieldPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TextField(
-        enabled: false,
-        decoration: InputDecoration(
-          hintText: 'Buscar',
-          hintStyle: GoogleFonts.inter(
-            fontSize: 14,
-            color: const Color(0xFF71717A),
-          ),
-          prefixIcon: const Icon(
-            Icons.search,
-            size: 20,
-            color: Color(0xFFA1A1AA),
-          ),
-          filled: true,
-          fillColor: const Color(0xFFF4F4F5),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
-          disabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-}
+
 
 class _SocketBanner extends StatelessWidget {
   const _SocketBanner({required this.phase});
@@ -755,13 +725,12 @@ class _SuggestionRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 24,
+            CircularNetworkAvatar(
+              imageUrl: model.fotoPerfil,
+              initials: model.acronym,
+              size: 48,
               backgroundColor: const Color(0xFFF4F4F5),
-              child: Text(
-                model.acronym,
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
-              ),
+              initialsStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
             ),
             const SizedBox(width: 12),
             Expanded(

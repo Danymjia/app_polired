@@ -19,11 +19,16 @@ class NetworkStoryModel {
   final bool isJoined;
   final String acronym;
 
+  final bool esVerificada;
+  final bool esOficial;
+
   NetworkStoryModel({
     required this.id,
     required this.name,
     required this.imageUrl,
     required this.isJoined,
     required this.acronym,
+    this.esVerificada = false,
+    this.esOficial = false,
   });
 }

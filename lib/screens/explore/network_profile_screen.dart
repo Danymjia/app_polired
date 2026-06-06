@@ -10,6 +10,8 @@ import '../../../providers/post_store_provider.dart';
 import '../../../widgets/post_card.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/network_options_bottom_sheet.dart';
+import '../../../widgets/network_badge.dart';
+import '../../../widgets/fullscreen_image_viewer.dart';
 import 'widgets/restricted_feed_overlay.dart';
 
 class NetworkProfileScreen extends StatefulWidget {
@@ -134,18 +136,39 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.surfaceContainerHighest,
-                              border: Border.all(color: AppTheme.outlineVariant),
-                            ),
-                            clipBehavior: Clip.hardEdge,
-                            child: profile.fotoPerfil != null && profile.fotoPerfil!.isNotEmpty
-                                ? SafeNetworkImage(url: profile.fotoPerfil!, fit: BoxFit.cover)
-                                : const Icon(Icons.groups, size: 40, color: AppTheme.onSurfaceVariant),
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  if (profile.fotoPerfil != null && profile.fotoPerfil!.isNotEmpty) {
+                                    FullscreenImageViewer.show(context, [profile.fotoPerfil!], isCircular: true);
+                                  }
+                                },
+                                child: Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppTheme.surfaceContainerHighest,
+                                    border: Border.all(color: AppTheme.outlineVariant),
+                                  ),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: profile.fotoPerfil != null && profile.fotoPerfil!.isNotEmpty
+                                      ? SafeNetworkImage(url: profile.fotoPerfil!, fit: BoxFit.cover)
+                                      : const Icon(Icons.groups, size: 40, color: AppTheme.onSurfaceVariant),
+                                ),
+                              ),
+                              if (profile.esVerificada || profile.esOficial)
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: NetworkBadge(
+                                    esVerificada: profile.esVerificada,
+                                    esOficial: profile.esOficial,
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(width: 24),
                           Expanded(

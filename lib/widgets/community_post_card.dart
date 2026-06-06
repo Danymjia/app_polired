@@ -142,6 +142,11 @@ class _CommunityPostCardState extends State<CommunityPostCard> {
             PostImageCarousel(
               mediaUrls: post.mediaUrls,
               aspectRatio: post.aspectRatio,
+              onDoubleTap: () {
+                if (!post.liked) {
+                  context.read<CommandBus>().dispatch(ToggleLikeCommand(postId: post.id));
+                }
+              },
             ),
 
           // ── Acciones ──────────────────────────────────────────────────────

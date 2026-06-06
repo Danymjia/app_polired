@@ -165,6 +165,11 @@ class _GlobalPostCardState extends State<GlobalPostCard> {
               PostImageCarousel(
                 mediaUrls: post.mediaUrls,
                 aspectRatio: post.aspectRatio,
+                onDoubleTap: () {
+                  if (!post.liked) {
+                    context.read<CommandBus>().dispatch(ToggleLikeCommand(postId: post.id));
+                  }
+                },
               ),
               // Price badge SOLO en GlobalPostCard
               if (post.isArticle && post.priceLabel.isNotEmpty)

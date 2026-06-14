@@ -4,6 +4,20 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../services/post_service.dart';
 
+/// Responsabilidad principal:
+/// Formulario para que el usuario envíe tickets de soporte técnico, reportes de bugs o problemas con su cuenta.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `SettingsScreen` -> "Asistencia" o desde el final de un FAQ en `HelpDetailScreen`.
+///
+/// Dependencias críticas:
+/// - `PostService` (reutilizado para el envío genérico de reportes de la app `reportApp`).
+///
+/// Side Effects:
+/// - Envía la descripción y categoría del problema al backend.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mantiene el estado del formulario localmente y bloquea envíos duplicados con `_isSubmitting`.
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
 

@@ -274,7 +274,7 @@ class _NotificationTile extends StatelessWidget {
                   backgroundImage: NetworkImage(notification.emisorSnap!.fotoPerfil!),
                 )
               else
-                _TypeIcon(tipo: notification.tipo, leida: notification.leida),
+                _TypeIcon(notification: notification),
               const SizedBox(width: 12),
 
             // Contenido
@@ -287,7 +287,7 @@ class _NotificationTile extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _typeColor(notification.tipo).withValues(alpha: 0.12),
+                          color: _typeColor(notification).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -295,7 +295,7 @@ class _NotificationTile extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: _typeColor(notification.tipo),
+                            color: _typeColor(notification),
                           ),
                         ),
                       ),
@@ -340,14 +340,18 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
-  Color _typeColor(String tipo) {
-    switch (tipo) {
+  Color _typeColor(NotificationModel notif) {
+    switch (notif.tipo) {
       case 'like':
         return Colors.red;
       case 'comentario':
         return Colors.blue;
       case 'respuesta_comentario':
         return Colors.teal;
+      case 'strike':
+        return (notif.mensajeTexto?.contains('suspendida') ?? false)
+            ? Colors.red.shade700
+            : Colors.orange.shade700;
       default:
         return AppTheme.primary;
     }
@@ -358,17 +362,16 @@ class _NotificationTile extends StatelessWidget {
 
 // ─── Ícono del tipo de notificación ─────────────────────────────────────────
 class _TypeIcon extends StatelessWidget {
-  final String tipo;
-  final bool leida;
+  final NotificationModel notification;
 
-  const _TypeIcon({required this.tipo, required this.leida});
+  const _TypeIcon({required this.notification});
 
   @override
   Widget build(BuildContext context) {
     IconData icon;
     Color color;
 
-    switch (tipo) {
+    switch (notification.tipo) {
       case 'like':
         icon = Icons.favorite_rounded;
         color = Colors.red;
@@ -381,6 +384,12 @@ class _TypeIcon extends StatelessWidget {
         icon = Icons.reply_rounded;
         color = Colors.teal;
         break;
+      case 'strike':
+        icon = Icons.warning_amber_rounded;
+        color = (notification.mensajeTexto?.contains('suspendida') ?? false)
+            ? Colors.red.shade700
+            : Colors.orange.shade700;
+        break;
       default:
         icon = Icons.campaign_rounded;
         color = AppTheme.primary;
@@ -390,7 +399,7 @@ class _TypeIcon extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: leida ? 0.08 : 0.15),
+        color: color.withValues(alpha: notification.leida ? 0.08 : 0.15),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: color, size: 22),

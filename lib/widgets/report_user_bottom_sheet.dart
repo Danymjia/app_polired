@@ -4,6 +4,20 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../services/public_profile_service.dart';
 
+/// Responsabilidad principal:
+/// Formulario modal para reportar a un Usuario específico.
+///
+/// Flujo dentro de la app:
+/// Invocado desde `ChatOptionsBottomSheet` o menús contextuales en perfiles de usuario.
+///
+/// Dependencias críticas:
+/// - `PublicProfileService` (Mutación de reporte).
+///
+/// Side Effects:
+/// - Muestra un `SnackBar` con el resultado y cierra el modal automáticamente en caso de éxito.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Se reutiliza el mismo diseño que en reportes de red/publicaciones, pero llamando a `reportUser`.
 class ReportUserBottomSheet extends StatefulWidget {
   final String userId;
   final String userName;

@@ -3,8 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../models/poi_model.dart';
 
-/// Convierte un ícono de Material en una imagen de bytes para Mapbox
-/// (Mapbox necesita Uint8List, no widgets Flutter)
+/// Responsabilidad principal:
+/// Utilidad para convertir íconos vectoriales de Material en imágenes de bytes (`Uint8List`) para los marcadores de Mapbox.
+///
+/// Flujo dentro de la app:
+/// Se invoca asíncronamente al cargar los POIs para registrar las imágenes de los marcadores en la instancia del mapa.
+///
+/// Dependencias críticas:
+/// - `dart:ui` y `flutter/material.dart` (para usar Canvas y PictureRecorder).
+///
+/// Side Effects:
+/// - Dibuja imágenes en memoria y devuelve los bytes png crudos.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mapbox nativamente requiere buffers de bytes para añadir íconos dinámicos; no admite widgets Flutter directamente como marcadores de alto rendimiento.
 class MarkerImageUtil {
 
   /// Genera un marcador estilo "cápsula negra" como el diseño de referencia

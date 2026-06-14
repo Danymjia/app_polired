@@ -8,6 +8,21 @@ import '../../utils/image_compression.dart';
 import '../../widgets/safe_network_image.dart';
 import 'update_password_screen.dart';
 
+/// Responsabilidad principal:
+/// Formulario para actualizar la información personal del usuario logueado (Nombre, Bio, Foto).
+///
+/// Flujo dentro de la app:
+/// Accesible desde la pantalla de Perfil Propio.
+///
+/// Dependencias críticas:
+/// - `AuthProvider` (para obtener datos actuales y despachar la actualización).
+/// - `ImagePicker` y compresión de imagen (para captura y optimización de imagen).
+///
+/// Side Effects:
+/// - Sube la nueva foto de perfil al backend y actualiza los datos del usuario en la BD.
+///
+/// Recordatorios técnicos y CQRS:
+/// - La imagen se comprime antes de enviarse para ahorrar ancho de banda y almacenamiento en el servidor.
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 

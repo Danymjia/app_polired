@@ -4,6 +4,20 @@ import 'package:go_router/go_router.dart';
 import '../config/theme.dart';
 import 'safe_network_image.dart';
 
+/// Responsabilidad principal:
+/// Muestra una lista en un Dialog con todas las redes a las que pertenece un usuario específico.
+///
+/// Flujo dentro de la app:
+/// Invocado desde `PublicProfileScreen` cuando se toca el contador de "Redes".
+///
+/// Dependencias críticas:
+/// - `go_router` (Para navegar a la red seleccionada).
+///
+/// Side Effects:
+/// - Navegación: Reemplaza o apila la pantalla de perfil de red (`/explore/networks/:id`).
+///
+/// Recordatorios técnicos y CQRS:
+/// - La lista de redes se recibe por constructor; no hace fetch interno. Se asume que los datos ya fueron cargados por el Perfil.
 class NetworksListDialog extends StatelessWidget {
   final String username;
   final List<dynamic> networks;

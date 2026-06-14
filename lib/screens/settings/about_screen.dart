@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 
+/// Responsabilidad principal:
+/// Pantalla de información general que muestra la versión, build y misión de la aplicación Polired.
+///
+/// Flujo dentro de la app:
+/// Accesible desde el menú "Información" en `SettingsScreen`.
+///
+/// Dependencias críticas:
+/// - Ninguna (UI estática).
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Útil para que los usuarios o QA reporten la versión exacta al levantar un ticket de soporte.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 

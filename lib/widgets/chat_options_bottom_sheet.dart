@@ -4,6 +4,21 @@ import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import 'report_user_bottom_sheet.dart';
 
+/// Responsabilidad principal:
+/// Presenta las opciones disponibles para interactuar con un usuario desde un chat (ej. Ver Perfil, Reportar).
+///
+/// Flujo dentro de la app:
+/// Invocado desde la pantalla de Chat (`ChatScreen`) al pulsar el botón de opciones.
+///
+/// Dependencias críticas:
+/// - `go_router` para navegación.
+/// - `ReportUserBottomSheet`.
+///
+/// Side Effects:
+/// - Muestra overlays de navegación (Navega a un nuevo sheet o pantalla cerrando el actual primero).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Siempre usar `Navigator.pop(context)` antes de navegar a otra pantalla para evitar bugs de enrutamiento con los BottomSheets.
 class ChatOptionsBottomSheet extends StatelessWidget {
   final String contactId;
   final String contactName;

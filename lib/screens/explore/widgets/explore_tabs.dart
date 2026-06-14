@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 
+/// Responsabilidad principal:
+/// Componente de navegación por pestañas (Tabs) personalizado para la sección Explorar.
+///
+/// Flujo dentro de la app:
+/// Se utiliza para alternar entre la vista de Redes y la vista de Usuarios.
+///
+/// Dependencias críticas:
+/// - Ninguna (Recibe callbacks y estados por parámetros).
+///
+/// Side Effects:
+/// - Dispara `onTabSelected` cuando el usuario cambia de pestaña.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Componente presentacional puro. El estado de la pestaña activa se mantiene en el widget padre.
 class ExploreTabs extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;

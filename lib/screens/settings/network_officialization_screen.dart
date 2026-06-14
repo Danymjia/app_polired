@@ -5,6 +5,21 @@ import '../../config/theme.dart';
 import '../../services/network_service.dart';
 import '../../providers/network_profile_provider.dart';
 
+/// Responsabilidad principal:
+/// Formulario para solicitar la insignia de Oficialización institucional de una red.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `SettingsScreen` (solo para admins de red) cuando la red seleccionada cumple los requisitos de elegibilidad.
+///
+/// Dependencias críticas:
+/// - `NetworkProfileProvider` (para obtener los datos base y comprobar la antigüedad/miembros).
+/// - `NetworkService` (para despachar el formulario al backend).
+///
+/// Side Effects:
+/// - Genera un ticket de oficialización en la base de datos central que será revisado por superadmins.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Evalúa la elegibilidad localmente en el front (30 días, 30 miembros) antes de permitir el envío del comando de solicitud.
 class NetworkOfficializationScreen extends StatefulWidget {
   final String redId;
   

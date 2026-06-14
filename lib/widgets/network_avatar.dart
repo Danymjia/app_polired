@@ -4,6 +4,21 @@ import 'safe_network_image.dart';
 import '../../models/network_story_model.dart';
 import 'network_badge.dart';
 
+/// Responsabilidad principal:
+/// Avatar circular visual para representar una Red (Comunidad), soportando estados de "Seleccionado", botones de "Unirse" (+), e insignias (Oficial/Verificada).
+///
+/// Flujo dentro de la app:
+/// Usado ampliamente en el Home Feed (barra superior) y listas de exploración.
+///
+/// Dependencias críticas:
+/// - `NetworkStoryModel`.
+/// - `NetworkBadge`.
+///
+/// Side Effects:
+/// - Ninguno. Puramente visual.
+///
+/// Recordatorios técnicos y CQRS:
+/// - El avatar maneja el padding de selección manualmente. No alterar el orden del Stack porque los badges dependen de sus posiciones relativas.
 class NetworkAvatar extends StatelessWidget {
   final NetworkStoryModel network;
   final VoidCallback onTap;

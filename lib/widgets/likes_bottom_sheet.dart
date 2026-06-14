@@ -5,6 +5,20 @@ import '../config/theme.dart';
 import '../services/post_service.dart';
 import 'safe_network_image.dart';
 
+/// Responsabilidad principal:
+/// Muestra la lista paginada/cargada de usuarios que han dado "Me gusta" a una publicación específica.
+///
+/// Flujo dentro de la app:
+/// Se invoca al tocar el contador de likes en cualquier `PostCard`.
+///
+/// Dependencias críticas:
+/// - `PostService` (HTTP requests).
+///
+/// Side Effects:
+/// - Ejecuta peticiones de red inmediatas en el `initState`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - No usa Providers reactivos para los datos porque la lista de "Me gusta" es una consulta de solo lectura (Read Model) efímera, no amerita estar en el store global.
 class LikesBottomSheet extends StatefulWidget {
   final String postId;
 

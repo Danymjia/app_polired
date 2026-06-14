@@ -3,6 +3,20 @@ import 'package:provider/provider.dart';
 import '../../../providers/map_provider.dart';
 import '../../../models/poi_model.dart';
 
+/// Responsabilidad principal:
+/// Directorio navegable de todos los POIs del campus agrupados por categorías.
+///
+/// Flujo dentro de la app:
+/// Accesible desde un botón flotante en `MapScreen`. Permite explorar lugares si no se sabe el nombre exacto.
+///
+/// Dependencias críticas:
+/// - `MapProvider` (para obtener la lista de POIs agrupados por categoría).
+///
+/// Side Effects:
+/// - Dispara `onPoiSelected` cuando el usuario elige un lugar.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Implementa navegación en dos niveles (Nivel 1: Categorías, Nivel 2: Lista de lugares) manteniendo el estado internamente sin afectar el provider global.
 class PoiDirectorySheet extends StatefulWidget {
   final PoiCategory? initialCategory;
   final VoidCallback onClose;

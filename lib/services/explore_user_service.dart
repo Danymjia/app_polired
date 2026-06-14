@@ -1,4 +1,5 @@
 import 'api_service.dart';
+import '../config/constants.dart';
 import '../models/public_user_model.dart';
 
 /// Responsabilidad principal:
@@ -21,7 +22,7 @@ class ExploreUserService {
   ExploreUserService(this._apiService);
 
   Future<ApiResult<Map<String, dynamic>>> getUsers({int page = 1, int limit = 10}) async {
-    final result = await _apiService.get('/cargar/estudiantes?page=$page&limit=$limit');
+    final result = await _apiService.get('${AppConstants.cargarEstudiantesEndpoint}?page=$page&limit=$limit');
     if (result.success && result.data != null) {
       try {
         final dataMap = result.data as Map<String, dynamic>;

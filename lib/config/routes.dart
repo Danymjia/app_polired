@@ -14,6 +14,7 @@ import '../screens/explore/public_profile_screen.dart';
 import '../screens/post/post_detail_screen.dart';
 import '../screens/messages/chat_screen.dart';
 import '../screens/map/map_screen.dart';
+import '../screens/settings/strikes_screen.dart';
 
 /// Responsabilidad principal:
 /// Configuración centralizada del enrutamiento declarativo y protección de rutas mediante redirects basados en estado de sesión.
@@ -53,6 +54,10 @@ final GoRouter appRouter = GoRouter(
           return '/complete-profile';
         }
         return null;
+      }
+
+      if (user != null && user.suspendido && state.matchedLocation != '/login') {
+        return '/home';
       }
       
       if (isAuthRoute) return '/home';
@@ -105,6 +110,10 @@ final GoRouter appRouter = GoRouter(
           contactAvatar: extra['contactAvatar'] as String?,
         );
       },
+    ),
+    GoRoute(
+      path: '/configuracion/strikes',
+      builder: (ctx, state) => const StrikesScreen(),
     ),
   ],
 );

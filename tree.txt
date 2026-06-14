@@ -1,0 +1,179 @@
+﻿Listado de rutas de carpetas para el volumen Windows-SSD
+El n·mero de serie del volumen es 00000285 6835:6D30
+C:\USERS\NARVA\DOCUMENTS\TESIS\APLICACION\APP\APP_POLIRED\LIB
+ª   main.dart
+ª   
++---config
+ª       constants.dart
+ª       routes.dart
+ª       spacing.dart
+ª       theme.dart
+ª       
++---models
+ª   ª   conversation_model.dart
+ª   ª   feed_context.dart
+ª   ª   message_model.dart
+ª   ª   network_profile_model.dart
+ª   ª   network_story_model.dart
+ª   ª   notification_model.dart
+ª   ª   poi_model.dart
+ª   ª   post_model.dart
+ª   ª   public_profile_model.dart
+ª   ª   public_user_model.dart
+ª   ª   suggested_network_model.dart
+ª   ª   user_model.dart
+ª   ª   
+ª   +---commands
+ª   ª       feed_command.dart
+ª   ª       
+ª   +---events
+ª           post_event.dart
+ª           
++---providers
+ª       auth_provider.dart
+ª       chat_provider.dart
+ª       explore_networks_provider.dart
+ª       explore_users_provider.dart
+ª       feed_provider.dart
+ª       global_feed_provider.dart
+ª       map_provider.dart
+ª       messages_inbox_provider.dart
+ª       my_profile_feed_provider.dart
+ª       network_profile_provider.dart
+ª       network_provider.dart
+ª       notification_provider.dart
+ª       post_store_provider.dart
+ª       public_profile_provider.dart
+ª       
++---repositories
+ª       conversations_repository.dart
+ª       
++---screens
+ª   ª   main_layout_screen.dart
+ª   ª   
+ª   +---auth
+ª   ª       complete_profile_screen.dart
+ª   ª       forgot_password_screen.dart
+ª   ª       login_screen.dart
+ª   ª       register_screen.dart
+ª   ª       splash_screen.dart
+ª   ª       welcome_screen.dart
+ª   ª       
+ª   +---explore
+ª   ª   ª   explore_networks_screen.dart
+ª   ª   ª   explore_screen.dart
+ª   ª   ª   network_profile_screen.dart
+ª   ª   ª   public_profile_screen.dart
+ª   ª   ª   
+ª   ª   +---widgets
+ª   ª           explore_empty_state.dart
+ª   ª           explore_error_state.dart
+ª   ª           explore_header.dart
+ª   ª           explore_loading.dart
+ª   ª           explore_tabs.dart
+ª   ª           restricted_feed_overlay.dart
+ª   ª           
+ª   +---home
+ª   ª       home_screen.dart
+ª   ª       
+ª   +---map
+ª   ª   ª   map_screen.dart
+ª   ª   ª   
+ª   ª   +---utils
+ª   ª   ª       campus_polygon.dart
+ª   ª   ª       marker_image_util.dart
+ª   ª   ª       
+ª   ª   +---widgets
+ª   ª           poi_detail_sheet.dart
+ª   ª           poi_directory_sheet.dart
+ª   ª           poi_search_bar.dart
+ª   ª           
+ª   +---messages
+ª   ª       chat_screen.dart
+ª   ª       messages_screen.dart
+ª   ª       
+ª   +---notifications
+ª   ª       notifications_screen.dart
+ª   ª       
+ª   +---post
+ª   ª       add_post_screen.dart
+ª   ª       post_detail_screen.dart
+ª   ª       
+ª   +---profile
+ª   ª       edit_profile_screen.dart
+ª   ª       liked_posts_screen.dart
+ª   ª       profile_screen.dart
+ª   ª       saved_posts_screen.dart
+ª   ª       settings_screen.dart
+ª   ª       update_password_screen.dart
+ª   ª       
+ª   +---settings
+ª           about_screen.dart
+ª           help_detail_screen.dart
+ª           help_screen.dart
+ª           legal_document_screen.dart
+ª           network_officialization_screen.dart
+ª           network_verification_screen.dart
+ª           privacy_screen.dart
+ª           request_network_screen.dart
+ª           support_screen.dart
+ª           
++---services
+ª   ª   api_service.dart
+ª   ª   auth_service.dart
+ª   ª   command_bus.dart
+ª   ª   explore_user_service.dart
+ª   ª   navigation_bus.dart
+ª   ª   navigation_service.dart
+ª   ª   network_service.dart
+ª   ª   notification_service.dart
+ª   ª   poi_data.dart
+ª   ª   post_service.dart
+ª   ª   public_profile_service.dart
+ª   ª   read_model_cache_service.dart
+ª   ª   socket_service.dart
+ª   ª   storage_service.dart
+ª   ª   
+ª   +---handlers
+ª           command_handler.dart
+ª           post_command_handlers.dart
+ª           
++---utils
+ª       app_snackbar.dart
+ª       feed_selectors.dart
+ª       image_compression.dart
+ª       json_ids.dart
+ª       network_acronym.dart
+ª       post_context_resolver.dart
+ª       validators.dart
+ª       
++---widgets
+    ª   app_text_field.dart
+    ª   chat_options_bottom_sheet.dart
+    ª   comment_tree_sheet.dart
+    ª   community_post_card.dart
+    ª   fullscreen_image_viewer.dart
+    ª   global_post_card.dart
+    ª   leave_network_dialog.dart
+    ª   likes_bottom_sheet.dart
+    ª   network_avatar.dart
+    ª   network_badge.dart
+    ª   network_list_dialog.dart
+    ª   network_options_bottom_sheet.dart
+    ª   polired_logo.dart
+    ª   post_card.dart
+    ª   post_image_carousel.dart
+    ª   post_options_bottom_sheet.dart
+    ª   primary_button.dart
+    ª   public_profile_grid.dart
+    ª   public_profile_header.dart
+    ª   report_network_bottom_sheet.dart
+    ª   report_post_bottom_sheet.dart
+    ª   report_user_bottom_sheet.dart
+    ª   safe_network_image.dart
+    ª   user_search_tile.dart
+    ª   
+    +---core
+            base_screen.dart
+            keyboard_aware_layout.dart
+            

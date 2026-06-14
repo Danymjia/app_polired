@@ -5,6 +5,22 @@ import '../config/theme.dart';
 import '../providers/network_provider.dart';
 import '../providers/auth_provider.dart';
 
+/// Responsabilidad principal:
+/// Diálogo de confirmación para que un usuario abandone una red a la que pertenece.
+///
+/// Flujo dentro de la app:
+/// Lanzado desde `NetworkOptionsBottomSheet` o `NetworkProfileScreen`.
+///
+/// Dependencias críticas:
+/// - `NetworkProvider` (Para ejecutar la mutación).
+/// - `AuthProvider` (Para sincronizar el perfil y redes si el abandono es exitoso).
+///
+/// Side Effects:
+/// - Modifica el estado global (remueve la red de las suscripciones del usuario).
+/// - Sincronización completa con el backend (`syncProfileFromServer`).
+///
+/// Recordatorios técnicos y CQRS:
+/// - La sincronización tras abandonar puede ser lenta. Mantener validación `context.mounted` después de esperas asíncronas para evitar crashes.
 class LeaveNetworkDialog extends StatefulWidget {
   final String networkId;
   final String networkName;

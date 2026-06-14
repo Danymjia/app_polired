@@ -4,8 +4,20 @@ import '../../config/theme.dart';
 import '../../models/post_model.dart';
 import '../../providers/post_store_provider.dart';
 import '../../widgets/post_card.dart';
-/// Obtiene el PostModel desde el PostStoreProvider (estado global).
-/// Soporta multimedia, likes, comentarios y saved completamente conectados al backend.
+/// Responsabilidad principal:
+/// Pantalla de detalle de una publicación, mostrando su contenido completo, multimedia y comentarios.
+///
+/// Flujo dentro de la app:
+/// Accesible al tocar una publicación en cualquier feed (Home, Explorar, Perfil).
+///
+/// Dependencias críticas:
+/// - `PostStoreProvider` (para obtener y mantener sincronizado el estado del post).
+///
+/// Side Effects:
+/// - Ninguno nativo, pero contiene widgets hijos (Like, Guardar, Comentar) que mutan el estado y el backend.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Lee el modelo directamente del `PostStoreProvider` usando el ID, asegurando reactividad ante cualquier mutación en otras pantallas.
 class PostDetailScreen extends StatelessWidget {
   final String postId;
 

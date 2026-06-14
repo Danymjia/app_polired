@@ -3,6 +3,20 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import 'support_screen.dart';
 
+/// Responsabilidad principal:
+/// Pantalla de detalle para visualizar un artículo específico de las Preguntas Frecuentes (FAQ).
+///
+/// Flujo dentro de la app:
+/// Se abre al tocar cualquier pregunta en `HelpScreen`.
+///
+/// Dependencias críticas:
+/// - Ninguna.
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Utiliza `SingleTickerProviderStateMixin` para animar la entrada del contenido (Fade y Slide).
 class HelpDetailScreen extends StatefulWidget {
   final String title;
   final String introduction;

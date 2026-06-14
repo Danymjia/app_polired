@@ -11,6 +11,25 @@ import '../../repositories/conversations_repository.dart';
 import '../../widgets/public_profile_header.dart';
 import '../../widgets/public_profile_grid.dart';
 
+/// Responsabilidad principal:
+/// Perfil público de otros usuarios. Muestra su información general, opciones de contacto (Chat) y sus publicaciones.
+///
+/// Flujo dentro de la app:
+/// Accesible al pulsar el avatar/nombre de un usuario en un post, comentario o búsqueda.
+///
+/// Dependencias críticas:
+/// - `PublicProfileProvider` (Carga información y feed del usuario).
+/// - `PostStoreProvider` (Renderiza publicaciones y artículos).
+/// - `ConversationsRepository` (Inicia o recupera el chat 1-a-1).
+/// - `ReadModelCacheService` (Limpia la caché del feed al salir).
+///
+/// Side Effects:
+/// - Consulta el perfil y los posts del usuario especificado.
+/// - Crea o recupera un chat en la base de datos al presionar el ícono de mensaje.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Usa `ReadModelCacheService.evict` en el `dispose()` usando un contexto guardado en `initState()`.
+/// - Divide visualmente las publicaciones (texto/imágenes) de los artículos (venta/servicio).
 class PublicProfileScreen extends StatefulWidget {
   final String userId;
 

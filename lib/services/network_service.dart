@@ -143,7 +143,7 @@ class NetworkService {
       return ApiResult.error('Identificador de red no válido');
     }
 
-    final result = await _api.get('/redes/$id?page=$page&limit=$limit');
+    final result = await _api.get('${AppConstants.redesEndpoint}/$id?page=$page&limit=$limit');
 
     if (result.success && result.data is Map) {
       return ApiResult.ok(result.data as Map<String, dynamic>);
@@ -169,7 +169,7 @@ class NetworkService {
     if (fotoPerfil != null && fotoPerfil.trim().isNotEmpty) {
       body['fotoPerfil'] = fotoPerfil.trim();
     }
-    return await _api.post('/redes/solicitar-creacion', body);
+    return await _api.post(AppConstants.redesSolicitarCreacionEndpoint, body);
   }
 
   // ─── Solicitar verificación de red ────────────────────────────────────────
@@ -187,7 +187,7 @@ class NetworkService {
       'cantidadMiembros': cantidadMiembros,
       'correoInstitucional': correoInstitucional.trim(),
     };
-    return await _api.post('/admin-red/redes/solicitar-verificacion', body);
+    return await _api.post('${AppConstants.adminRedBaseEndpoint}${AppConstants.redesSolicitarVerificacionEndpoint}', body);
   }
 
   // ─── Solicitar oficialización de red ──────────────────────────────────────
@@ -211,7 +211,7 @@ class NetworkService {
       'correoInstitucional': correoInstitucional.trim(),
       'justificacion': justificacion.trim(),
     };
-    return await _api.post('/admin-red/redes/solicitar-oficializacion', body);
+    return await _api.post('${AppConstants.adminRedBaseEndpoint}${AppConstants.redesSolicitarOficializacionEndpoint}', body);
   }
 
   // ─── Reportar red ─────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ class NetworkService {
       'tipo': tipo.trim(),
       'descripcion': descripcion.trim(),
     };
-    return await _api.post('/estudiantes/reportes/red', body);
+    return await _api.post('${AppConstants.estudiantesBaseEndpoint}${AppConstants.reportesRedEndpoint}', body);
   }
 
   // ─── Abandonar una red ────────────────────────────────────────────────────
@@ -237,6 +237,16 @@ class NetworkService {
     final body = {
       'redId': redId.trim(),
     };
-    return await _api.post('/estudiantes/salirse/red', body);
+    return await _api.post('${AppConstants.estudiantesBaseEndpoint}${AppConstants.salirseRedEndpoint}', body);
+  }
+
+  // ─── Obtener red asignada al admin ────────────────────────────────────────
+  /// GET /admin/red/info
+  Future<ApiResult<Map<String, dynamic>>> getAdminNetworkInfo() async {
+    final result = await _api.get('/red/admin/informacion');
+    if (result.success && result.data is Map) {
+      return ApiResult.ok(result.data as Map<String, dynamic>);
+    }
+    return ApiResult.error(result.message ?? 'Error al obtener red asignada');
   }
 }

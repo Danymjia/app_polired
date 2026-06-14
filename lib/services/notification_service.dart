@@ -1,5 +1,6 @@
 import 'api_service.dart';
 import '../models/notification_model.dart';
+import '../config/constants.dart';
 
 /// Responsabilidad principal:
 /// Repositorio de dominio para la carga inicial y el marcado de lectura del historial de Notificaciones.
@@ -24,7 +25,7 @@ class NotificationService {
   /// GET /notificaciones
   /// Respuesta: { notificaciones: [ <Notificacion> ] }
   Future<ApiResult<List<NotificationModel>>> getNotificaciones() async {
-    final result = await _api.get('/notificaciones');
+    final result = await _api.get(AppConstants.notificacionesEndpoint);
 
     if (result.success && result.data is Map) {
       final data = result.data as Map<String, dynamic>;
@@ -44,6 +45,6 @@ class NotificationService {
   /// PATCH /notificaciones/:id/leida
   /// Respuesta: { msg: 'Notificación marcada como leída' }
   Future<ApiResult<dynamic>> marcarLeida(String notifId) async {
-    return _api.patch('/notificaciones/$notifId/leida', {});
+    return _api.patch('${AppConstants.notificacionesEndpoint}/$notifId/leida', {});
   }
 }

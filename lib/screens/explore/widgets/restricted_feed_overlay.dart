@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 
+/// Responsabilidad principal:
+/// Capa visual con gradiente que restringe la lectura completa del feed para usuarios que no son miembros de una red.
+///
+/// Flujo dentro de la app:
+/// Se aplica sobre el quinto post en la vista de perfil de red (`NetworkProfileScreen`) cuando el usuario no está unido.
+///
+/// Dependencias críticas:
+/// - Ninguna (Recibe el widget subyacente y la acción `onJoinPressed` por parámetro).
+///
+/// Side Effects:
+/// - Bloquea la interacción con el post subyacente e invita visualmente a unirse a la red.
+///
+/// Recordatorios técnicos y CQRS:
+/// - El botón interno dispara el callback provisto para ejecutar el flujo de membresía.
 class RestrictedFeedOverlay extends StatelessWidget {
   final Widget child;
   final VoidCallback onJoinPressed;

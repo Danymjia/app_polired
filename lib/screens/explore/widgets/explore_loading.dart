@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 
+/// Responsabilidad principal:
+/// Animación de esqueleto (Skeleton) para indicar carga en el feed de Explorar.
+///
+/// Flujo dentro de la app:
+/// Renderizado inicial mientras se cargan los datos iniciales de las publicaciones.
+///
+/// Dependencias críticas:
+/// - Ninguna (Widget presentacional).
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Optimizado para rendimiento con `SliverList` y colores predefinidos del tema.
 class ExploreLoading extends StatelessWidget {
   const ExploreLoading({super.key});
 

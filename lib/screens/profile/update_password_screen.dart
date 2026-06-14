@@ -3,7 +3,20 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 
+/// Responsabilidad principal:
 /// Pantalla para que el usuario actualice su contraseña actual.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `EditProfileScreen`.
+///
+/// Dependencias críticas:
+/// - `AuthProvider` (para despachar el cambio de contraseña al backend).
+///
+/// Side Effects:
+/// - Modifica las credenciales de autenticación del usuario en el sistema.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Requiere la contraseña actual por seguridad. Validar en cliente que la nueva y la confirmación coincidan antes de enviar la petición.
 class UpdatePasswordScreen extends StatefulWidget {
   const UpdatePasswordScreen({super.key});
 

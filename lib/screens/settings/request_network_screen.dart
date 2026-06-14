@@ -4,6 +4,20 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import '../../services/network_service.dart';
 
+/// Responsabilidad principal:
+/// Formulario para que cualquier usuario proponga la creación de una nueva Red Universitaria.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `SettingsScreen` (solo si el usuario NO tiene rol de admin de red).
+///
+/// Dependencias críticas:
+/// - `NetworkService` (para enviar la propuesta al backend).
+///
+/// Side Effects:
+/// - Registra una solicitud de creación de red pendiente de revisión por superadmins.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Formulario con validaciones estrictas de longitud (mínimo y máximo de caracteres) para asegurar propuestas fundamentadas.
 class RequestNetworkScreen extends StatefulWidget {
   const RequestNetworkScreen({super.key});
 

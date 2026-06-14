@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/network_provider.dart';
 import '../../services/read_model_cache_service.dart';
+import '../../services/network_service.dart';
 import '../settings/help_screen.dart';
 import '../settings/support_screen.dart';
 import '../settings/about_screen.dart';
@@ -16,6 +16,21 @@ import '../settings/network_officialization_screen.dart';
 import 'saved_posts_screen.dart';
 import 'liked_posts_screen.dart';
 
+/// Responsabilidad principal:
+/// Menú principal de ajustes, donde el usuario puede gestionar su actividad, privacidad, seguridad y cerrar sesión.
+///
+/// Flujo dentro de la app:
+/// Accesible desde el ícono de engranaje en la pantalla de Perfil (`MyProfileScreen`).
+///
+/// Dependencias críticas:
+/// - `AuthProvider` (para cierre de sesión y verificación de roles).
+/// - `ReadModelCacheService` (para limpiar caché al hacer logout).
+///
+/// Side Effects:
+/// - Despacha la acción de `logout()` borrando credenciales y forzando la redirección al Login.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Muestra opciones adicionales de gestión (`Solicitar Oficialización`, `Mi Red`) si el usuario tiene el rol `esAdminRed`.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -98,6 +113,17 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
 
+            const SizedBox(height: 20),
+
+            // Group 4: Gestión de cuenta
+            _buildSectionTitle('Gestión de cuenta'),
+            _buildMenuItem(
+              context,
+              'Mis advertencias',
+              Icons.warning_amber_rounded,
+              onTap: () => context.push('/configuracion/strikes'),
+            ),
+
             // Featured Action — solo para usuarios SIN rol admin_red
             if (!isAdmin) ...[
               const SizedBox(height: 28),
@@ -162,47 +188,21 @@ class SettingsScreen extends StatelessWidget {
                   );
                 },
               ),
-              Builder(
-                builder: (context) {
-                  final np = context.watch<NetworkProvider>();
-                  final isVerifiedOrOfficial = (np.selectedNetwork?.esVerificada ?? false) || (np.selectedNetwork?.esOficial ?? false);
-                  if (isVerifiedOrOfficial) return const SizedBox.shrink();
-
-                  return _buildMenuItem(
-                    context,
-                    'Solicitar Verificación',
-                    Icons.verified_user_outlined,
-                    onTap: () {
-                      final redId = np.selectedNetwork?.id ?? '';
-                      if (redId.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una red primero')));
-                        return;
-                      }
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => NetworkVerificationScreen(redId: redId)));
-                    },
-                  );
-                }
+              _buildMenuItem(
+                context,
+                'Solicitar Verificación',
+                Icons.verified_user_outlined,
+                onTap: () => _handleAdminAction(context, (redId) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => NetworkVerificationScreen(redId: redId)));
+                }),
               ),
-              Builder(
-                builder: (context) {
-                  final np = context.watch<NetworkProvider>();
-                  final isVerifiedOrOfficial = (np.selectedNetwork?.esVerificada ?? false) || (np.selectedNetwork?.esOficial ?? false);
-                  if (isVerifiedOrOfficial) return const SizedBox.shrink();
-
-                  return _buildMenuItem(
-                    context,
-                    'Solicitar Oficialización',
-                    Icons.account_balance_outlined,
-                    onTap: () {
-                      final redId = np.selectedNetwork?.id ?? '';
-                      if (redId.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una red primero')));
-                        return;
-                      }
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => NetworkOfficializationScreen(redId: redId)));
-                    },
-                  );
-                }
+              _buildMenuItem(
+                context,
+                'Solicitar Oficialización',
+                Icons.account_balance_outlined,
+                onTap: () => _handleAdminAction(context, (redId) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => NetworkOfficializationScreen(redId: redId)));
+                }),
               ),
             ],
 
@@ -282,7 +282,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, String title, IconData icon, {Widget? screen, VoidCallback? onTap}) {
+  Widget _buildMenuItem(BuildContext context, String title, IconData icon, {Widget? screen, VoidCallback? onTap, String? subtitle, Color? iconColor}) {
     return InkWell(
       onTap: onTap ?? () {
         if (screen != null) {
@@ -295,16 +295,32 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 13.0),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AppTheme.onBackground),
+            Icon(icon, size: 22, color: iconColor ?? AppTheme.onBackground),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.onBackground,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.onBackground,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.outline,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const Icon(Icons.chevron_right, size: 22, color: AppTheme.outlineVariant),
@@ -312,6 +328,55 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleAdminAction(BuildContext context, void Function(String redId) onSuccess) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final networkService = context.read<NetworkService>();
+      final result = await networkService.getAdminNetworkInfo();
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        if (result.success && result.data != null) {
+          final redData = result.data!['red'];
+          if (redData != null) {
+            final esVerificada = redData['esVerificada'] == true;
+            final esOficial = redData['esOficial'] == true;
+            
+            if (esVerificada || esOficial) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Tu red ya se encuentra verificada u oficializada.')),
+              );
+              return;
+            }
+
+            final redId = redData['_id'] as String? ?? redData['id'] as String? ?? '';
+            if (redId.isNotEmpty) {
+              onSuccess(redId);
+              return;
+            }
+          }
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message ?? 'No se pudo obtener la información de tu red')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ocurrió un error al cargar la red')),
+        );
+      }
+    }
   }
 }
 

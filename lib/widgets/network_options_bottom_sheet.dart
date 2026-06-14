@@ -4,6 +4,21 @@ import '../config/theme.dart';
 import 'report_network_bottom_sheet.dart';
 import 'leave_network_dialog.dart';
 
+/// Responsabilidad principal:
+/// Presenta opciones contextuales sobre una Red específica (Reportar Red, Abandonar Red).
+///
+/// Flujo dentro de la app:
+/// Invocado desde el menú de puntos (Kebab menu) en `NetworkProfileScreen`.
+///
+/// Dependencias críticas:
+/// - `LeaveNetworkDialog`
+/// - `ReportNetworkBottomSheet`
+///
+/// Side Effects:
+/// - Ninguno directamente, delega en los diálogos secundarios.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Cierra automáticamente este BottomSheet (`Navigator.pop`) antes de abrir los diálogos subsiguientes para no superponer múltiples overlays.
 class NetworkOptionsBottomSheet extends StatelessWidget {
   final String networkId;
   final String networkName;

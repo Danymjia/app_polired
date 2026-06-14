@@ -7,6 +7,22 @@ import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 import '../../utils/image_compression.dart';
 
+/// Responsabilidad principal:
+/// Formulario opcional para completar el perfil (foto, descripción, username) tras el registro inicial.
+///
+/// Flujo dentro de la app:
+/// Se muestra inmediatamente después de `RegisterScreen` si el usuario no tiene los datos completos.
+///
+/// Dependencias críticas:
+/// - `AuthProvider`
+/// - `ImagePicker`
+///
+/// Side Effects:
+/// - Muta el perfil en el backend vía `AuthProvider.completarPerfil`.
+/// - Navega a `/welcome` en caso de éxito.
+///
+/// Recordatorios técnicos y CQRS:
+/// - La compresión de imagen se realiza antes de enviar el payload.
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
 

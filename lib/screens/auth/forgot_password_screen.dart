@@ -10,10 +10,21 @@ import '../../widgets/primary_button.dart';
 import '../../utils/app_snackbar.dart';
 import '../../utils/validators.dart';
 
-/// Recuperar Contraseña — reinterpretación del HTML de referencia.
-/// Layout: AppBar con logo y título, logo cuadrado redondeado, form con label,
-/// botón con flecha, link de volver al login.
-/// Tiene dos estados: formulario y confirmación de envío.
+/// Responsabilidad principal:
+/// Interfaz para solicitar el enlace de recuperación de contraseña.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `LoginScreen`. Almacena dos estados visuales (formulario y confirmación).
+///
+/// Dependencias críticas:
+/// - `AuthProvider`
+///
+/// Side Effects:
+/// - Dispara el envío de correo desde `AuthProvider.forgotPassword`.
+/// - Animación de estado al enviar.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Reinterpretación del HTML de referencia. Mantiene estado interno para la animación (`SingleTickerProviderStateMixin`).
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 

@@ -110,6 +110,8 @@ class NotificationModel {
         return '↩️';
       case 'mensaje':
         return '📢';
+      case 'strike':
+        return '⚠️';
       default:
         return '🔔';
     }
@@ -126,6 +128,8 @@ class NotificationModel {
         return 'Respuesta';
       case 'mensaje':
         return 'Mensaje';
+      case 'strike':
+        return 'Advertencia';
       default:
         return 'Notificación';
     }
@@ -147,6 +151,8 @@ class NotificationModel {
         return '$primerNombre respondió a tu comentario';
       case 'mensaje':
         return mensajeTexto ?? 'Nueva notificación del sistema';
+      case 'strike':
+        return mensajeTexto ?? 'Has recibido una advertencia formal en tu cuenta.';
       default:
         return 'Nueva notificación';
     }

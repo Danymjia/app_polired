@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 
+/// Responsabilidad principal:
+/// Widget visual que indica al usuario que no hay resultados o publicaciones en la vista de Explorar.
+///
+/// Flujo dentro de la app:
+/// Se muestra dentro del Feed Global cuando la lista de posts devuelta está vacía.
+///
+/// Dependencias críticas:
+/// - Ninguna (Widget puramente presentacional).
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - No contiene lógica de negocio; es un estado visual (Empty State).
 class ExploreEmptyState extends StatelessWidget {
   const ExploreEmptyState({super.key});
 

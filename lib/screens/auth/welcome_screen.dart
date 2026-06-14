@@ -5,6 +5,21 @@ import '../../providers/network_provider.dart';
 import '../../config/theme.dart';
 import '../../utils/json_ids.dart';
 
+/// Responsabilidad principal:
+/// Pantalla de bienvenida que obliga al usuario a unirse al menos a 3 redes comunitarias.
+///
+/// Flujo dentro de la app:
+/// Aparece en el flujo de Onboarding, después de completar el perfil y antes del `HomeScreen`.
+///
+/// Dependencias críticas:
+/// - `NetworkProvider`
+///
+/// Side Effects:
+/// - Despacha peticiones HTTP para unirse a las redes seleccionadas en batch.
+/// - Navega a `/home` al finalizar.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Utiliza `parseMongoIdFromMap` de `json_ids.dart` para extracción segura de IDs del payload dinámico.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -164,9 +179,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     if (networkProvider.isLoading && networkProvider.redes.isEmpty)
                       const Center(child: CircularProgressIndicator())
                     else if (networkProvider.redes.isEmpty)
-                      const Text('No hay redes disponibles', style: TextStyle(color: Colors.grey))
+                      Text(networkProvider.errorMessage ?? 'No hay redes disponibles', style: const TextStyle(color: Colors.grey))
                     else
-                      ...networkProvider.redes.map((raw) {
+                      ...networkProvider.redes.take(10).map((raw) {
                         if (raw is! Map) return const SizedBox.shrink();
                         final red = Map<String, dynamic>.from(raw);
                         final redId = parseMongoIdFromMap(red) ?? '';
@@ -176,18 +191,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           padding: const EdgeInsets.only(bottom: 24),
                           child: Row(
                             children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppTheme.surfaceContainerHigh,
-                                  border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.1)),
+                                Container(
+                                  width: 64,
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppTheme.surfaceContainerHigh,
+                                    border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.1)),
+                                    image: (red['fotoPerfil'] != null && red['fotoPerfil'].toString().trim().isNotEmpty)
+                                        ? DecorationImage(
+                                            image: NetworkImage(red['fotoPerfil'].toString().trim()),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                  ),
+                                  child: (red['fotoPerfil'] == null || red['fotoPerfil'].toString().trim().isEmpty)
+                                      ? const Center(
+                                          child: Icon(Icons.groups, color: AppTheme.secondary),
+                                        )
+                                      : null,
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.groups, color: AppTheme.secondary),
-                                ),
-                              ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(

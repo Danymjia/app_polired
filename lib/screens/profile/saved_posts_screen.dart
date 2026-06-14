@@ -8,6 +8,21 @@ import '../../services/post_service.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/core/base_screen.dart';
 
+/// Responsabilidad principal:
+/// Pantalla que lista todas las publicaciones guardadas (Bookmarks) por el usuario actual.
+///
+/// Flujo dentro de la app:
+/// Accesible desde el menú de Configuración y Actividad (`SettingsScreen`).
+///
+/// Dependencias críticas:
+/// - `PostService` (para consultar la API).
+/// - `PostStoreProvider` (para inyectar los posts recuperados al estado global unificado).
+///
+/// Side Effects:
+/// - Consulta el endpoint de posts guardados.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Renderiza de forma optimista basándose en el campo `saved` de `PostStoreProvider`. Si el usuario des-guarda, desaparecerá reactivamente de la lista.
 class SavedPostsScreen extends StatefulWidget {
   const SavedPostsScreen({super.key});
 

@@ -4,6 +4,20 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../services/network_service.dart';
 
+/// Responsabilidad principal:
+/// Formulario modal para reportar una Red por incumplimiento de normas.
+///
+/// Flujo dentro de la app:
+/// Invocado desde `NetworkOptionsBottomSheet`.
+///
+/// Dependencias críticas:
+/// - `NetworkService` (Ejecuta la mutación de reporte).
+///
+/// Side Effects:
+/// - Muestra un `SnackBar` con el resultado y cierra el modal automáticamente en caso de éxito.
+///
+/// Recordatorios técnicos y CQRS:
+/// - La lógica de reporte no altera el Read Model local de la red, solo envía la petición y notifica al usuario.
 class ReportNetworkBottomSheet extends StatefulWidget {
   final String networkId;
   final String networkName;

@@ -19,13 +19,25 @@ import '../../providers/notification_provider.dart';
 import '../post/add_post_screen.dart';
 import '../map/map_screen.dart';
 
-/// Pantalla de Feed Principal — SOLO publicaciones comunitarias.
+/// Responsabilidad principal:
+/// Pantalla de Feed Principal que muestra exclusivamente publicaciones de las redes unidas por el usuario.
 ///
-/// REGLAS ARQUITECTÓNICAS:
-///   - Usa ÚNICAMENTE [NetworkProvider] como fuente de IDs.
-///   - Posts resueltos en BATCH vía [PostStoreProvider.resolvePosts].
-///   - Sin fallback, sin categorías globales, sin mezcla.
-///   - Scroll infinito → [NetworkProvider.loadMoreForNetwork].
+/// Flujo dentro de la app:
+/// Pantalla principal (`/home`) tras iniciar sesión exitosamente o terminar el onboarding.
+///
+/// Dependencias críticas:
+/// - `NetworkProvider`
+/// - `PostStoreProvider`
+/// - `CommandBus`
+///
+/// Side Effects:
+/// - Registra scroll en `NavigationService` para navegación global.
+/// - Despacha `InitializeSocialStateCommand` si el estado social no está inicializado.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Usa ÚNICAMENTE `NetworkProvider` como fuente de IDs (sin mezclar global).
+/// - Los posts se renderizan reactivamente en batch consultando el `PostStoreProvider`.
+/// - Paginación infinita vinculada al scroll, ejecutando `loadMoreForNetwork`.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -271,12 +283,14 @@ class HomeScreenState extends State<HomeScreen> {
 
     // ── Error ─────────────────────────────────────────────────────────────────
     if (networkProvider.feedStatus == FeedStatus.error && posts.isEmpty) {
+      final errorMsg = networkProvider.feedErrorState ?? 
+          networkProvider.homeFeedError ?? '';
+      // El guard global en el scaffold raíz ya maneja la suspensión
+      // Aquí solo mostramos errores de red/feed reales
       return [
         SliverFillRemaining(
           child: _ErrorState(
-            message: networkProvider.feedErrorState ??
-                networkProvider.homeFeedError ??
-                'Error al cargar el feed',
+            message: errorMsg.isEmpty ? 'Error al cargar el feed' : errorMsg,
             onRetry: networkProvider.refreshHomeFeed,
           ),
         ),

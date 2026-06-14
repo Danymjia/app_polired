@@ -48,6 +48,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isLoading => _status == AuthStatus.loading;
   String? get errorMessage => _errorMessage;
+  bool get isSuspended => _user?.suspendido == true;
 
   // ─── Inicialización ───────────────────────────────────────────────────────
   /// Verifica si hay sesión guardada al iniciar la app.
@@ -83,8 +84,24 @@ class AuthProvider extends ChangeNotifier {
   Future<void> syncProfileFromServer() async {
     final refresh = await _authService.refreshUserFromPerfil();
     if (refresh.success && refresh.data != null) {
+      final wasNotSuspended = !(_user?.suspendido == true);
       _user = UserModel.fromJson(refresh.data!);
-      notifyListeners();
+      if (wasNotSuspended && _user!.suspendido) {
+        notifyListeners();
+      } else {
+        notifyListeners();
+      }
+    } else if (!refresh.success) {
+      // El backend devuelve 403 cuando la cuenta está suspendida.
+      // En ese caso forzamos el estado local de suspensión.
+      final msg = (refresh.message ?? '').toLowerCase();
+      final isSuspensionError = refresh.statusCode == 403 ||
+          msg.contains('suspendida') ||
+          msg.contains('suspendido');
+      if (isSuspensionError && _user != null) {
+        _user = UserModel.fromSuspended(_user!);
+        notifyListeners();
+      }
     }
   }
 
@@ -98,7 +115,16 @@ class AuthProvider extends ChangeNotifier {
     if (result.success && result.data != null) {
       final userData = result.data!['usuario'] as Map<String, dynamic>?;
       if (userData != null) {
-        _user = UserModel.fromJson(userData);
+        final tempUser = UserModel.fromJson(userData);
+        if (tempUser.suspendido) {
+          _errorMessage = 'Tu cuenta ha sido suspendida. Usa el enlace de apelación para solicitar reactivación.';
+          await _authService.logout();
+          await _clearSession();
+          notifyListeners();
+          return false;
+        }
+
+        _user = tempUser;
         _status = AuthStatus.authenticated;
         final token = StorageService.getToken();
         if (token != null && token.isNotEmpty && _user != null) {

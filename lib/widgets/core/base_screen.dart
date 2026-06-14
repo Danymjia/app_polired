@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 
+/// Responsabilidad principal:
+/// Layout base que estandariza la estructura principal de las pantallas, manejando el Scaffold, SafeArea y el teclado.
+///
+/// Flujo dentro de la app:
+/// Utilizado como contenedor raíz en múltiples pantallas para evitar reescribir lógica de SafeArea y `unfocus` del teclado.
+///
+/// Dependencias críticas:
+/// - Ninguna.
+///
+/// Side Effects:
+/// - Oculta el teclado automáticamente al tocar fuera de un input (`dismissKeyboardOnTap`).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Es un componente puramente presentacional.
 class BaseScreen extends StatelessWidget {
   const BaseScreen({
     super.key,

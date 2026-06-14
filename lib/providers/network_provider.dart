@@ -112,7 +112,7 @@ class NetworkProvider extends ChangeNotifier {
     List<NetworkStoryModel> available = [];
     if (availableResult.success && availableResult.data != null) {
       final joinedIds = joined.map((e) => e.id).toSet();
-      available = availableResult.data!.where((e) => !joinedIds.contains(e.id)).toList();
+      available = availableResult.data!.where((e) => !joinedIds.contains(e.id)).take(10).toList();
     }
 
     _networkStories = [...joined, ...available];

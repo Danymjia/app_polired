@@ -153,6 +153,10 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               ),
               onMapCreated: _onMapCreated,
               onStyleLoadedListener: (_) async {
+                if (_mapboxMap != null) {
+                  await _mapboxMap!.style.setStyleImportConfigProperty("basemap", "showPointOfInterestLabels", false);
+                  await _mapboxMap!.style.setStyleImportConfigProperty("basemap", "showPlaceLabels", false);
+                }
                 await _addFogOfWarEffect();
                 await _loadMarkers();
               },
@@ -309,11 +313,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   void _onMapCreated(MapboxMap map) async {
     _mapboxMap = map;
 
-    // 1. Aplicar configuración de estilo primero
-    // Esto asegura que la orden se envíe al motor nativo antes de que termine
-    // de cargar el estilo, evitando el "flash" de etiquetas genéricas.
-    await map.style.setStyleImportConfigProperty("basemap", "showPointOfInterestLabels", false);
-    await map.style.setStyleImportConfigProperty("basemap", "showPlaceLabels", false);
+    // 1. Aplicar configuración de estilo primero (Movido al onStyleLoadedListener para evitar que se ignore)
 
     await map.setBounds(CameraBoundsOptions(
       bounds: _campusBounds,

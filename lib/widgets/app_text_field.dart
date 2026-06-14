@@ -2,8 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 
-/// Campo de texto con estilo Polired (tema claro).
-/// Fondo: surfaceContainerLow (#f5f3f3), sin borde excepto en foco.
+/// Responsabilidad principal:
+/// Campo de texto estandarizado con el diseño base de Polired (bordes redondeados, fondo grisáceo).
+///
+/// Flujo dentro de la app:
+/// Usado transversalmente en formularios de Auth, creación de redes, y edición de perfil.
+///
+/// Dependencias críticas:
+/// - `AppTheme` (Tokens visuales).
+///
+/// Side Effects:
+/// - Mantiene el estado interno de visibilidad (`_obscure`) cuando es tipo password.
+///
+/// Recordatorios técnicos y CQRS:
+/// - No contiene validaciones de negocio, solo aplica la UI. Las reglas de validación se inyectan vía callback (`validator`).
 class AppTextField extends StatefulWidget {
   final String hint;
   final IconData? prefixIcon;

@@ -2,8 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 
-/// Botón primario de Polired con el azul marino del HTML (#1D3557).
-/// Soporta estado de carga y animación de opacidad al presionar.
+/// Responsabilidad principal:
+/// Botón principal estandarizado de la aplicación con soporte para estado de carga y diseño base (Azul marino).
+///
+/// Flujo dentro de la app:
+/// Usado en todas las llamadas a la acción (CTAs) principales: Login, Registrar, Enviar, Guardar.
+///
+/// Dependencias críticas:
+/// - `AppTheme` (Tokens visuales).
+///
+/// Side Effects:
+/// - Deshabilita interacciones automáticamente cuando `isLoading` es true.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Puramente UI (Dumb component). No debe contener lógica asíncrona ni manejar su propio estado.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;

@@ -1,5 +1,6 @@
 import '../models/conversation_model.dart';
 import '../services/api_service.dart';
+import '../config/constants.dart';
 
 /// Responsabilidad principal:
 /// Repositorio de datos estricto para extraer las conversaciones 1:1 desde la API y mapearlas a Objetos de Dominio (`ConversationModel`).
@@ -22,7 +23,7 @@ class ConversationsRepository {
 
   /// GET /conversaciones → { conversaciones: [...] }
   Future<ApiResult<List<ConversationModel>>> fetchConversations() async {
-    final result = await _api.get('/conversaciones');
+    final result = await _api.get(AppConstants.conversacionesEndpoint);
     if (!result.success) {
       return ApiResult.error(result.message ?? 'Error al cargar conversaciones', statusCode: result.statusCode);
     }
@@ -44,7 +45,7 @@ class ConversationsRepository {
 
   /// GET /entre/:otherId → { conversacion: { _id: ... }, mensajes: [...] }
   Future<ApiResult<String>> getOrCreateConversation(String contactId) async {
-    final result = await _api.get('/entre/$contactId');
+    final result = await _api.get('${AppConstants.mensajesEntreEndpoint}/$contactId');
     if (!result.success) {
       return ApiResult.error(result.message ?? 'Error al iniciar conversación', statusCode: result.statusCode);
     }

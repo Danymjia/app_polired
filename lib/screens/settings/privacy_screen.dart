@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import 'support_screen.dart';
 
+/// Responsabilidad principal:
+/// Pantalla estática para visualizar la Política de Privacidad de Polired.
+///
+/// Flujo dentro de la app:
+/// Históricamente accesible desde configuración; similar a `LegalDocumentScreen` pero con diseño fijo.
+///
+/// Dependencias críticas:
+/// - Ninguna (UI estática).
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Podría refactorizarse en un futuro para unificarse con `LegalDocumentScreen` y leer el contenido desde un Markdown externo para facilitar actualizaciones.
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
 

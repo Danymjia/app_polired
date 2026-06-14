@@ -14,6 +14,23 @@ import '../../../widgets/network_badge.dart';
 import '../../../widgets/fullscreen_image_viewer.dart';
 import 'widgets/restricted_feed_overlay.dart';
 
+/// Responsabilidad principal:
+/// Muestra los detalles de una red comunitaria (estadísticas, descripción) y su feed exclusivo.
+///
+/// Flujo dentro de la app:
+/// Accesible desde los resultados de búsqueda de redes o desde el carrusel superior del Home.
+///
+/// Dependencias críticas:
+/// - `NetworkProfileProvider` (para cargar el perfil y manejar la paginación del feed).
+/// - `NetworkProvider` (para unirse a la red y comprobar si el usuario es miembro).
+/// - `PostStoreProvider` (para renderizar los posts en la UI).
+///
+/// Side Effects:
+/// - Consulta el backend para cargar información de la red y su feed de publicaciones.
+/// - Si el usuario no es miembro, el feed se corta en el quinto elemento mostrando `RestrictedFeedOverlay`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - La lógica de membresía (`isMember`) verifica activamente la colección de `networkStories`.
 class NetworkProfileScreen extends StatefulWidget {
   final String networkId;
 
@@ -198,14 +215,7 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
                       ),
                       if (profile.descripcion.isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        Text(
-                          profile.descripcion,
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: AppTheme.onSurfaceVariant,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        _ExpandableDescription(text: profile.descripcion),
                       ],
                       const SizedBox(height: 24),
                       SizedBox(
@@ -355,6 +365,52 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
             fontSize: 10,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ExpandableDescription extends StatefulWidget {
+  final String text;
+  const _ExpandableDescription({required this.text});
+
+  @override
+  State<_ExpandableDescription> createState() => _ExpandableDescriptionState();
+}
+
+class _ExpandableDescriptionState extends State<_ExpandableDescription> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.text.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          style: AppTheme.bodyMedium.copyWith(
+            color: AppTheme.onSurfaceVariant,
+          ),
+          maxLines: _expanded ? null : 3,
+          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        ),
+        if (!_expanded && widget.text.length > 100)
+          GestureDetector(
+            onTap: () => setState(() => _expanded = true),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Ver más',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

@@ -104,14 +104,21 @@ class PostService {
       for (final file in imageFiles) {
         files.add(await http.MultipartFile.fromPath('imagen', file.path));
       }
-      return _api.multipartRequest(AppConstants.crearPublicacionEndpoint, method: 'POST', fields: fields, files: files);
+      return _api.multipartRequest(
+        AppConstants.crearPublicacionEndpoint,
+        method: 'POST',
+        fields: fields,
+        files: files,
+      );
     }
 
     final body = <String, dynamic>{
       'feedContext': feedContext,
       'contenido': contenido,
       'categoria': categoria,
-      'tipoContenido': (mediaUrls != null && mediaUrls.isNotEmpty) ? 'imagen' : 'texto',
+      'tipoContenido': (mediaUrls != null && mediaUrls.isNotEmpty)
+          ? 'imagen'
+          : 'texto',
       'aspectRatio': aspectRatio,
     };
     if (titulo != null && titulo.isNotEmpty) body['titulo'] = titulo;
@@ -151,7 +158,12 @@ class PostService {
       for (final file in imageFiles) {
         files.add(await http.MultipartFile.fromPath('imagen', file.path));
       }
-      return _api.multipartRequest('/publicaciones/articulos', method: 'POST', fields: fields, files: files);
+      return _api.multipartRequest(
+        '/publicaciones/articulos',
+        method: 'POST',
+        fields: fields,
+        files: files,
+      );
     }
 
     final body = <String, dynamic>{
@@ -167,7 +179,7 @@ class PostService {
     if (mediaUrls != null && mediaUrls.isNotEmpty) {
       body['mediaUrls'] = mediaUrls;
     }
-    return _api.post('/publicaciones/articulos', body);
+    return _api.post(AppConstants.publicacionesArticulosEndpoint, body);
   }
 
   // ─── Crear Publicación Extendida ──────────────────────────────────────────
@@ -194,11 +206,14 @@ class PostService {
   }
 
   // ─── Interacciones Sociales ───────────────────────────────────────────────
-  
+
   String cleanId(String id) => id.split(':').last;
 
   /// DELETE /publicaciones/eliminar/:id o /publicaciones/articulo/eliminar/:id
-  Future<ApiResult<dynamic>> deletePost(String postId, {required bool isArticle}) async {
+  Future<ApiResult<dynamic>> deletePost(
+    String postId, {
+    required bool isArticle,
+  }) async {
     final rawId = cleanId(postId);
     final endpoint = isArticle
         ? '/publicaciones/articulo/eliminar/$rawId'
@@ -210,7 +225,9 @@ class PostService {
   Future<bool> toggleLike(String postId, bool isCurrentlyLiked) async {
     final rawId = cleanId(postId);
     final endpoint = '/publicaciones/$rawId/like';
-    final result = isCurrentlyLiked ? await _api.delete(endpoint) : await _api.post(endpoint, {});
+    final result = isCurrentlyLiked
+        ? await _api.delete(endpoint)
+        : await _api.post(endpoint, {});
     return result.success;
   }
 
@@ -218,20 +235,22 @@ class PostService {
   Future<bool> toggleSave(String postId, bool isCurrentlySaved) async {
     final rawId = cleanId(postId);
     final endpoint = '/publicaciones/$rawId/guardar';
-    final result = isCurrentlySaved ? await _api.delete(endpoint) : await _api.post(endpoint, {});
+    final result = isCurrentlySaved
+        ? await _api.delete(endpoint)
+        : await _api.post(endpoint, {});
     return result.success;
   }
 
   /// GET /publicaciones/:id/comentarios/arbol
   Future<ApiResult<dynamic>> getCommentsTree(String postId) async {
     final rawId = cleanId(postId);
-    return await _api.get('/publicaciones/$rawId/comentarios/arbol');
+    return await _api.get('${AppConstants.comentariosEndpoint}/$rawId/comentarios/arbol');
   }
 
   /// GET /publicaciones/:id/likes
   Future<ApiResult<List<dynamic>>> getPostLikes(String postId) async {
     final rawId = cleanId(postId);
-    final result = await _api.get('/publicaciones/$rawId/likes');
+    final result = await _api.get('${AppConstants.likeEndpoint}/$rawId/likes');
     if (result.success && result.data is Map) {
       final data = result.data as Map<String, dynamic>;
       final likes = data['likes'];
@@ -239,16 +258,18 @@ class PostService {
         return ApiResult.ok(likes);
       }
     }
-    return ApiResult.error(result.message ?? 'Error al obtener personas que dieron like');
+    return ApiResult.error(
+      result.message ?? 'Error al obtener personas que dieron like',
+    );
   }
 
   /// POST /reportes/publicacion
-  Future<ApiResult<dynamic>> reportPost({
-    required String postId,
+  Future<ApiResult<dynamic>> reportarPublicacion({
+    required String publicacionId,
     required String tipo,
     required String descripcion,
   }) async {
-    final rawId = cleanId(postId);
+    final rawId = cleanId(publicacionId);
     String normalizedTipo = tipo;
     final lower = tipo.toLowerCase();
     if (lower == 'contenido inapropiado') {
@@ -268,27 +289,67 @@ class PostService {
       'tipo': normalizedTipo,
       'descripcion': descripcion,
     };
-    return await _api.post('/reportes/publicacion', body);
+    return await _api.post(AppConstants.reportesPublicacionEndpoint, body);
+  }
+
+  /// POST /reportes/articulo
+  Future<ApiResult<dynamic>> reportarArticulo({
+    required String articuloId,
+    required String tipo,
+    required String descripcion,
+  }) async {
+    final rawId = cleanId(articuloId);
+    String normalizedTipo = tipo;
+    final lower = tipo.toLowerCase();
+    if (lower == 'contenido inapropiado') {
+      normalizedTipo = 'Contenido Inapropiado';
+    } else if (lower == 'spam') {
+      normalizedTipo = 'Spam';
+    } else if (lower == 'acoso o bullying') {
+      normalizedTipo = 'Acoso o Bullying';
+    } else if (lower == 'información falsa') {
+      normalizedTipo = 'Información falsa';
+    } else if (lower == 'otro') {
+      normalizedTipo = 'Otro';
+    }
+
+    final body = {
+      'articuloId': rawId,
+      'tipo': normalizedTipo,
+      'descripcion': descripcion,
+    };
+    return await _api.post(AppConstants.reportesArticuloEndpoint, body);
   }
 
   /// POST /publicaciones/:id/comentarios
-  Future<ApiResult<dynamic>> createComment(String postId, String contenido) async {
+  Future<ApiResult<dynamic>> createComment(
+    String postId,
+    String contenido,
+  ) async {
     final rawId = cleanId(postId);
-    return await _api.post('/publicaciones/$rawId/comentarios', {'contenido': contenido});
+    return await _api.post('${AppConstants.comentariosEndpoint}/$rawId/comentarios', {
+      'contenido': contenido,
+    });
   }
 
   /// POST /comentarios/:commentId/responder
-  Future<ApiResult<dynamic>> replyComment(String commentId, String contenido) async {
-    return await _api.post('/comentarios/$commentId/responder', {'contenido': contenido});
+  Future<ApiResult<dynamic>> replyComment(
+    String commentId,
+    String contenido,
+  ) async {
+    return await _api.post('${AppConstants.respuestasComentarioEndpoint}/$commentId/responder', {
+      'contenido': contenido,
+    });
   }
 
   /// GET /usuarios/guardados
   Future<ApiResult<List<PostModel>>> fetchSavedPosts() async {
     try {
-      final result = await _api.get('/usuarios/guardados');
+      final result = await _api.get(AppConstants.usuariosGuardadosEndpoint);
       if (result.success && result.data is Map) {
         final data = result.data as Map<String, dynamic>;
-        final rawList = data['guardados'] ?? data['items'] ?? data['publicaciones'];
+        final rawList =
+            data['guardados'] ?? data['items'] ?? data['publicaciones'];
         if (rawList is List) {
           final List<PostModel> posts = [];
           for (final item in rawList) {
@@ -296,16 +357,22 @@ class PostService {
               try {
                 posts.add(PostModel.fromJson(item));
               } catch (e, stack) {
-                debugPrint('PostService.fetchSavedPosts: Error parsing item: $item\nError: $e\n$stack');
+                debugPrint(
+                  'PostService.fetchSavedPosts: Error parsing item: $item\nError: $e\n$stack',
+                );
               }
             }
           }
           return ApiResult.ok(posts);
         } else {
-          debugPrint('PostService.fetchSavedPosts: Raw list is not a List: $rawList');
+          debugPrint(
+            'PostService.fetchSavedPosts: Raw list is not a List: $rawList',
+          );
         }
       } else {
-        debugPrint('PostService.fetchSavedPosts: Request failed or data is not a Map: ${result.message}');
+        debugPrint(
+          'PostService.fetchSavedPosts: Request failed or data is not a Map: ${result.message}',
+        );
       }
     } catch (e, stack) {
       debugPrint('PostService.fetchSavedPosts: Exception caught: $e\n$stack');
@@ -314,12 +381,19 @@ class PostService {
   }
 
   /// GET /usuarios/likes?page=&limit=
-  Future<ApiResult<List<PostModel>>> fetchLikedPosts({int page = 1, int limit = 20}) async {
+  Future<ApiResult<List<PostModel>>> fetchLikedPosts({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final result = await _api.get('/usuarios/likes?page=$page&limit=$limit');
+      final result = await _api.get('${AppConstants.usuariosLikesEndpoint}?page=$page&limit=$limit');
       if (result.success && result.data is Map) {
         final data = result.data as Map<String, dynamic>;
-        final rawList = data['likes'] ?? data['liked'] ?? data['items'] ?? data['publicaciones'];
+        final rawList =
+            data['likes'] ??
+            data['liked'] ??
+            data['items'] ??
+            data['publicaciones'];
         if (rawList is List) {
           final List<PostModel> posts = [];
           for (final item in rawList) {
@@ -327,16 +401,22 @@ class PostService {
               try {
                 posts.add(PostModel.fromJson(item));
               } catch (e, stack) {
-                debugPrint('PostService.fetchLikedPosts: Error parsing item: $item\nError: $e\n$stack');
+                debugPrint(
+                  'PostService.fetchLikedPosts: Error parsing item: $item\nError: $e\n$stack',
+                );
               }
             }
           }
           return ApiResult.ok(posts);
         } else {
-          debugPrint('PostService.fetchLikedPosts: Raw list is not a List: $rawList');
+          debugPrint(
+            'PostService.fetchLikedPosts: Raw list is not a List: $rawList',
+          );
         }
       } else {
-        debugPrint('PostService.fetchLikedPosts: Request failed or data is not a Map: ${result.message}');
+        debugPrint(
+          'PostService.fetchLikedPosts: Request failed or data is not a Map: ${result.message}',
+        );
       }
     } catch (e, stack) {
       debugPrint('PostService.fetchLikedPosts: Exception caught: $e\n$stack');
@@ -349,11 +429,8 @@ class PostService {
     required String tipo,
     required String descripcion,
   }) async {
-    final body = {
-      'tipo': tipo,
-      'descripcion': descripcion,
-    };
-    return await _api.post('/reportes/app', body);
+    final body = {'tipo': tipo, 'descripcion': descripcion};
+    return await _api.post(AppConstants.reportesAppEndpoint, body);
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────

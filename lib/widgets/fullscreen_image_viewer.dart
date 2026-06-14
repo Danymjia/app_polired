@@ -1,6 +1,21 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// Responsabilidad principal:
+/// Visor de imágenes en pantalla completa con soporte para múltiples imágenes (carrusel), zoom (`InteractiveViewer`), y carga asíncrona.
+///
+/// Flujo dentro de la app:
+/// Utilizado cuando un usuario toca una imagen en un Post o en un Perfil (Avatar).
+///
+/// Dependencias críticas:
+/// - `cached_network_image`.
+///
+/// Side Effects:
+/// - Intercepta eventos de gestos (Pinch-to-zoom, Swipe).
+/// - Navegación: Añade una ruta opaca sobre el stack actual.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Las imágenes pueden requerir mucha RAM. `cached_network_image` maneja esto, pero evitar carruseles masivos (>50 imágenes).
 class FullscreenImageViewer extends StatefulWidget {
   final List<String> imageUrls;
   final int initialIndex;

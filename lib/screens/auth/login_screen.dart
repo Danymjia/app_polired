@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../config/spacing.dart';
+import '../../config/constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/core/base_screen.dart';
 import '../../widgets/core/keyboard_aware_layout.dart';
@@ -41,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _showAppealButton = false;
 
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
@@ -105,10 +108,26 @@ class _LoginScreenState extends State<LoginScreen>
           message: 'Usuario o contraseña incorrectos. Intenta de nuevo.',
           type: SnackbarType.error,
         );
+      } else if (lowerMsg.contains('suspendida')) {
+        AppSnackbar.show(context, message: msg, type: SnackbarType.error);
+        setState(() => _showAppealButton = true);
       } else {
         AppSnackbar.show(context, message: msg, type: SnackbarType.error);
       }
     }
+  }
+
+  Future<void> _launchApelacionUrl() async {
+    if (AppConstants.kApelacionUrl.isEmpty) {
+      AppSnackbar.show(context, message: 'El enlace de apelación no está disponible aún.', type: SnackbarType.error);
+      return;
+    }
+    final Uri url = Uri.parse(AppConstants.kApelacionUrl);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -185,6 +204,21 @@ class _LoginScreenState extends State<LoginScreen>
                             onPressed: _isLoading ? null : _submit,
                           ),
                           const SizedBox(height: 12),
+
+                          if (_showAppealButton) ...[
+                            TextButton(
+                              onPressed: _launchApelacionUrl,
+                              child: Text(
+                                'Apelar suspensión',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red.shade600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
 
                           // ── Olvidé mi contraseña ────────────────────
                           GestureDetector(

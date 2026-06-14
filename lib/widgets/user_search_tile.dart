@@ -7,6 +7,21 @@ import '../models/public_user_model.dart';
 import '../repositories/conversations_repository.dart';
 import 'safe_network_image.dart';
 
+/// Responsabilidad principal:
+/// Renderiza un item de lista para un usuario en resultados de búsqueda, con acceso directo a su perfil o para iniciar un chat.
+///
+/// Flujo dentro de la app:
+/// Usado en listas de búsqueda y sugerencias (ej. `NetworkSearchDelegate`).
+///
+/// Dependencias críticas:
+/// - `ConversationsRepository` (Para obtener o crear la conversación de chat).
+/// - `go_router` (Navegación al perfil o chat).
+///
+/// Side Effects:
+/// - Petición de red silenciosa al presionar el botón de chat (`getOrCreateConversation`).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Usa estado local (`_isLoading`) para prevenir múltiples clicks mientras se crea la conversación en el backend.
 class UserSearchTile extends StatefulWidget {
   final PublicUserModel user;
 

@@ -160,7 +160,7 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       final token = StorageService.getToken() ?? '';
-      final url = Uri.parse('${AppConstants.baseUrl}/conversacion/$_conversationId?page=$_page&limit=$_limit');
+      final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.conversacionEndpoint}/$_conversationId?page=$_page&limit=$_limit');
       final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
 
       if (response.statusCode == 200) {
@@ -227,7 +227,7 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       final token = StorageService.getToken() ?? '';
-      final url = Uri.parse('${AppConstants.baseUrl}/send');
+      final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.enviarMensajeEndpoint}');
       final response = await http.post(
         url,
         headers: {

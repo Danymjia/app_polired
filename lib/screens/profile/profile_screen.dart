@@ -13,6 +13,7 @@ import '../../providers/post_store_provider.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/public_profile_grid.dart';
 import '../../widgets/fullscreen_image_viewer.dart';
+import '../../services/socket_service.dart';
 
 /// Responsabilidad principal:
 /// Pantalla principal del Perfil de Usuario ("Mi Perfil"). Muestra estadísticas (número de redes, posts), biografía, y un feed personal dividido entre Publicaciones y Artículos.
@@ -40,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
+  bool _strikesChipVisible = true;
 
   @override
   void initState() {
@@ -55,10 +57,24 @@ class _ProfileScreenState extends State<ProfileScreen>
         context.read<MyProfileFeedProvider>().fetchInitialFeed(user.id);
       }
     });
+
+    final socketService = context.read<SocketService>();
+    socketService.on('nuevo_strike', _handleNuevoStrike);
+  }
+
+  void _handleNuevoStrike(dynamic data) {
+    if (mounted) {
+      context.read<AuthProvider>().syncProfileFromServer();
+    }
   }
 
   @override
   void dispose() {
+    if (mounted) {
+      try {
+        context.read<SocketService>().off('nuevo_strike', _handleNuevoStrike);
+      } catch (_) {}
+    }
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _tabController.dispose();
@@ -239,6 +255,45 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (user != null && user.strikes.isNotEmpty && _strikesChipVisible && !user.suspendido)
+                GestureDetector(
+                  onTap: () => context.push('/configuracion/strikes'),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 16, right: 16, top: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.05),
+                      border: Border.all(color: Colors.red.shade200),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.red.shade600, size: 24),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Tienes ${user.strikes.length} de 5 advertencias',
+                            style: GoogleFonts.inter(
+                              color: AppTheme.primaryText,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppTheme.primaryText, size: 22),
+                          onPressed: () {
+                            setState(() {
+                              _strikesChipVisible = false;
+                            });
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               // ── Header: Avatar + Stats + Bio + Botones ──────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
@@ -290,6 +345,46 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                       ],
                     ),
+                    if (user != null && user.suspendido && _strikesChipVisible) ...[
+                      GestureDetector(
+                        onTap: () => context.push('/configuracion/strikes'),
+                        child: Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(top: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade700,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.block_rounded, color: Colors.white, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Tu cuenta ha sido suspendida',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                                onPressed: () {
+                                  setState(() {
+                                    _strikesChipVisible = false;
+                                  });
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     if (bioDescripcion != null && bioDescripcion.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       Text(

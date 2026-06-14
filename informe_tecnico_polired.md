@@ -15,7 +15,7 @@ El ecosistema de la aplicación está basado en Flutter SDK ^3.10.1. A continuac
 | **Comunicaciones** | http | ^1.6.0 | Capa base para solicitudes REST hacia el backend. |
 | **Tiempo Real** | pusher_channels_flutter | ^2.2.0 | Conexión WebSockets para el sistema de chat y notificaciones push. |
 | **Mapas** | mapbox_maps_flutter | ^2.3.0 | Despliegue de mapas interactivos y Puntos de Interés (POIs). |
-| **Almacenamiento** | shared_preferences | ^2.5.5 | Persistencia síncrona local (ej. JWT Tokens). |
+| **Almacenamiento** | flutter_secure_storage | ^10.3.1 | Persistencia segura local (ej. JWT Tokens, Datos de Usuario). |
 | **Manejo de Medios** | image_picker, image_cropper | Varios | Selección, toma de fotografías y recorte para perfiles y posts. |
 | **Optimización** | flutter_image_compress | ^2.4.0 | Reducción de bytes y escalado antes de envíos multiparte. |
 | **Interfaz y UI** | google_fonts, flutter_svg | Varios | Tipografías enriquecidas e iconografía vectorial personalizada. |
@@ -55,7 +55,9 @@ lib/
 │   └── theme.dart
 ├── models/
 │   ├── commands/
+│   │   └── feed_command.dart
 │   ├── events/
+│   │   └── post_event.dart
 │   ├── conversation_model.dart
 │   ├── feed_context.dart
 │   ├── message_model.dart
@@ -85,22 +87,6 @@ lib/
 │   └── public_profile_provider.dart
 ├── repositories/
 │   └── conversations_repository.dart
-├── services/
-│   ├── handlers/
-│   ├── api_service.dart
-│   ├── auth_service.dart
-│   ├── command_bus.dart
-│   ├── explore_user_service.dart
-│   ├── navigation_bus.dart
-│   ├── navigation_service.dart
-│   ├── network_service.dart
-│   ├── notification_service.dart
-│   ├── poi_data.dart
-│   ├── post_service.dart
-│   ├── public_profile_service.dart
-│   ├── read_model_cache_service.dart
-│   ├── socket_service.dart
-│   └── storage_service.dart
 ├── screens/
 │   ├── main_layout_screen.dart
 │   ├── auth/
@@ -116,12 +102,23 @@ lib/
 │   │   ├── network_profile_screen.dart
 │   │   ├── public_profile_screen.dart
 │   │   └── widgets/
+│   │       ├── explore_empty_state.dart
+│   │       ├── explore_error_state.dart
+│   │       ├── explore_header.dart
+│   │       ├── explore_loading.dart
+│   │       ├── explore_tabs.dart
+│   │       └── restricted_feed_overlay.dart
 │   ├── home/
 │   │   └── home_screen.dart
 │   ├── map/
 │   │   ├── map_screen.dart
 │   │   ├── utils/
+│   │   │   ├── campus_polygon.dart
+│   │   │   └── marker_image_util.dart
 │   │   └── widgets/
+│   │       ├── poi_detail_sheet.dart
+│   │       ├── poi_directory_sheet.dart
+│   │       └── poi_search_bar.dart
 │   ├── messages/
 │   │   ├── chat_screen.dart
 │   │   └── messages_screen.dart
@@ -130,7 +127,7 @@ lib/
 │   ├── post/
 │   │   ├── add_post_screen.dart
 │   │   └── post_detail_screen.dart
-│   │   ├── profile/
+│   ├── profile/
 │   │   ├── edit_profile_screen.dart
 │   │   ├── liked_posts_screen.dart
 │   │   ├── profile_screen.dart
@@ -142,9 +139,30 @@ lib/
 │       ├── help_detail_screen.dart
 │       ├── help_screen.dart
 │       ├── legal_document_screen.dart
+│       ├── network_officialization_screen.dart
+│       ├── network_verification_screen.dart
 │       ├── privacy_screen.dart
 │       ├── request_network_screen.dart
+│       ├── strikes_screen.dart
 │       └── support_screen.dart
+├── services/
+│   ├── handlers/
+│   │   ├── command_handler.dart
+│   │   └── post_command_handlers.dart
+│   ├── api_service.dart
+│   ├── auth_service.dart
+│   ├── command_bus.dart
+│   ├── explore_user_service.dart
+│   ├── navigation_bus.dart
+│   ├── navigation_service.dart
+│   ├── network_service.dart
+│   ├── notification_service.dart
+│   ├── poi_data.dart
+│   ├── post_service.dart
+│   ├── public_profile_service.dart
+│   ├── read_model_cache_service.dart
+│   ├── socket_service.dart
+│   └── storage_service.dart
 ├── utils/
 │   ├── app_snackbar.dart
 │   ├── feed_selectors.dart
@@ -158,6 +176,7 @@ lib/
     │   ├── base_screen.dart
     │   └── keyboard_aware_layout.dart
     ├── app_text_field.dart
+    ├── chat_options_bottom_sheet.dart
     ├── comment_tree_sheet.dart
     ├── community_post_card.dart
     ├── fullscreen_image_viewer.dart
@@ -165,6 +184,7 @@ lib/
     ├── leave_network_dialog.dart
     ├── likes_bottom_sheet.dart
     ├── network_avatar.dart
+    ├── network_badge.dart
     ├── network_list_dialog.dart
     ├── network_options_bottom_sheet.dart
     ├── polired_logo.dart
@@ -176,7 +196,9 @@ lib/
     ├── public_profile_header.dart
     ├── report_network_bottom_sheet.dart
     ├── report_post_bottom_sheet.dart
+    ├── report_user_bottom_sheet.dart
     ├── safe_network_image.dart
+    ├── suspended_overlay.dart
     └── user_search_tile.dart
 ```
 
@@ -210,6 +232,7 @@ La navegación está centralizada usando go_router.
 - Gestiona el token JWT mediante StorageService.
 - Consume endpoints REST definidos en AppConstants (/auth/login, /registro-estudiantes, /perfil-estudiante).
 - Al autenticarse con éxito, notifica a los *Proxy Providers* descendientes y ejecuta la suscripción al canal privado de Websockets (Pusher).
+- Monitorea el estado de la cuenta (ej. suspensiones por strikes), forzando un estado de restricción o cerrando la sesión al detectar respuestas HTTP 403 (Forbidden).
 
 ### 4.4. Comunicación con el Backend (ApiService)
 
@@ -241,33 +264,75 @@ La navegación está centralizada usando go_router.
 - Usa mapbox_maps_flutter. La API Key (MAPBOX_ACCESS_TOKEN) se lee desde el .env.
 - Implementa POIs (Puntos de Interés) definidos en el modelo PoiModel para mostrar información espacial relevante (como redes o comunidades geolocalizadas) en la vista MapScreen.
 
-### 4.9. Integración con Endpoints REST (Backend)
+### 4.9. Moderación y Suspensión de Cuentas (Strikes)
+
+- **Sistema de Infracciones:** El `UserModel` incluye un historial de advertencias formales o "strikes" recibidas por infringir normas comunitarias.
+- **Bloqueo por Suspensión:** Cuando un usuario acumula 5 strikes, su estado `suspendido` se vuelve verdadero. El `AuthProvider` detecta este estado (o un HTTP 403 del backend) y la interfaz renderiza un `SuspendedOverlay` restrictivo que bloquea la navegación habitual.
+- **Transparencia:** A través de la pantalla `StrikesScreen`, los usuarios activos pueden consultar sus advertencias vigentes y el motivo de los reportes. Si ocurre una suspensión, se provee un mecanismo para iniciar una apelación externa usando `url_launcher`.
+
+### 4.10. Integración con Endpoints REST (Backend)
 
 La aplicación consume una API REST desplegada en https://polired-api.vercel.app/api. A continuación se detallan los endpoints mapeados en AppConstants y operados por la capa de servicios:
 
+> **Nota:** Los endpoints listados representan el contrato HTTP con el backend.
+> En el código fuente, las rutas se construyen composicionalmente desde constantes
+> centralizadas en `AppConstants` (ver `lib/config/constants.dart`).
+
 | Módulo | Endpoint | Método HTTP | Descripción |
 | :--- | :--- | :--- | :--- |
-| **Auth & Perfil** | /auth/login | POST | Autenticación y obtención de token JWT. |
-| | /registro-estudiantes | POST | Creación de cuenta de estudiante. |
-| | /recuperar-password-e | POST | Flujo de recuperación de contraseña. |
-| | /perfil-estudiante | GET | Obtener datos completos del usuario logueado. |
-| | /completar/perfil | POST | Rellenar los datos requeridos tras el registro. |
-| **Redes / Comunidades** | /redes/listar | GET | Listar redes o comunidades disponibles. |
-| | /estudiantes/listar/redes | GET | Obtener redes a las que el usuario ya pertenece. |
-| | /estudiantes/unirse/red | POST | Lógica para afiliarse a una comunidad específica. |
-| **Publicaciones** | /publicaciones/global | GET | Feed paginado de todas las publicaciones públicas. |
-| | /publicaciones/comunitarias | GET | Feed de publicaciones de las redes propias. |
-| | /publicaciones/red/:id | GET | Obtener publicaciones exclusivas de una red. |
-| | /estudiantes/publicaciones | POST | Crear una publicación simple. |
-| | /publicaciones/extendida | POST | Crear una publicación con imágenes u otros recursos. |
-| **Interacción Social** | /publicaciones/:id/like | POST | Acción para dar o quitar 'Me Gusta'. |
-| | /publicaciones/:id/comentarios| POST | Comentar en el hilo de una publicación. |
-| **Mensajes** | /mensajes/conversaciones | GET | Listado del inbox de chats activos del usuario. |
-| **Notificaciones** | /notificaciones | GET/PATCH| Obtener lista y/o marcar como leídas las notificaciones. |
+| **Auth & Perfil** | `/auth/login` | POST | Autenticación y obtención de token JWT. |
+| | `/registro-estudiantes` | POST | Creación de cuenta de estudiante. |
+| | `/recuperar-password-e` | POST | Flujo de recuperación de contraseña. |
+| | `/perfil-estudiante` | GET | Obtener datos completos del usuario logueado. |
+| | `/completar/perfil` | PATCH | Completar los datos requeridos tras el registro (Multipart). |
+| | `/estudiante/:id` | PATCH | Actualizar datos del estudiante (Ej. Avatar, Portada). |
+| | `/perfil/username` | PATCH | Actualizar el nombre de usuario de forma independiente. |
+| | `/estudiante/actualizarpassword` | PATCH | Cambiar la contraseña del usuario logueado. |
+| **Exploración y Usuarios** | `/cargar/estudiantes` | GET | Listado global paginado del directorio de estudiantes activos. |
+| | `/perfil-publico/:id/info` | GET | Obtener datos para mostrar el perfil público de terceros. |
+| | `/perfil-publico/:id/feed` | GET | Obtener el muro o publicaciones (paginado) de un estudiante. |
+| | `/reportes/usuario` | POST | Enviar reporte de la conducta o perfil de un usuario. |
+| **Redes / Comunidades** | `/redes/listar` | GET | Listar todas las redes disponibles y buscar. |
+| | `/estudiantes/listar/redes` | GET | Obtener redes a las que el usuario actual pertenece. |
+| | `/redes/:id` | GET | Obtener el feed/información específica de una red (paginado). |
+| | `/estudiantes/unirse/red` | POST | Solicitar afiliación/unirse a una comunidad. |
+| | `/redes/solicitar-creacion` | POST | Solicitar la creación de una nueva comunidad. |
+| | `/admin-red/redes/solicitar-verificacion` | POST | Solicitar verificación como administrador de una red. |
+| | `/admin-red/redes/solicitar-oficializacion` | POST | Solicitar oficialización como administrador de una red. |
+| | `/estudiantes/reportes/red` | POST | Enviar un reporte contra una red/comunidad. |
+| | `/estudiantes/salirse/red` | POST | Abandonar una red de la que se es miembro. |
+| **Publicaciones** | `/publicaciones/global` | GET | Feed paginado de todas las publicaciones públicas. |
+| | `/publicaciones/comunitarias` | GET | Feed de publicaciones de las redes propias. |
+| | `/publicaciones/articulos/global` | GET | Feed global enfocado en el Marketplace de Artículos. |
+| | `/publicaciones/red/:id` | GET | Obtener publicaciones exclusivas de una red. |
+| | `/estudiantes/publicaciones` | POST | Crear una publicación estándar (soporta Multipart para imágenes). |
+| | `/publicaciones/articulos` | POST | Crear una publicación tipo artículo/marketplace. |
+| | `/publicaciones/extendida` | POST | Crear una publicación con múltiples características extra. |
+| | `/publicaciones/eliminar/:id` | DELETE | Eliminar una publicación creada por el usuario. |
+| | `/publicaciones/articulo/eliminar/:id` | DELETE | Eliminar un artículo creado por el usuario. |
+| **Interacción Social** | `/publicaciones/:id/like` | POST/DELETE | Acción para dar (POST) o quitar (DELETE) 'Me Gusta'. |
+| | `/publicaciones/:id/guardar` | POST/DELETE | Guardar o quitar de guardados una publicación. |
+| | `/publicaciones/:id/comentarios/arbol` | GET | Cargar todo el árbol completo de comentarios de un post. |
+| | `/publicaciones/:id/likes` | GET | Obtener la lista de usuarios que dieron "Me gusta". |
+| | `/publicaciones/:id/comentarios` | POST | Agregar un nuevo comentario principal en una publicación. |
+| | `/comentarios/:id/responder` | POST | Responder a un comentario específico dentro del árbol. |
+| | `/usuarios/guardados` | GET | Obtener el feed paginado de publicaciones guardadas por el usuario. |
+| | `/usuarios/likes` | GET | Obtener el feed paginado de publicaciones a las que el usuario dio like. |
+| | `/reportes/publicacion` | POST | Reportar contenido inadecuado o spam de una publicación. |
+| | `/reportes/articulo` | POST | Reportar contenido inadecuado o spam de un artículo. |
+| **Mensajes y Chats** | `/conversaciones` | GET | Listado del inbox de chats y conversaciones activas. |
+| | `/entre/:contactId` | GET | Abrir o recuperar una conversación 1 a 1 con un contacto. |
+| | `/conversacion/:id` | GET | Historial paginado de mensajes de una sala de chat. |
+| | `/:id/leidos` | POST | Marcar los mensajes de una sala/conversación como leídos. |
+| | `/send` | POST | Enviar un mensaje de chat dentro de una conversación. |
+| | `/api/pusher/auth` | POST | Autenticación para WebSockets privados (Pusher channels). |
+| **Notificaciones** | `/notificaciones` | GET | Obtener lista general paginada de notificaciones. |
+| | `/notificaciones/:id/leida` | PATCH | Marcar como leída una notificación específica. |
+| **App** | `/reportes/app` | POST | Enviar un reporte general de bugs o problemas técnicos de la aplicación. |
 
 ## 5. Almacenamiento, Persistencia y Cache
 
-- **StorageService:** Wrapper estático sobre shared_preferences. Utiliza claves constantes como AppConstants.tokenKey y AppConstants.userKey para persistir la sesión de forma síncrona.
+- **StorageService:** Wrapper estático sobre flutter_secure_storage. Utiliza claves constantes como AppConstants.tokenKey y AppConstants.userKey para persistir la sesión de forma segura.
 - **ReadModelCacheService:** Servicio en memoria para evitar llamadas redundantes a la API al cambiar de pestañas, útil para optimizar la red de endpoints pesados.
 - **Cache Multimedia:** Las imágenes remotas son procesadas y cacheadas agresivamente usando cached_network_image. Las subidas locales se minimizan usando flutter_image_compress antes de enviar el multipart a la API.
 
@@ -305,3 +370,24 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
 ## 9. Conclusiones Técnicas
 
 PoliRed presenta una arquitectura de código sorprendentemente madura para una aplicación basada en Flutter. La correcta decisión de separar la lectura del modelo de la escritura (a través del acercamiento CQRS) previene los típicos problemas de inconsistencia visual en feeds paginados de redes sociales. Las integraciones clave (API, Websockets, Mapas, Storage) están debidamente segregadas en servicios, y el enrutamiento está centralizado con go_router. El sistema cumple con un estándar empresarial y su base de código facilita un futuro escalamiento a nuevas funcionalidades.
+
+## 10. Deuda Técnica Documentada
+
+### Nomenclatura de constantes heredadas en `AppConstants`
+
+**Archivo:** `lib/config/constants.dart`  
+**Severidad:** Baja — no afecta funcionalidad  
+**Detectado durante:** Refactorización de centralización de endpoints (junio 2026)
+
+Las constantes `likeEndpoint` y `comentariosEndpoint` tienen nombres semánticamente
+incorrectos: ambas apuntan al valor `'/publicaciones'` y actúan como prefijo base
+para construir rutas dinámicas en los servicios (por ejemplo,
+`'${AppConstants.comentariosEndpoint}/$id/comentarios'`).
+
+El nombre apropiado para ambas sería `publicacionesBaseEndpoint`. Se mantuvieron
+sus nombres originales para no interrumpir los servicios que ya dependían de ellas
+al momento de detectarse el problema.
+
+**Acción pendiente:** Renombrar ambas constantes a `publicacionesBaseEndpoint` y
+actualizar todas las referencias en la capa de servicios en una tarea de refactorización
+futura, una vez concluida la evaluación del jurado.

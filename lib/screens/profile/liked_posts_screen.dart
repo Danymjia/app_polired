@@ -8,6 +8,21 @@ import '../../services/post_service.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/core/base_screen.dart';
 
+/// Responsabilidad principal:
+/// Pantalla que lista todas las publicaciones a las que el usuario actual ha dado "Me gusta".
+///
+/// Flujo dentro de la app:
+/// Accesible desde el menú de Configuración y Actividad (`SettingsScreen`).
+///
+/// Dependencias críticas:
+/// - `PostService` (para consultar la API).
+/// - `PostStoreProvider` (para inyectar los posts recuperados al estado global unificado).
+///
+/// Side Effects:
+/// - Consulta el endpoint paginado de posts likeados.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Renderiza de forma optimista basándose en el campo `liked` de `PostStoreProvider`. Si el usuario quita el like aquí, desaparecerá reactivamente.
 class LikedPostsScreen extends StatefulWidget {
   const LikedPostsScreen({super.key});
 

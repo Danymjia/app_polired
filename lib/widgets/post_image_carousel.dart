@@ -4,8 +4,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/theme.dart';
 
-/// Carousel or single image renderer for posts.
-/// Handles multi-image swiping, "1/3" overlay, and blue dot indicators below.
+/// Responsabilidad principal:
+/// Renderiza un carrusel interactivo (`PageView`) de imágenes para las publicaciones, con soporte para Double Tap to Like (animación de corazón) e indicadores visuales.
+///
+/// Flujo dentro de la app:
+/// Usado por `PostCard` y pantallas de visualización de publicaciones.
+///
+/// Dependencias críticas:
+/// - `cached_network_image`.
+///
+/// Side Effects:
+/// - Ejecuta animaciones explícitas de UI mediante `AnimationController` (Corazón gigante).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Si hay múltiples imágenes, mantiene estado interno (`_currentIndex`).
+/// - Soporta tanto URLs remotas (`mediaUrls`) como archivos locales (`localFiles`), vital para la creación vs consumo de posts.
 class PostImageCarousel extends StatefulWidget {
   final List<String> mediaUrls;
   final List<File>? localFiles;

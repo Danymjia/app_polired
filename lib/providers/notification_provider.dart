@@ -3,6 +3,7 @@ import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../models/user_model.dart';
 import '../services/socket_service.dart';
+import '../providers/auth_provider.dart';
 
 enum NotifStatus { idle, loading, success, empty, error }
 
@@ -25,8 +26,9 @@ enum NotifStatus { idle, loading, success, empty, error }
 class NotificationProvider extends ChangeNotifier {
   final NotificationService _service;
   final SocketService _socketService;
+  final AuthProvider _authProvider;
 
-  NotificationProvider(this._service, this._socketService);
+  NotificationProvider(this._service, this._socketService, this._authProvider);
 
   String? _sessionUserId;
   bool _socketListeners = false;
@@ -61,12 +63,14 @@ class NotificationProvider extends ChangeNotifier {
     _socketListeners = true;
     _socketService.on('nueva_notificacion', _handleNuevaNotificacion);
     _socketService.on('notificacion_actualizada', _handleNotificacionActualizada);
+    _socketService.on('nuevo_strike', _handleNuevoStrike);
   }
 
   void _removeSocketListeners() {
     if (!_socketListeners) return;
     _socketService.off('nueva_notificacion');
     _socketService.off('notificacion_actualizada');
+    _socketService.off('nuevo_strike');
     _socketListeners = false;
   }
 
@@ -87,6 +91,13 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   void _handleNotificacionActualizada(dynamic raw) {
+    refresh();
+  }
+
+  void _handleNuevoStrike(dynamic raw) {
+    if (raw is Map && raw['suspendido'] == true) {
+      _authProvider.syncProfileFromServer();
+    }
     refresh();
   }
 

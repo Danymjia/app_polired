@@ -3,6 +3,21 @@ import 'package:provider/provider.dart';
 import '../../../providers/map_provider.dart';
 import '../../../models/poi_model.dart';
 
+/// Responsabilidad principal:
+/// Barra de búsqueda superpuesta en el mapa con resultados predictivos en tiempo real.
+///
+/// Flujo dentro de la app:
+/// Posicionada en la parte superior de `MapScreen`.
+///
+/// Dependencias críticas:
+/// - `MapProvider` (para filtrar POIs y mantener el estado de la búsqueda).
+///
+/// Side Effects:
+/// - Actualiza dinámicamente el query de búsqueda en el `MapProvider`.
+/// - Llama a `onPoiSelected` y centra el mapa cuando se selecciona un resultado.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Limpia la búsqueda automáticamente al seleccionar un lugar para colapsar los resultados en la UI.
 class PoiSearchBar extends StatefulWidget {
   final Future<void> Function(PoiModel poi)? onPoiSelected;
   final VoidCallback? onSearchTap;

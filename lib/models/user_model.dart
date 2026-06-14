@@ -25,6 +25,8 @@ class UserModel {
   final bool perfilCompleto;
   /// Total de publicaciones del usuario (viene de GET /perfil-estudiante).
   final int publicacionesCount;
+  final List<dynamic> strikes;
+  final bool suspendido;
 
   const UserModel({
     required this.id,
@@ -37,11 +39,30 @@ class UserModel {
     this.biografia,
     required this.perfilCompleto,
     this.publicacionesCount = 0,
+    this.strikes = const [],
+    this.suspendido = false,
   });
 
   String get nombreCompleto => '$nombre $apellido';
 
   bool get esAdminRed => roles.contains('admin_red');
+
+  factory UserModel.fromSuspended(UserModel source) {
+    return UserModel(
+      id: source.id,
+      nombre: source.nombre,
+      apellido: source.apellido,
+      email: source.email,
+      roles: source.roles,
+      username: source.username,
+      fotoPerfil: source.fotoPerfil,
+      biografia: source.biografia,
+      perfilCompleto: source.perfilCompleto,
+      publicacionesCount: source.publicacionesCount,
+      strikes: source.strikes,
+      suspendido: true,
+    );
+  }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -55,6 +76,8 @@ class UserModel {
       biografia: (json['biografia'] as String?) ?? (json['descripcion'] as String?),
       perfilCompleto: json['perfilCompleto'] as bool? ?? false,
       publicacionesCount: _parseInt(json['publicacionesCount'] ?? json['publicaciones'] ?? 0),
+      strikes: (json['strikes'] as List<dynamic>?) ?? [],
+      suspendido: json['suspendido'] as bool? ?? false,
     );
   }
 
@@ -74,5 +97,7 @@ class UserModel {
         'fotoPerfil': fotoPerfil,
         'biografia': biografia,
         'perfilCompleto': perfilCompleto,
+        'strikes': strikes,
+        'suspendido': suspendido,
       };
 }

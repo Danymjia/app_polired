@@ -6,6 +6,21 @@ import '../models/public_profile_model.dart';
 import 'safe_network_image.dart';
 import 'fullscreen_image_viewer.dart';
 
+/// Responsabilidad principal:
+/// Renderiza la cabecera del perfil público de un usuario, mostrando foto, contadores (Publicaciones/Redes), nombre y biografía.
+///
+/// Flujo dentro de la app:
+/// Usado en la parte superior de `PublicProfileScreen`.
+///
+/// Dependencias críticas:
+/// - `PublicProfileModel` (Datos de solo lectura).
+///
+/// Side Effects:
+/// - Muestra el visualizador de imágenes a pantalla completa al tocar el avatar.
+/// - Abre un BottomSheet con la lista de redes si pertenece a más de una.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Componente agnóstico al estado global; recibe todo por constructor.
 class PublicProfileHeader extends StatelessWidget {
   final PublicProfileModel profile;
 

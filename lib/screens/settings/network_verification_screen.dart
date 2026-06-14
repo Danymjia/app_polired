@@ -5,6 +5,21 @@ import '../../config/theme.dart';
 import '../../services/network_service.dart';
 import '../../providers/network_profile_provider.dart';
 
+/// Responsabilidad principal:
+/// Formulario simplificado para solicitar la insignia de Verificación de una red.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `SettingsScreen` (solo para admins de red) cuando la red seleccionada cumple los requisitos de elegibilidad.
+///
+/// Dependencias críticas:
+/// - `NetworkProfileProvider` (para obtener los datos base de la red seleccionada).
+/// - `NetworkService` (para despachar el formulario al backend).
+///
+/// Side Effects:
+/// - Genera un ticket de verificación en la base de datos.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Similar a Oficialización, valida reglas de negocio básicas en el frontend (30 días, 30 miembros) para habilitar el botón de envío.
 class NetworkVerificationScreen extends StatefulWidget {
   final String redId;
   
@@ -206,7 +221,21 @@ class _NetworkVerificationScreenState extends State<NetworkVerificationScreen> {
                 decoration: BoxDecoration(color: AppTheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Nombre'), Text(profile.nombre, style: const TextStyle(fontWeight: FontWeight.bold))]),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Nombre'),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            profile.nombre,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Miembros Totales'), Text(profile.cantidadMiembros.toString(), style: const TextStyle(fontWeight: FontWeight.bold))]),
                   ],

@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../models/poi_model.dart';
 
+/// Responsabilidad principal:
+/// Bottom sheet que muestra el detalle de un Punto de Interés (POI) seleccionado en el mapa (fotos, horarios, cómo llegar).
+///
+/// Flujo dentro de la app:
+/// Se despliega sobre el mapa (`MapScreen`) cuando el usuario toca un marcador o selecciona un resultado de búsqueda.
+///
+/// Dependencias críticas:
+/// - `PoiModel` (Modelo de datos puro inyectado por parámetro).
+///
+/// Side Effects:
+/// - Ninguno internamente; expone callbacks para cierre (`onClose`) o volver al directorio (`onOpenDirectory`).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Usa `DraggableScrollableSheet` para permitir arrastrar hacia arriba/abajo y ver el contenido completo de manera nativa.
 class PoiDetailSheet extends StatelessWidget {
   final PoiModel poi;
   final VoidCallback onClose;

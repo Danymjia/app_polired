@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 
+/// Responsabilidad principal:
+/// Widget visual que maneja la presentación de errores durante la carga en la vista de Explorar, con opción a reintentar.
+///
+/// Flujo dentro de la app:
+/// Se muestra cuando falla una petición al backend (ej. estado de error en Feed).
+///
+/// Dependencias críticas:
+/// - Ninguna (Recibe callback de reintento `onRetry`).
+///
+/// Side Effects:
+/// - Ninguno internamente, delega la acción al callback `onRetry`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mantener desacoplado del estado global, inyectando dependencias por constructor.
 class ExploreErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;

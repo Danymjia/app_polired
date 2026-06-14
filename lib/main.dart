@@ -189,9 +189,9 @@ Future<void> main() async {
           update: (_, store, previous) => previous ?? MyProfileFeedProvider(publicProfileService, store),
         ),
         ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
-          create: (context) => NotificationProvider(notificationService, context.read<SocketService>()),
+          create: (context) => NotificationProvider(notificationService, context.read<SocketService>(), context.read<AuthProvider>()),
           update: (context, auth, previous) {
-            final provider = previous ?? NotificationProvider(notificationService, context.read<SocketService>());
+            final provider = previous ?? NotificationProvider(notificationService, context.read<SocketService>(), auth);
             provider.onAuthChanged(auth.user);
             return provider;
           },

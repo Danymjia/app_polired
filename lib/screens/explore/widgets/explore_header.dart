@@ -4,6 +4,20 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../post/add_post_screen.dart';
 
+/// Responsabilidad principal:
+/// Cabecera superior para la sección Explorar, incluye accesos rápidos (Crear Post, Buscar Redes).
+///
+/// Flujo dentro de la app:
+/// Componente anclado en la parte superior del Feed Global.
+///
+/// Dependencias críticas:
+/// - `go_router` (para navegación).
+///
+/// Side Effects:
+/// - Navega a `/explore/networks` o `AddPostScreen`.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Aplica efecto de desenfoque (`BackdropFilter`) para mezclarse con el scroll inferior.
 class ExploreHeader extends StatelessWidget {
   const ExploreHeader({super.key});
 

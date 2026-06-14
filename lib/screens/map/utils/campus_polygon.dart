@@ -1,3 +1,17 @@
+/// Responsabilidad principal:
+/// Contiene las coordenadas (GeoJSON) del polígono que delimita el campus de la EPN.
+///
+/// Flujo dentro de la app:
+/// Utilizado por el MapProvider y la vista del mapa para renderizar la máscara invertida (oscurecer fuera del campus) y el borde.
+///
+/// Dependencias críticas:
+/// - Ninguna (Datos estáticos puros).
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Mapbox requiere que el polígono invertido contenga primero el anillo exterior (el mundo entero) y luego el anillo interior (el campus) como hueco.
 class CampusPolygonData {
   static const List<List<double>> campusRing = [
     [-78.49287371339769, -0.21141781321387043],

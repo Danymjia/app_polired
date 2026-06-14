@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 
-/// Logo de Polired: usa la imagen assets/images/logo_v5.2.png.
-/// Parámetros:
+/// Responsabilidad principal:
+/// Widget reutilizable que renderiza el logo oficial de la aplicación (assets/images/logo_v5.2.png).
+///
+/// Flujo dentro de la app:
+/// Usado en pantallas de Autenticación, Splash Screen y cabeceras.
+///
+/// Dependencias críticas:
+/// - Asset local de imagen.
+///
+/// Side Effects:
+/// - Ninguno. Puramente visual.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Usa un `errorBuilder` para renderizar un icono genérico en caso de que el asset falle en cargar (por ej. si se cambia de nombre o borra por accidente).
+/// - Parámetros:
 ///   [size]       — diámetro del contenedor circular
 ///   [showText]   — si mostrar el texto "Polired" debajo
 ///   [shape]      — BoxShape.circle (default) o usar borderRadius

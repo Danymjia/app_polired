@@ -12,6 +12,8 @@ import '../../services/navigation_bus.dart';
 import '../../models/feed_context.dart';
 import '../../providers/network_provider.dart';
 import 'profile/profile_screen.dart';
+import '../widgets/suspended_overlay.dart';
+import '../../providers/auth_provider.dart';
 
 /// Responsabilidad principal:
 /// Contenedor raíz (Layout) para la navegación principal basada en pestañas (BottomNavigationBar).
@@ -89,6 +91,13 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    
+    // Guard global: si la cuenta está suspendida, bloquear toda la UI
+    if (authProvider.isSuspended) {
+      return const SuspendedOverlay();
+    }
+
     return Scaffold(
       extendBody: true, // Needed for transparent/blur bottom nav bar
       body: IndexedStack(

@@ -9,8 +9,14 @@ class AuthResult {
   final bool success;
   final String? message;
   final Map<String, dynamic>? data;
+  final int? statusCode;
 
-  const AuthResult({required this.success, this.message, this.data});
+  const AuthResult({
+    required this.success,
+    this.message,
+    this.data,
+    this.statusCode,
+  });
 }
 
 /// Responsabilidad principal:
@@ -199,7 +205,7 @@ class AuthService {
       return AuthResult(success: false, message: result.message ?? 'Error al actualizar el perfil');
     }
 
-    final result = await _api.patch('/estudiante/$estudianteId', {
+    final result = await _api.patch('${AppConstants.estudianteBaseEndpoint}/$estudianteId', {
       'nombre': nombre.trim(),
       'apellido': apellido.trim(),
       'biografia': biografia.trim(),
@@ -234,7 +240,11 @@ class AuthService {
       }
       return AuthResult(success: false, message: 'Respuesta inválida del servidor');
     }
-    return AuthResult(success: false, message: result.message ?? 'No se pudo cargar el perfil');
+    return AuthResult(
+      success: false,
+      message: result.message ?? 'No se pudo cargar el perfil',
+      statusCode: result.statusCode,
+    );
   }
 
   /// Cerrar sesión: limpiar token local.

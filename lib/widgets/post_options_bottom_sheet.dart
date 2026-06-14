@@ -9,6 +9,23 @@ import '../models/commands/feed_command.dart';
 import '../providers/auth_provider.dart';
 import 'report_post_bottom_sheet.dart';
 
+/// Responsabilidad principal:
+/// Presenta opciones contextuales sobre una Publicación (Reportar, Guardar/Eliminar de Guardados, Eliminar Publicación).
+///
+/// Flujo dentro de la app:
+/// Invocado al tocar el icono de opciones (3 puntos) en la cabecera de un `PostCard`.
+///
+/// Dependencias críticas:
+/// - `CommandBus` (Para enviar `ToggleSaveCommand`, `DeletePostCommand`).
+/// - `PostStoreProvider` (Para verificar si está guardado localmente).
+/// - `ReportPostBottomSheet`.
+///
+/// Side Effects:
+/// - Despacha comandos CQRS que alteran el estado global del Post.
+/// - Cierra la hoja actual antes de abrir modales secundarios para evitar apilamiento de BottomSheets.
+///
+/// Recordatorios técnicos y CQRS:
+/// - La opción "Eliminar publicación" solo es visible si el usuario autenticado es el autor (`isAuthor`).
 class PostOptionsBottomSheet extends StatelessWidget {
   final PostModel post;
 
@@ -55,7 +72,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (_) => ReportPostBottomSheet(postId: post.id),
+                  builder: (_) => ReportPostBottomSheet(postId: post.id, isArticle: post.isArticle),
                 );
               },
               child: Container(

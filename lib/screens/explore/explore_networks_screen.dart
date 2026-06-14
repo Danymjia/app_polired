@@ -10,6 +10,24 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/safe_network_image.dart';
 import '../../widgets/user_search_tile.dart';
 
+/// Responsabilidad principal:
+/// Pantalla principal de búsqueda y descubrimiento tanto de redes comunitarias como de otros estudiantes.
+///
+/// Flujo dentro de la app:
+/// Accesible desde el ícono de búsqueda en el header del Feed Global.
+///
+/// Dependencias críticas:
+/// - `ExploreNetworksProvider` (para buscar redes).
+/// - `ExploreUsersProvider` (para buscar usuarios).
+/// - `AuthProvider` (para obtener el ID actual y excluirlo de las búsquedas).
+///
+/// Side Effects:
+/// - Despacha consultas HTTP de búsqueda (debounced) a los proveedores correspondientes.
+/// - Navega al perfil detallado de la red o del usuario seleccionado.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Utiliza `TabController` para separar el contexto de búsqueda (Redes vs Usuarios).
+/// - El campo de texto aplica `debounce` de 300ms antes de disparar la búsqueda.
 class ExploreNetworksScreen extends StatefulWidget {
   const ExploreNetworksScreen({super.key});
 

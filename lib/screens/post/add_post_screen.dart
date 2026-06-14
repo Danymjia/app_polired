@@ -192,6 +192,12 @@ class _AddPostScreenState extends State<AddPostScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      if (auth.isSuspended && mounted) {
+        Navigator.of(context).pop();
+      }
+    });
 
     // Auto-select first joined network if available
     WidgetsBinding.instance.addPostFrameCallback((_) {

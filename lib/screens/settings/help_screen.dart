@@ -17,6 +17,20 @@ class FAQData {
   });
 }
 
+/// Responsabilidad principal:
+/// Pantalla principal del centro de ayuda, lista de Preguntas Frecuentes (FAQs) estáticas.
+///
+/// Flujo dentro de la app:
+/// Accesible desde `SettingsScreen` en la sección "Soporte y recursos".
+///
+/// Dependencias críticas:
+/// - Navega a `HelpDetailScreen` para mostrar el detalle de cada FAQ.
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Las preguntas y respuestas están hardcodeadas en memoria (`_faqs`). Si en el futuro deben ser dinámicas, se requerirá conectarlo a un provider/servicio.
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 

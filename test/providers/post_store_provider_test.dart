@@ -4,6 +4,9 @@ import 'package:polired/models/post_model.dart';
 import 'package:polired/models/feed_context.dart';
 import 'package:polired/models/events/post_event.dart';
 
+/// Archivo de pruebas para: `PostStoreProvider`
+/// Cubre: Idempotencia de eventos duplicados, ignorar eventos desactualizados (sequenceNumber) y mutación de huellas dactilares (fingerprint).
+/// Tipo: Unit
 void main() {
   group('PostStoreProvider (CQRS Phase 1)', () {
     late PostStoreProvider store;

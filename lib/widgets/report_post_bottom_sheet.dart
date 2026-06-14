@@ -3,11 +3,27 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../services/post_service.dart';
+import '../services/api_service.dart';
 
+/// Responsabilidad principal:
+/// Formulario modal para reportar una Publicación o Artículo por contenido inapropiado.
+///
+/// Flujo dentro de la app:
+/// Invocado desde `PostOptionsBottomSheet`.
+///
+/// Dependencias críticas:
+/// - `PostService` (Mutación de reporte).
+///
+/// Side Effects:
+/// - Ejecuta peticiones HTTP para enviar el reporte (con variaciones si es un Post normal o un Artículo).
+///
+/// Recordatorios técnicos y CQRS:
+/// - Usa el flag `isArticle` para decidir a qué endpoint de reporte llamar (`reportarArticulo` vs `reportarPublicacion`).
 class ReportPostBottomSheet extends StatefulWidget {
   final String postId;
+  final bool isArticle;
 
-  const ReportPostBottomSheet({super.key, required this.postId});
+  const ReportPostBottomSheet({super.key, required this.postId, this.isArticle = false});
 
   @override
   State<ReportPostBottomSheet> createState() => _ReportPostBottomSheetState();
@@ -48,13 +64,23 @@ class _ReportPostBottomSheetState extends State<ReportPostBottomSheet> {
     final postService = context.read<PostService>();
 
     try {
-      final result = await postService.reportPost(
-        postId: widget.postId,
-        tipo: _selectedOption!,
-        descripcion: _selectedOption == 'Otro'
-            ? _descriptionController.text.trim()
-            : 'Reportado como $_selectedOption',
-      );
+      final Future<ApiResult<dynamic>> request = widget.isArticle
+          ? postService.reportarArticulo(
+              articuloId: widget.postId,
+              tipo: _selectedOption!,
+              descripcion: _selectedOption == 'Otro'
+                  ? _descriptionController.text.trim()
+                  : 'Reportado como $_selectedOption',
+            )
+          : postService.reportarPublicacion(
+              publicacionId: widget.postId,
+              tipo: _selectedOption!,
+              descripcion: _selectedOption == 'Otro'
+                  ? _descriptionController.text.trim()
+                  : 'Reportado como $_selectedOption',
+            );
+
+      final result = await request;
 
       if (result.success) {
         if (mounted) {

@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 
+/// Responsabilidad principal:
+/// Insignia visual (Tooltip y Icono) para distinguir redes Verificadas (Azul) u Oficiales (Dorado).
+///
+/// Flujo dentro de la app:
+/// Integrado como overlay (Positioned) dentro de componentes más grandes como `NetworkAvatar` o encabezados de perfil.
+///
+/// Dependencias críticas:
+/// - Ninguna.
+///
+/// Side Effects:
+/// - Ninguno.
+///
+/// Recordatorios técnicos y CQRS:
+/// - Prioridad: Si una red tiene ambos booleanos verdaderos, se mostrará como "Oficial" (Dorado) por regla de negocio.
 class NetworkBadge extends StatelessWidget {
   final bool esVerificada;
   final bool esOficial;

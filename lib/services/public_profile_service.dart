@@ -1,4 +1,5 @@
 import 'api_service.dart';
+import '../config/constants.dart';
 import '../models/public_profile_model.dart';
 import '../models/post_model.dart';
 
@@ -22,7 +23,7 @@ class PublicProfileService {
   PublicProfileService(this._apiService);
 
   Future<ApiResult<PublicProfileModel>> getPublicProfile(String userId) async {
-    final result = await _apiService.get('/perfil-publico/$userId/info');
+    final result = await _apiService.get('${AppConstants.perfilPublicoEndpoint}/$userId/info');
     if (result.success && result.data != null) {
       try {
         final profile = PublicProfileModel.fromJson(result.data as Map<String, dynamic>);
@@ -35,7 +36,7 @@ class PublicProfileService {
   }
 
   Future<ApiResult<Map<String, dynamic>>> getPublicProfileFeed(String userId, {int page = 1, int limit = 12}) async {
-    final result = await _apiService.get('/perfil-publico/$userId/feed?page=$page&limit=$limit');
+    final result = await _apiService.get('${AppConstants.perfilPublicoEndpoint}/$userId/feed?page=$page&limit=$limit');
     if (result.success && result.data != null) {
       try {
         final dataMap = result.data as Map<String, dynamic>;
@@ -68,6 +69,6 @@ class PublicProfileService {
     if (descripcion != null && descripcion.isNotEmpty) {
       body['descripcion'] = descripcion;
     }
-    return await _apiService.post('/reportes/usuario', body);
+    return await _apiService.post(AppConstants.reportesUsuarioEndpoint, body);
   }
 }

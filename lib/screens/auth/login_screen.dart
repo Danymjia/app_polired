@@ -124,10 +124,15 @@ class _LoginScreenState extends State<LoginScreen>
     }
     final Uri url = Uri.parse(AppConstants.kApelacionUrl);
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        if (!mounted) return;
+        AppSnackbar.show(context, message: 'No se pudo abrir el enlace.', type: SnackbarType.error);
       }
-    } catch (_) {}
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackbar.show(context, message: 'Error al abrir el enlace.', type: SnackbarType.error);
+    }
   }
 
   @override

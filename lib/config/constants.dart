@@ -17,11 +17,8 @@ class AppConstants {
   AppConstants._();
 
   // ─── Backend ────────────────────────────────────────────────────────────────
-  // static const String baseUrl = 'https://polired-api.vercel.app/api';
-  // static const String socketUrl = 'https://polired-api.vercel.app';
-
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-  static const String socketUrl = 'http://10.0.2.2:3000';
+  static const String baseUrl = 'https://polired-api.vercel.app/api';
+  static const String socketUrl = 'https://polired-api.vercel.app';
 
   // ─── Base endpoints ────────────────────────────────────────────────────────
   static const String estudianteBaseEndpoint = '/estudiante';
@@ -43,9 +40,12 @@ class AppConstants {
   static const String redesListarEndpoint = '/redes/listar';
   static const String unirseRedEndpoint = '/estudiantes/unirse/red';
   static const String redesEstudianteEndpoint = '/estudiantes/listar/redes';
-  static const String redesSolicitarCreacionEndpoint = '/redes/solicitar-creacion';
-  static const String redesSolicitarVerificacionEndpoint = '/redes/solicitar-verificacion';
-  static const String redesSolicitarOficializacionEndpoint = '/redes/solicitar-oficializacion';
+  static const String redesSolicitarCreacionEndpoint =
+      '/redes/solicitar-creacion';
+  static const String redesSolicitarVerificacionEndpoint =
+      '/redes/solicitar-verificacion';
+  static const String redesSolicitarOficializacionEndpoint =
+      '/redes/solicitar-oficializacion';
   static const String salirseRedEndpoint = '/salirse/red';
 
   // ─── Exploración y Usuarios endpoints ───────────────────────────────────────
@@ -69,12 +69,13 @@ class AppConstants {
   /// Crear publicación extendida → POST /publicaciones/extendida (requiere auth + perfil completo)
   static const String crearPublicacionExtendidaEndpoint =
       '/publicaciones/extendida';
-      
+
   /// Publicaciones de artículos
-  static const String publicacionesArticulosEndpoint = '/publicaciones/articulos';
+  static const String publicacionesArticulosEndpoint =
+      '/publicaciones/articulos';
 
   // ─── Social endpoints ────────────────────────────────────────────────────────
-  
+
   // DEUDA TÉCNICA (pendiente de renombrar):
   // `likeEndpoint` y `comentariosEndpoint` son nombres engañosos. Ambas
   // constantes apuntan a '/publicaciones' porque funcionan como prefijo base
@@ -89,10 +90,10 @@ class AppConstants {
 
   /// Base para rutas de comentarios → /publicaciones/:id/comentarios
   static const String comentariosEndpoint = '/publicaciones';
-  
+
   /// Respuestas a comentarios
   static const String respuestasComentarioEndpoint = '/comentarios';
-  
+
   /// Guardados y Likes de usuario
   static const String usuariosGuardadosEndpoint = '/usuarios/guardados';
   static const String usuariosLikesEndpoint = '/usuarios/likes';
@@ -126,5 +127,7 @@ class AppConstants {
 
   // ─── Misc ─────────────────────────────────────────────────────────────────────
   static const Duration requestTimeout = Duration(seconds: 30);
-  static const String kApelacionUrl = '';
+  static const String kApelacionUrl =
+      'https://polired.vercel.app/crearApelacion';
+  static const String kGestionRedUrl = 'https://polired.vercel.app/login';
 }

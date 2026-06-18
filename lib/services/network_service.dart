@@ -77,27 +77,35 @@ class NetworkService {
   Future<ApiResult<List<NetworkStoryModel>>> getAvailableNetworksStories() async {
     final result = await _api.get(AppConstants.redesListarEndpoint);
 
-    if (result.success && result.data is List) {
-      final rawList = result.data as List;
-      final stories = <NetworkStoryModel>[];
-      for (final item in rawList) {
-        if (item is! Map) continue;
-        final r = Map<String, dynamic>.from(item);
-        final id = parseMongoIdFromMap(r) ?? '';
-        if (id.isEmpty) continue;
-        stories.add(
-          NetworkStoryModel(
-            id: id,
-            name: (r['nombre'] as String?) ?? '',
-            acronym: buildNetworkAcronym(r['nombre'] as String? ?? ''),
-            imageUrl: (r['fotoPerfil'] as String?) ?? '',
-            isJoined: false,
-            esVerificada: r['esVerificada'] == true,
-            esOficial: r['esOficial'] == true,
-          ),
-        );
+    if (result.success) {
+      List? rawList;
+      if (result.data is List) {
+        rawList = result.data as List;
+      } else if (result.data is Map && (result.data as Map)['redes'] is List) {
+        rawList = (result.data as Map)['redes'] as List;
       }
-      return ApiResult.ok(stories);
+
+      if (rawList != null) {
+        final stories = <NetworkStoryModel>[];
+        for (final item in rawList) {
+          if (item is! Map) continue;
+          final r = Map<String, dynamic>.from(item);
+          final id = parseMongoIdFromMap(r) ?? '';
+          if (id.isEmpty) continue;
+          stories.add(
+            NetworkStoryModel(
+              id: id,
+              name: (r['nombre'] as String?) ?? '',
+              acronym: buildNetworkAcronym(r['nombre'] as String? ?? ''),
+              imageUrl: (r['fotoPerfil'] as String?) ?? '',
+              isJoined: false,
+              esVerificada: r['esVerificada'] == true,
+              esOficial: r['esOficial'] == true,
+            ),
+          );
+        }
+        return ApiResult.ok(stories);
+      }
     }
 
     return ApiResult.error(result.message ?? 'Error al obtener redes disponibles');
@@ -109,8 +117,12 @@ class NetworkService {
   Future<ApiResult<List<dynamic>>> getRedes() async {
     final result = await _api.get(AppConstants.redesListarEndpoint);
 
-    if (result.success && result.data is List) {
-      return ApiResult.ok(result.data as List<dynamic>);
+    if (result.success) {
+      if (result.data is List) {
+        return ApiResult.ok(result.data as List<dynamic>);
+      } else if (result.data is Map && (result.data as Map)['redes'] is List) {
+        return ApiResult.ok((result.data as Map)['redes'] as List<dynamic>);
+      }
     }
 
     return ApiResult.error(result.message ?? 'Error al obtener redes comunitarias');

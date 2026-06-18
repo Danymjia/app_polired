@@ -4,59 +4,11 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_01",
-        "name": "Bodega Universal",
-        "category": "services",
-        "description": "Bodega central de almacenamiento y distribución de materiales e insumos para las distintas facultades y dependencias del campus politécnico.",
-        "shortDescription": "Bodega · Almacenamiento",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector norte del campus",
-        "images": [
-          "assets/pois/poi_01_1.jpeg",
-          "assets/pois/poi_01_2.jpeg",
-          "assets/pois/poi_01_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4888679,
-          -0.2090885
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_02",
+        "id": "poi_03",
         "name": "Parqueadero A",
         "category": "other",
-        "description": "Parqueadero para docentes, personal administrativo y visitantes. Requiere autorización o tarjeta de acceso universitaria.",
-        "shortDescription": "Parqueadero A · Vehículos",
-        "schedule": "Lun–Vie 06:30–20:00",
-        "howToGet": "Sector norte del campus",
-        "images": [
-          "assets/pois/poi_02_1.jpeg",
-          "assets/pois/poi_02_2.jpeg",
-          "assets/pois/poi_02_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4889153,
-          -0.2087403
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_03",
-        "name": "Parqueadero B",
-        "category": "other",
         "description": "Parqueadero secundario para docentes y personal del campus. Acceso con tarjeta universitaria.",
-        "shortDescription": "Parqueadero B · Vehículos",
+        "shortDescription": "Parqueadero A · Vehículos",
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector occidental del campus",
         "images": [
@@ -124,30 +76,6 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_06",
-        "name": "Facultad de Ingeniería Química y Eléctrica",
-        "category": "academic",
-        "description": "Facultad que integra formación en ingeniería química y eléctrica con laboratorios especializados.",
-        "shortDescription": "Ing. Química y Eléctrica",
-        "schedule": "Lun–Vie 07:00–19:00",
-        "howToGet": "Sector central del campus",
-        "images": [
-          "assets/pois/poi_06_1.jpeg",
-          "assets/pois/poi_06_2.jpeg",
-          "assets/pois/poi_06_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4892495,
-          -0.2095389
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_07",
         "name": "Facultad de Ingeniería Química y Agroindustria",
         "category": "academic",
@@ -156,8 +84,8 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Acceso por la calle Alfredo Mena Caamaño y Andalucía",
         "images": [
-          "assets/pois/poi_07_1.jpeg",
-          "assets/pois/poi_07_2.jpeg",
+          "assets/pois/poi_07_1.jpg",
+          "assets/pois/poi_07_2.jpg",
           "assets/pois/poi_07_3.jpeg"
         ]
       },
@@ -244,35 +172,11 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_11",
-        "name": "Polipasto A",
-        "category": "services",
-        "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto A · Servicios",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_11_1.jpeg",
-          "assets/pois/poi_11_2.jpeg",
-          "assets/pois/poi_11_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4902968,
-          -0.2103359
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_12",
-        "name": "Parqueadero C",
+        "name": "Parqueadero B",
         "category": "other",
         "description": "Parqueadero para docentes y personal administrativo del campus.",
-        "shortDescription": "Parqueadero C · Vehículos",
+        "shortDescription": "Parqueadero B · Vehículos",
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector central del campus",
         "images": [
@@ -286,78 +190,6 @@
         "coordinates": [
           -78.4900678,
           -0.2103719
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_13",
-        "name": "Centro de Investigación y Control Ambiental",
-        "category": "academic",
-        "description": "Centro dedicado a la investigación y monitoreo ambiental. Desarrolla proyectos de control de calidad del aire, agua y suelo.",
-        "shortDescription": "Control Ambiental · Investigación",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_13_1.jpeg",
-          "assets/pois/poi_13_2.jpeg",
-          "assets/pois/poi_13_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4910787,
-          -0.2111911
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_14",
-        "name": "Polipasto B",
-        "category": "services",
-        "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto B · Servicios",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_14_1.jpeg",
-          "assets/pois/poi_14_2.jpeg",
-          "assets/pois/poi_14_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4913921,
-          -0.2111569
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_15",
-        "name": "Laboratorio de Aguas",
-        "category": "academic",
-        "description": "Laboratorio especializado en análisis y tratamiento de aguas. Equipado para investigación en calidad del agua y procesos de potabilización.",
-        "shortDescription": "Lab. Aguas · Investigación",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_15_1.jpeg",
-          "assets/pois/poi_15_2.jpeg",
-          "assets/pois/poi_15_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.491579,
-          -0.2112385
         ]
       }
     },
@@ -412,30 +244,6 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_18",
-        "name": "Parqueadero D",
-        "category": "other",
-        "description": "Parqueadero para docentes y personal del campus.",
-        "shortDescription": "Parqueadero D · Vehículos",
-        "schedule": "Lun–Vie 06:30–20:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_18_1.jpeg",
-          "assets/pois/poi_18_2.jpeg",
-          "assets/pois/poi_18_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4916527,
-          -0.2118163
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_20",
         "name": "Facultad de Ingeniería Civil y Ambiental",
         "category": "academic",
@@ -460,35 +268,11 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_21",
-        "name": "Facultad de Ciencias Administrativas",
-        "category": "academic",
-        "description": "Forma profesionales en Gerencia Empresarial y Sistemas de Gestión Integrados. Enfocada en gestión organizacional con base técnica y tecnológica.",
-        "shortDescription": "Ciencias Administrativas · FCA",
-        "schedule": "Lun–Vie 07:00–19:00",
-        "howToGet": "Sector norte del campus",
-        "images": [
-          "assets/pois/poi_21_1.jpeg",
-          "assets/pois/poi_21_2.jpeg",
-          "assets/pois/poi_21_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4912092,
-          -0.2122375
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_22",
-        "name": "Parqueadero E",
+        "name": "Parqueadero C",
         "category": "other",
         "description": "Parqueadero para docentes y personal del campus.",
-        "shortDescription": "Parqueadero E · Vehículos",
+        "shortDescription": "Parqueadero C · Vehículos",
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
@@ -556,30 +340,6 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_25",
-        "name": "Instituto de Ciencias Biológicas",
-        "category": "academic",
-        "description": "Instituto dedicado a la investigación y enseñanza en ciencias biológicas, ecología y biodiversidad del Ecuador.",
-        "shortDescription": "Ciencias Biológicas · ICB",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_25_1.jpeg",
-          "assets/pois/poi_25_2.jpeg",
-          "assets/pois/poi_25_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4902741,
-          -0.2115294
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_26",
         "name": "Museo de Historia Natural",
         "category": "services",
@@ -598,30 +358,6 @@
         "coordinates": [
           -78.4901577,
           -0.2114899
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_27",
-        "name": "Hemiciclo Politécnico",
-        "category": "services",
-        "description": "Espacio de reunión y debate académico. Utilizado para sesiones de consejo, conferencias y eventos institucionales de la EPN.",
-        "shortDescription": "Hemiciclo · Eventos Institucionales",
-        "schedule": "Según programación de eventos",
-        "howToGet": "Sector central del campus",
-        "images": [
-          "assets/pois/poi_27_1.jpeg",
-          "assets/pois/poi_27_2.jpeg",
-          "assets/pois/poi_27_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4907425,
-          -0.2115153
         ]
       }
     },
@@ -718,30 +454,6 @@
         "coordinates": [
           -78.4895775,
           -0.2122938
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_32",
-        "name": "Polipasto C",
-        "category": "services",
-        "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto C · Servicios",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_32_1.jpeg",
-          "assets/pois/poi_32_2.jpeg",
-          "assets/pois/poi_32_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.488624,
-          -0.21122
         ]
       }
     },
@@ -868,30 +580,6 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_38",
-        "name": "Cancha de Vóley C",
-        "category": "sports",
-        "description": "Tercera cancha de voleibol del campus politécnico.",
-        "shortDescription": "Vóley C · Deportes",
-        "schedule": "Lun–Sáb 07:00–19:00",
-        "howToGet": "Área deportiva del campus",
-        "images": [
-          "assets/pois/poi_38_1.jpeg",
-          "assets/pois/poi_38_2.jpeg",
-          "assets/pois/poi_38_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4895947,
-          -0.2109962
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_39",
         "name": "Mesas A",
         "category": "other",
@@ -917,10 +605,10 @@
       "type": "Feature",
       "properties": {
         "id": "poi_40",
-        "name": "Parqueadero F",
+        "name": "Parqueadero D",
         "category": "other",
         "description": "Parqueadero para docentes y personal del campus.",
-        "shortDescription": "Parqueadero F · Vehículos",
+        "shortDescription": "Parqueadero D · Vehículos",
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
@@ -934,30 +622,6 @@
         "coordinates": [
           -78.4899121,
           -0.2106882
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_41",
-        "name": "Edificio de Ciencias",
-        "category": "academic",
-        "description": "Edificio que alberga la Facultad de Ciencias. Ofrece formación en Matemáticas, Física, Química y Biología, base científica de todas las ingenierías.",
-        "shortDescription": "Ciencias Básicas · FC",
-        "schedule": "Lun–Vie 07:00–19:00",
-        "howToGet": "Sector occidental del campus",
-        "images": [
-          "assets/pois/poi_41_1.jpeg",
-          "assets/pois/poi_41_2.jpeg",
-          "assets/pois/poi_41_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4899571,
-          -0.2109419
         ]
       }
     },
@@ -988,30 +652,6 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "poi_43",
-        "name": "Polipasto D",
-        "category": "services",
-        "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto D · Servicios",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_43_1.jpeg",
-          "assets/pois/poi_43_2.jpeg",
-          "assets/pois/poi_43_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4905122,
-          -0.2110704
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "poi_44",
         "name": "Facultad de Ingeniería en Geología",
         "category": "academic",
@@ -1020,9 +660,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_44_1.jpeg",
-          "assets/pois/poi_44_2.jpeg",
-          "assets/pois/poi_44_3.jpeg"
+          "assets/pois/poi_44_1.jpg",
+          "assets/pois/poi_44_2.jpg",
+          "assets/pois/poi_44_3.jpg"
         ]
       },
       "geometry": {
@@ -1030,30 +670,6 @@
         "coordinates": [
           -78.4895265,
           -0.2107634
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_45",
-        "name": "Biblioteca B",
-        "category": "services",
-        "description": "Biblioteca secundaria del campus con material especializado por facultad.",
-        "shortDescription": "Biblioteca B · Recursos Académicos",
-        "schedule": "Lun–Vie 07:30–19:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_45_1.jpeg",
-          "assets/pois/poi_45_2.jpeg",
-          "assets/pois/poi_45_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4895656,
-          -0.2106238
         ]
       }
     },
@@ -1068,9 +684,9 @@
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Sector del campus",
         "images": [
-          "assets/pois/poi_46_1.jpeg",
-          "assets/pois/poi_46_2.jpeg",
-          "assets/pois/poi_46_3.jpeg"
+          "assets/pois/poi_46_1.jpg",
+          "assets/pois/poi_46_2.jpg",
+          "assets/pois/poi_46_3.jpg"
         ]
       },
       "geometry": {
@@ -1078,54 +694,6 @@
         "coordinates": [
           -78.4897354,
           -0.2105022
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_47",
-        "name": "Parqueadero G",
-        "category": "other",
-        "description": "Parqueadero para docentes y personal del campus.",
-        "shortDescription": "Parqueadero G · Vehículos",
-        "schedule": "Lun–Vie 06:30–20:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_47_1.jpeg",
-          "assets/pois/poi_47_2.jpeg",
-          "assets/pois/poi_47_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4894282,
-          -0.2105275
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_48",
-        "name": "Polipasto E",
-        "category": "services",
-        "description": "Punto de servicio del campus politécnico.",
-        "shortDescription": "Polipasto E · Servicios",
-        "schedule": "Lun–Vie 08:00–17:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_48_1.jpg",
-          "assets/pois/poi_48_2.jpg",
-          "assets/pois/poi_48_3.jpg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4893305,
-          -0.2104305
         ]
       }
     },
@@ -1421,10 +989,10 @@
       "type": "Feature",
       "properties": {
         "id": "poi_62",
-        "name": "Parqueadero H",
+        "name": "Parqueadero E",
         "category": "other",
         "description": "Parqueadero para docentes y personal del campus.",
-        "shortDescription": "Parqueadero H · Vehículos",
+        "shortDescription": "Parqueadero E · Vehículos",
         "schedule": "Lun–Vie 06:30–20:00",
         "howToGet": "Sector del campus",
         "images": [
@@ -1558,150 +1126,6 @@
         "coordinates": [
           -78.4866813,
           -0.209094
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_71",
-        "name": "Entradas y Salidas",
-        "category": "other",
-        "description": "Acceso principal del campus EPN. Ubicado frente al Coliseo Rumiñahui en la calle Ladrón de Guevara E11-253.",
-        "shortDescription": "Entradas y Salidas · Acceso",
-        "schedule": "Lun–Sáb 06:00–22:00",
-        "howToGet": "Av. Ladrón de Guevara E11-253",
-        "images": [
-          "assets/pois/poi_71_1.jpeg",
-          "assets/pois/poi_71_2.jpeg",
-          "assets/pois/poi_71_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4890397,
-          -0.208631
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_72",
-        "name": "Entradas y Salidas",
-        "category": "other",
-        "description": "Acceso secundario al sector del Centro de Educación Continua de la EPN.",
-        "shortDescription": "Entradas y Salidas · Acceso",
-        "schedule": "Lun–Sáb 06:30–21:00",
-        "howToGet": "Sector CEC del campus",
-        "images": [
-          "assets/pois/poi_72_1.jpeg",
-          "assets/pois/poi_72_2.jpeg",
-          "assets/pois/poi_72_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4879625,
-          -0.2095555
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_73",
-        "name": "Entradas y Salidas",
-        "category": "other",
-        "description": "Acceso principal al sector del Centro de Educación Continua de la EPN.",
-        "shortDescription": "Entradas y Salidas · Acceso",
-        "schedule": "Lun–Sáb 06:30–21:00",
-        "howToGet": "Sector CEC del campus",
-        "images": [
-          "assets/pois/poi_73_1.jpeg",
-          "assets/pois/poi_73_2.jpeg",
-          "assets/pois/poi_73_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4866959,
-          -0.2095263
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_74",
-        "name": "Entradas y Salidas",
-        "category": "other",
-        "description": "Acceso directo a la Escuela de Formación de Tecnólogos.",
-        "shortDescription": "Entradas y Salidas · Acceso",
-        "schedule": "Lun–Vie 06:30–21:00",
-        "howToGet": "Sector ESFOT del campus",
-        "images": [
-          "assets/pois/poi_74_1.jpeg",
-          "assets/pois/poi_74_2.jpeg",
-          "assets/pois/poi_74_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4887652,
-          -0.2099479
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_75",
-        "name": "Entradas y Salidas",
-        "category": "other",
-        "description": "Segundo acceso principal del campus EPN.",
-        "shortDescription": "Entradas y Salidas · Acceso",
-        "schedule": "Lun–Sáb 06:00–22:00",
-        "howToGet": "Sector sur del campus",
-        "images": [
-          "assets/pois/poi_75_1.jpeg",
-          "assets/pois/poi_75_2.jpeg",
-          "assets/pois/poi_75_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4903442,
-          -0.2123314
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "poi_76",
-        "name": "Entradas y Salidas",
-        "category": "other",
-        "description": "Acceso adicional al campus politécnico.",
-        "shortDescription": "Entradas y Salidas · Acceso",
-        "schedule": "Lun–Vie 06:30–21:00",
-        "howToGet": "Sector del campus",
-        "images": [
-          "assets/pois/poi_76_1.jpeg",
-          "assets/pois/poi_76_2.jpeg",
-          "assets/pois/poi_76_3.jpeg"
-        ]
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -78.4919833,
-          -0.2119984
         ]
       }
     },

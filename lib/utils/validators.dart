@@ -21,6 +21,9 @@ class Validators {
     if (!emailRegex.hasMatch(value.trim())) {
       return 'Ingresa un correo electrónico válido';
     }
+    if (!value.trim().endsWith('@epn.edu.ec')) {
+      return 'El correo debe terminar en @epn.edu.ec';
+    }
     return null;
   }
 

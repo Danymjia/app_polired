@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
+import '../../config/constants.dart';
 import '../post/add_post_screen.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
@@ -432,7 +434,24 @@ class _ProfileScreenState extends State<ProfileScreen>
                             child: SizedBox(
                               height: 34,
                               child: ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () async {
+                                  final url = Uri.parse(AppConstants.kGestionRedUrl);
+                                  try {
+                                    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    if (!launched) {
+                                      throw Exception('No se pudo abrir $url');
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Error al abrir la página de gestión de red.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primary,
                                   foregroundColor: Colors.white,

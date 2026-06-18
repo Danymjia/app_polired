@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
+import '../../config/constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/read_model_cache_service.dart';
 import '../../services/network_service.dart';
@@ -181,11 +183,23 @@ class SettingsScreen extends StatelessWidget {
                 context,
                 'Mi Red',
                 Icons.group_outlined,
-                onTap: () {
-                  //Implementar navegación a "Mi Red" al igual que el botón del perfil privado
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Próximamente')),
-                  );
+                onTap: () async {
+                  final url = Uri.parse(AppConstants.kGestionRedUrl);
+                  try {
+                    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+                    if (!launched) {
+                      throw Exception('No se pudo abrir $url');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Error al abrir la página de gestión de red.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
                 },
               ),
               _buildMenuItem(

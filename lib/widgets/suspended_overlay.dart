@@ -38,9 +38,8 @@ class SuspendedOverlay extends StatelessWidget {
 
     final Uri url = Uri.parse(AppConstants.kApelacionUrl);
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
         throw Exception('No se pudo abrir $url');
       }
     } catch (e) {

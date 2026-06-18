@@ -26,6 +26,8 @@ class NetworkProfileModel {
   final String creadaPor;
   final int publicacionesCount;
   final String? createdAt;
+  final String? administrador;
+  final bool deshabilitada;
 
   NetworkProfileModel({
     required this.id,
@@ -38,6 +40,8 @@ class NetworkProfileModel {
     required this.creadaPor,
     required this.publicacionesCount,
     this.createdAt,
+    this.administrador,
+    required this.deshabilitada,
   });
 
   factory NetworkProfileModel.fromApiMap(Map<String, dynamic> json) {
@@ -52,6 +56,8 @@ class NetworkProfileModel {
       creadaPor: json['creadaPor'] as String? ?? '',
       publicacionesCount: (json['publicacionesCount'] as num?)?.toInt() ?? 0,
       createdAt: json['createdAt']?.toString() ?? json['fechaCreacion']?.toString(),
+      administrador: json['administrador']?.toString(),
+      deshabilitada: json['deshabilitada'] == true,
     );
   }
 }

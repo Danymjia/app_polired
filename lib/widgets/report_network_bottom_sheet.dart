@@ -34,9 +34,9 @@ class ReportNetworkBottomSheet extends StatefulWidget {
 
 class _ReportNetworkBottomSheetState extends State<ReportNetworkBottomSheet> {
   final List<String> _options = [
-    'Contenido inapropiado',
+    'Contenido Inapropiado',
     'Spam',
-    'Acoso o bullying',
+    'Acoso o Bullying',
     'Información falsa',
     'Otro',
   ];

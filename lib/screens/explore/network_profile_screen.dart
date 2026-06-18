@@ -13,6 +13,8 @@ import '../../../widgets/network_options_bottom_sheet.dart';
 import '../../../widgets/network_badge.dart';
 import '../../../widgets/fullscreen_image_viewer.dart';
 import 'widgets/restricted_feed_overlay.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../widgets/disabled_network_overlay.dart';
 
 /// Responsabilidad principal:
 /// Muestra los detalles de una red comunitaria (estadísticas, descripción) y su feed exclusivo.
@@ -100,6 +102,16 @@ class _NetworkProfileScreenState extends State<NetworkProfileScreen> {
           final profile = profileProvider.profile;
           if (profile == null) {
             return const Center(child: Text('Perfil no encontrado'));
+          }
+
+          if (profile.deshabilitada) {
+            final currentUserId = context.read<AuthProvider>().user?.id;
+            final isAdmin = currentUserId != null && profile.administrador == currentUserId;
+            return DisabledNetworkOverlay(
+              isAdmin: isAdmin,
+              networkId: profile.id,
+              networkName: profile.nombre,
+            );
           }
 
           return CustomScrollView(

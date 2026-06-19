@@ -136,6 +136,7 @@ lib/
 │   │   └── update_password_screen.dart
 │   └── settings/
 │       ├── about_screen.dart
+│       ├── apelar_red_screen.dart
 │       ├── help_detail_screen.dart
 │       ├── help_screen.dart
 │       ├── legal_document_screen.dart
@@ -179,6 +180,7 @@ lib/
     ├── chat_options_bottom_sheet.dart
     ├── comment_tree_sheet.dart
     ├── community_post_card.dart
+    ├── disabled_network_overlay.dart
     ├── fullscreen_image_viewer.dart
     ├── global_post_card.dart
     ├── leave_network_dialog.dart
@@ -264,11 +266,13 @@ La navegación está centralizada usando go_router.
 - Usa mapbox_maps_flutter. La API Key (MAPBOX_ACCESS_TOKEN) se lee desde el .env.
 - Implementa POIs (Puntos de Interés) definidos en el modelo PoiModel para mostrar información espacial relevante (como redes o comunidades geolocalizadas) en la vista MapScreen.
 
-### 4.9. Moderación y Suspensión de Cuentas (Strikes)
+### 4.9. Moderación y Suspensión de Cuentas y Redes (Strikes)
 
-- **Sistema de Infracciones:** El `UserModel` incluye un historial de advertencias formales o "strikes" recibidas por infringir normas comunitarias.
-- **Bloqueo por Suspensión:** Cuando un usuario acumula 5 strikes, su estado `suspendido` se vuelve verdadero. El `AuthProvider` detecta este estado (o un HTTP 403 del backend) y la interfaz renderiza un `SuspendedOverlay` restrictivo que bloquea la navegación habitual.
-- **Transparencia:** A través de la pantalla `StrikesScreen`, los usuarios activos pueden consultar sus advertencias vigentes y el motivo de los reportes. Si ocurre una suspensión, se provee un mecanismo para iniciar una apelación externa usando `url_launcher`.
+- **Sistema de Infracciones (Usuarios y Redes):** Tanto los usuarios (`UserModel`) como las redes pueden acumular advertencias o "strikes" por infringir normas comunitarias.
+- **Bloqueos por Suspensión:** Cuando un usuario acumula 5 strikes, su estado `suspendido` se vuelve verdadero. El `AuthProvider` detecta esto y la interfaz renderiza un `SuspendedOverlay`. Similarmente, si una red alcanza 5 strikes, pasa a estado `deshabilitada` y al intentar visitarla se mostrará un `DisabledNetworkOverlay`.
+- **Transparencia y Apelaciones:** 
+  - Para usuarios, a través de la pantalla `StrikesScreen`, pueden consultar sus advertencias y el motivo de los reportes.
+  - Para redes, los administradores cuentan con la pantalla `ApelarRedScreen` para enviar un recurso de apelación directamente desde la app en caso de deshabilitación, comunicándose con el endpoint dedicado.
 
 ### 4.10. Integración con Endpoints REST (Backend)
 
@@ -297,10 +301,11 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
 | | `/redes/:id` | GET | Obtener el feed/información específica de una red (paginado). |
 | | `/estudiantes/unirse/red` | POST | Solicitar afiliación/unirse a una comunidad. |
 | | `/redes/solicitar-creacion` | POST | Solicitar la creación de una nueva comunidad. |
-| | `/admin-red/redes/solicitar-verificacion` | POST | Solicitar verificación como administrador de una red. |
-| | `/admin-red/redes/solicitar-oficializacion` | POST | Solicitar oficialización como administrador de una red. |
-| | `/estudiantes/reportes/red` | POST | Enviar un reporte contra una red/comunidad. |
-| | `/estudiantes/salirse/red` | POST | Abandonar una red de la que se es miembro. |
+| | `/redes/solicitar-verificacion` | POST | Solicitar verificación como administrador de una red. |
+| | `/redes/solicitar-oficializacion` | POST | Solicitar oficialización como administrador de una red. |
+| | `/reportes/red` | POST | Enviar un reporte contra una red/comunidad. |
+| | `/salirse/red` | POST | Abandonar una red de la que se es miembro. |
+| | `/apelaciones/red` | POST | Enviar apelación para restaurar una red deshabilitada. |
 | **Publicaciones** | `/publicaciones/global` | GET | Feed paginado de todas las publicaciones públicas. |
 | | `/publicaciones/comunitarias` | GET | Feed de publicaciones de las redes propias. |
 | | `/publicaciones/articulos/global` | GET | Feed global enfocado en el Marketplace de Artículos. |
@@ -343,6 +348,7 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
   - **Nota Técnica (`comment_tree_sheet.dart`)**: Análisis técnico confirma un riesgo potencial de OOM (Out of Memory) en este componente, ya que el árbol de comentarios se descarga y procesa completamente en una sola petición. La solución requiere cambios en el backend para soportar un endpoint paginado (con cursor y `limit`). Se tomó la decisión consciente de postergar esta optimización para una fase posterior al lanzamiento inicial. La propuesta arquitectónica de integrar un `CommentQueryProvider` queda registrada como plan de implementación futuro.
 - Utiliza carruseles de imágenes interactivos (post_image_carousel.dart) y un visualizador en pantalla completa (fullscreen_image_viewer.dart).
 - Avatares de red seguros (network_avatar.dart, safe_network_image.dart) previenen crashes por URLs inválidas.
+- Overlays restrictivos para control de acceso como `suspended_overlay.dart` para usuarios y `disabled_network_overlay.dart` para redes sancionadas.
 
 ## 7. Optimización, Rendimiento y Seguridad
 

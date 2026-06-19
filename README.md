@@ -25,6 +25,7 @@ El cliente (Frontend) consume los servicios del `BackendV2`, el cual provee un r
 - 👤 **Perfiles Personalizables:** Biografía, foto de perfil y métricas.
 - 💬 **Mensajería en Tiempo Real:** Integración con WebSocket (Pusher) para actualización síncrona de chats y notificaciones.
 - 🗺️ **Geolocalización:** Despliegue de mapas interactivos utilizando Mapbox.
+- 🛡️ **Moderación y Seguridad:** Sistema de advertencias (strikes), suspensión y apelaciones tanto para usuarios como para redes comunitarias.
 
 ## 🏗️ Arquitectura del Proyecto
 

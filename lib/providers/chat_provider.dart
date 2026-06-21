@@ -24,6 +24,7 @@ import '../services/storage_service.dart';
 /// - Inconsistencia de ID temporal: La lógica de Optimistic UI distingue IDs temporales comparando la longitud del String (`m.id.length > 10`), asumiendo que MongoId es de 24 chars y el local es un Timestamp largo. Frágil y propenso a fallos.
 class ChatProvider extends ChangeNotifier {
   final SocketService _socketService;
+  final http.Client _client;
   final String _conversationId;
   final String _contactId;
   final String _currentUserId;
@@ -44,7 +45,9 @@ class ChatProvider extends ChangeNotifier {
     required String contactId,
     required String currentUserId,
     this.onMessageSent,
+    http.Client? client,
   })  : _socketService = socketService,
+        _client = client ?? http.Client(),
         _conversationId = conversationId,
         _contactId = contactId,
         _currentUserId = currentUserId {
@@ -161,7 +164,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       final token = StorageService.getToken() ?? '';
       final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.conversacionEndpoint}/$_conversationId?page=$_page&limit=$_limit');
-      final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+      final response = await _client.get(url, headers: {'Authorization': 'Bearer $token'});
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -203,7 +206,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       final token = StorageService.getToken() ?? '';
       final url = Uri.parse('${AppConstants.baseUrl}/$_conversationId/leidos');
-      await http.post(url, headers: {'Authorization': 'Bearer $token'});
+      await _client.post(url, headers: {'Authorization': 'Bearer $token'});
     } catch (_) {}
   }
 
@@ -228,7 +231,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       final token = StorageService.getToken() ?? '';
       final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.enviarMensajeEndpoint}');
-      final response = await http.post(
+      final response = await _client.post(
         url,
         headers: {
           'Authorization': 'Bearer $token',

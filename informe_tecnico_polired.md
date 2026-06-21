@@ -365,7 +365,20 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
 - La intercepción de navegación mediante go_router funciona como guardia robusto (Route Guard) garantizando que usuarios sin sesión no puedan acceder a rutas protegidas bajo ninguna circunstancia.
 - Peticiones HTTPS mandatorias para el backend alojado en Vercel.
 
-## 8. Riesgos Técnicos y Mejoras Recomendadas
+## 8. Auditoría de Calidad y Pruebas (QA)
+
+Como parte del rigor técnico del proyecto, PoliRed cuenta con un robusto banco de pruebas automatizadas y procesos de validación manual que certifican el correcto funcionamiento de la arquitectura, la lógica de negocio y la reactividad de la interfaz.
+
+El proceso de QA abarcó las siguientes dimensiones:
+- **Pruebas Unitarias (Unit Testing):** Validación aislada de las capas de Servicio, Handlers de CQRS y Proveedores de Estado, comprobando respuestas a peticiones exitosas, fallidas y escenarios de *rollback*.
+- **Pruebas de Widgets (Widget Testing):** Renderizado simulado de la interfaz para comprobar las interacciones del usuario, el formateo de errores locales y el redibujado condicional frente a mutaciones de estado en el entorno Reactivo (CQRS).
+- **Pruebas de Compatibilidad:** Evaluación manual en múltiples dispositivos (físicos y emuladores) con distintas resoluciones y versiones de Android para confirmar una experiencia de usuario (UX/UI) cohesiva y sin errores de adaptabilidad.
+
+Para examinar el desglose técnico detallado, los fragmentos de código de los escenarios evaluados, los *refactorings* estructurales (como el Patrón Fake y la inyección de dependencias HTTP) aplicados durante el ciclo de pruebas y el estado de aprobación final (24 tests en verde sobre 11 componentes críticos), **consulte el documento oficial de evidencias:**
+
+[👉 **Ver Evidencia de Pruebas Completa**](./evidencia_pruebas.md)
+
+## 9. Riesgos Técnicos y Mejoras Recomendadas
 
 1. **Pusher Channels Fijos:** En el archivo socket_service.dart, la apiKey y el cluster de Pusher están quemados (*hardcoded*) directamente en la inicialización en vez de estar inyectados desde .env. Es un riesgo potencial si se requiere rotar credenciales.
 2. **Dependencia Fuerte a Singletons Dinámicos:** El modelo CQRS mezclado con Proveedores inyectados hace que el tracing del flujo de un comando pueda ser oscuro para nuevos desarrolladores.
@@ -373,11 +386,11 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
 4. **Manejo de Excepciones del Socket:** La conexión con Pusher realiza intentos de reconexión, sin embargo, el encolamiento de mensajes enviados offline no parece estar cubierto, por lo que podrían perderse si la red falla temporalmente.
 5. **Código Muerto/Comentado:** En constants.dart aún yacen comentadas configuraciones de localhost, lo cual sugiere un entorno de desarrollo algo manual en vez del uso de sabores (*flavors*) nativos de Flutter.
 
-## 9. Conclusiones Técnicas
+## 10. Conclusiones Técnicas
 
 PoliRed presenta una arquitectura de código sorprendentemente madura para una aplicación basada en Flutter. La correcta decisión de separar la lectura del modelo de la escritura (a través del acercamiento CQRS) previene los típicos problemas de inconsistencia visual en feeds paginados de redes sociales. Las integraciones clave (API, Websockets, Mapas, Storage) están debidamente segregadas en servicios, y el enrutamiento está centralizado con go_router. El sistema cumple con un estándar empresarial y su base de código facilita un futuro escalamiento a nuevas funcionalidades.
 
-## 10. Deuda Técnica Documentada
+## 11. Deuda Técnica Documentada
 
 ### Nomenclatura de constantes heredadas en `AppConstants`
 

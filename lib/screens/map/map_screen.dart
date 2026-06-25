@@ -8,9 +8,12 @@ import 'utils/marker_image_util.dart';
 import 'widgets/poi_search_bar.dart';
 import 'widgets/poi_detail_sheet.dart';
 import 'widgets/poi_directory_sheet.dart';
+import 'widgets/poi_layer_selector.dart';
 import 'dart:convert';
 import 'utils/campus_polygon.dart';
 import '../../widgets/core/base_screen.dart';
+import '../../services/path_graph_service.dart';
+import 'widgets/route_selector_panel.dart';
 
 /// Responsabilidad principal:
 /// Renderizar el mapa de la Escuela Politécnica Nacional usando Mapbox. Gestiona el "Fog of War" (polígono invertido oscuro fuera del campus), marcadores dinámicos y la cámara interactiva (Auto-rotación).
@@ -59,6 +62,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMixin {
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _annotationManager;
+  final PathGraphService _pathService = PathGraphService();
   bool _directoryOpen = false;
   PoiCategory? _directoryFilter;
 
@@ -69,6 +73,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   // Estado de visibilidad actual para evitar updates innecesarios
   bool _markersVisible = false;
   bool _labelsVisible = false;
+  PoiCategory? _currentActiveCategory;
+  bool _isRoutingActive = false;
 
   // Variables de rotación continua
   late AnimationController _rotationController;
@@ -81,12 +87,53 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    _pathService.loadGraph();
     _mapProvider = context.read<MapProvider>();
+    _mapProvider.addListener(_onMapProviderChanged);
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
     )..addListener(_onRotationTick);
     // Ya no se llama a repeat() aquí. Se llamará al finalizar el vuelo hacia un POI.
+  }
+
+  void _onMapProviderChanged() async {
+    if (_mapboxMap != null && mounted) {
+      final state = await _mapboxMap!.getCameraState();
+      await _syncMarkerVisibility(state.zoom);
+      await _syncRouteLine();
+    }
+  }
+
+  Future<void> _syncRouteLine() async {
+    if (_mapboxMap == null) return;
+    final mapProvider = context.read<MapProvider>();
+    final coords = mapProvider.activeRouteCoords;
+    
+    if (coords.isEmpty || !mapProvider.isRoutingMode) {
+      await _mapboxMap!.style.setStyleSourceProperty("route-source", "data", '{"type": "FeatureCollection", "features": []}');
+      return;
+    }
+    
+    // Draw the route
+    final jsonStr = '''
+    {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              ${coords.map((p) => "[${p.lng}, ${p.lat}]").join(",")}
+            ]
+          }
+        }
+      ]
+    }
+    ''';
+    await _mapboxMap!.style.setStyleSourceProperty("route-source", "data", jsonStr);
   }
 
   void _onRotationTick() {
@@ -106,6 +153,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   void dispose() {
     _rotationController.stop();
     _rotationController.dispose();
+    _mapProvider.removeListener(_onMapProviderChanged);
     
     // Limpiar el estado global del mapa al salir de la pantalla para que
     // los sheets se cierren y la carga inicial sea limpia.
@@ -172,45 +220,119 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             ),
           ),
 
-          // BARRA DE BÚSQUEDA SUPERIOR Y BOTÓN HOME
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            left: 8,
-            right: 16,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1D3557)),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: PoiSearchBar(
-                    onSearchTap: _closeAllSheets,
-                    onPoiSelected: (poi) async {
-                      final previousId = context.read<MapProvider>().selectedPoi?.id;
-                      context.read<MapProvider>().selectPoi(poi);
-                      await _updateMarkerSelection(previousId, poi.id);
-                      await _flyToPoi(poi);
+          // PANEL SUPERIOR: Búsqueda o Modo Ruta
+          Consumer<MapProvider>(
+            builder: (context, mapProvider, child) {
+              if (mapProvider.isRoutingMode) {
+                return Positioned(
+                  top: MediaQuery.of(context).padding.top + 12,
+                  left: 0,
+                  right: 0,
+                  child: RouteSelectorPanel(
+                    onClose: () {
+                      mapProvider.exitRoutingMode();
                     },
+                    onRouteRequested: (start, end) async {
+                      final path = _pathService.findRoute(
+                        Position(start.longitude, start.latitude),
+                        Position(end.longitude, end.latitude)
+                      );
+                      mapProvider.setRouteStart(start);
+                      mapProvider.setRouteEnd(end);
+                      mapProvider.setActiveRouteCoords(path);
+                      
+                      if (path.isNotEmpty && _mapboxMap != null) {
+                        double minLat = 90.0, maxLat = -90.0, minLng = 180.0, maxLng = -180.0;
+                        for (final p in path) {
+                          if (p.lat.toDouble() < minLat) minLat = p.lat.toDouble();
+                          if (p.lat.toDouble() > maxLat) maxLat = p.lat.toDouble();
+                          if (p.lng.toDouble() < minLng) minLng = p.lng.toDouble();
+                          if (p.lng.toDouble() > maxLng) maxLng = p.lng.toDouble();
+                        }
+                        final bounds = CoordinateBounds(
+                          southwest: Point(coordinates: Position(minLng, minLat)),
+                          northeast: Point(coordinates: Position(maxLng, maxLat)),
+                          infiniteBounds: true,
+                        );
+                        final state = await _mapboxMap!.getCameraState();
+                        final cam = await _mapboxMap!.cameraForCoordinateBounds(
+                          bounds, 
+                          MbxEdgeInsets(top: 250, left: 60, bottom: 60, right: 60),
+                          state.bearing, state.pitch, null, null
+                        );
+                        
+                        double targetZoom = cam.zoom ?? state.zoom;
+                        if (targetZoom > 18.0) targetZoom = 18.0;
+
+                        await _mapboxMap!.flyTo(
+                          CameraOptions(
+                            center: cam.center,
+                            zoom: targetZoom,
+                            bearing: state.bearing,
+                            pitch: state.pitch,
+                          ),
+                          MapAnimationOptions(duration: 800)
+                        );
+                      }
+                    }
                   ),
+                );
+              }
+              
+              return Positioned(
+                top: MediaQuery.of(context).padding.top + 12,
+                left: 0,
+                right: 0,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1D3557)),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: PoiSearchBar(
+                              onSearchTap: _closeAllSheets,
+                              onPoiSelected: (poi) async {
+                                final previousId = context.read<MapProvider>().selectedPoi?.id;
+                                context.read<MapProvider>().selectPoi(poi);
+                                await _updateMarkerSelection(previousId, poi.id);
+                                await _flyToPoi(poi);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    PoiLayerSelector(
+                      onFilterApplied: (category) {
+                        _flyToCategoryBounds(category);
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           // BOTÓN DIRECTORIO (abajo izquierda)
@@ -235,6 +357,25 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               return Positioned.fill(
                 child: PoiDetailSheet(
                   poi: poi,
+                  onStartRouting: () async {
+                    final previousId = poi.id;
+                    mapProvider.startRoutingFromPoi(poi);
+                    await _updateMarkerSelection(previousId, null);
+                    
+                    if (_mapboxMap != null) {
+                      final state = await _mapboxMap!.getCameraState();
+                      await _mapboxMap?.flyTo(
+                        CameraOptions(
+                          center: state.center,
+                          zoom: 17.0, // Moderate zoom out
+                          pitch: 45.0,
+                          bearing: state.bearing,
+                          padding: MbxEdgeInsets(top: 150, left: 0, bottom: 0, right: 0),
+                        ),
+                        MapAnimationOptions(duration: 800),
+                      );
+                    }
+                  },
                   onClose: () async {
                     final previousId = poi.id;
                     mapProvider.clearSelection();
@@ -330,6 +471,20 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       padding: MbxEdgeInsets(top: 80, left: 0, bottom: 0, right: 0),
     ));
 
+    await map.style.addSource(GeoJsonSource(
+      id: "route-source",
+      data: '{"type": "FeatureCollection", "features": []}',
+    ));
+    await map.style.addLayer(LineLayer(
+      id: "route-layer",
+      sourceId: "route-source",
+      lineColor: const Color(0xFF4CAF50).toARGB32(), // Verde para la ruta
+      lineWidth: 6.0,
+      lineOpacity: 0.8,
+      lineJoin: LineJoin.ROUND,
+      lineCap: LineCap.ROUND,
+    ));
+
     _annotationManager = await map.annotations.createPointAnnotationManager();
     _annotationManager!.tapEvents(onTap: (annotation) async {
       final poi = _findPoiByAnnotationId(annotation.id);
@@ -386,19 +541,14 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     _annotationIdToPoiId.clear();
     _annotations.clear();
 
-    // Pre-registrar imágenes por categoría (normal + seleccionado)
-    // 1. Generar los bytes de Canvas en paralelo para ahorrar tiempo
+    // 1. Generar los bytes de Canvas en paralelo para todos los POIs
     final futures = <Future<Map<String, dynamic>>>[];
-    for (final category in PoiCategory.values) {
+    for (final poi in PoiData.all) {
       futures.add(() async {
-        final normalBytes = await MarkerImageUtil.generateMarkerBytes(
-            category: category, isSelected: false);
-        final selectedBytes = await MarkerImageUtil.generateMarkerBytes(
-            category: category, isSelected: true);
+        final markerBytes = await MarkerImageUtil.generatePoiMarker(poi, size: 56);
         return {
-          'category': category,
-          'normalBytes': normalBytes,
-          'selectedBytes': selectedBytes,
+          'poiId': poi.id,
+          'bytes': markerBytes,
         };
       }());
     }
@@ -407,28 +557,21 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
     // 2. Registrar las imágenes secuencialmente en Mapbox (Method Channel thread-safe)
     for (final result in results) {
-      final category = result['category'] as PoiCategory;
-      final normalBytes = result['normalBytes'] as dynamic;
-      final selectedBytes = result['selectedBytes'] as dynamic;
+      final poiId = result['poiId'] as String;
+      final bytes = result['bytes'] as dynamic;
       
-      final normalKey = 'marker_${category.name}_normal';
-      final selectedKey = 'marker_${category.name}_selected';
+      final iconKey = 'image_$poiId';
 
       await _mapboxMap!.style.addStyleImage(
-        normalKey, 1.0,
-        MbxImage(width: 44, height: 44, data: normalBytes),
-        false, [], [], null,
-      );
-      await _mapboxMap!.style.addStyleImage(
-        selectedKey, 1.0,
-        MbxImage(width: 52, height: 52, data: selectedBytes),
+        iconKey, 1.0,
+        MbxImage(width: 56, height: 56, data: bytes),
         false, [], [], null,
       );
     }
 
     // Crear anotaciones para los 41 puntos
     for (final poi in PoiData.all) {
-      final iconKey = 'marker_${poi.category.name}_normal';
+      final iconKey = 'image_${poi.id}';
       final annotation = await _annotationManager!.create(
         PointAnnotationOptions(
           geometry: Point(coordinates: Position(poi.longitude, poi.latitude)),
@@ -449,15 +592,21 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       _annotationIdToPoiId[annotation.id] = poi.id;
       _annotations[poi.id] = annotation;
     }
+    final campusBytes = await MarkerImageUtil.generateCampusMarker();
+    await _mapboxMap!.style.addStyleImage(
+      'image_campus_logo', 1.0,
+      MbxImage(width: 56, height: 56, data: campusBytes),
+      false, [], [], null,
+    );
 
     _campusAnnotation = await _annotationManager!.create(
       PointAnnotationOptions(
         geometry: Point(coordinates: Position(_campusCenter.coordinates.lng, _campusCenter.coordinates.lat)),
-        iconImage: 'marker_other_selected',
+        iconImage: 'image_campus_logo',
         iconSize: 1.2,
         iconOpacity: 1.0,
         textField: 'Escuela Politécnica Nacional',
-        textOffset: [0.0, 0.5],
+        textOffset: [0.0, 1.2],
         textSize: 14.0,
         textColor: Colors.black.toARGB32(),
         textHaloColor: Colors.white.toARGB32(),
@@ -477,17 +626,23 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   /// - Sobre _markersVisibleZoom → íconos visibles siempre
   ///                               textos visibles solo sobre 16.5
   Future<void> _syncMarkerVisibility(double zoom) async {
-    final shouldShowMarkers = zoom >= _markersVisibleZoom;
-    final shouldShowLabels = zoom >= _labelsVisibleZoom;
+    final activeCategory = _mapProvider.activeCategory;
+    final isRoutingWithBoth = _mapProvider.isRoutingMode && _mapProvider.routeStart != null && _mapProvider.routeEnd != null;
+    final shouldShowMarkers = zoom >= _markersVisibleZoom || activeCategory != null;
+    final shouldShowLabels = zoom >= _labelsVisibleZoom || activeCategory != null;
 
     // Salir si nada cambia
     if (shouldShowMarkers == _markersVisible &&
-        shouldShowLabels == _labelsVisible) {
+        shouldShowLabels == _labelsVisible &&
+        activeCategory == _currentActiveCategory &&
+        isRoutingWithBoth == _isRoutingActive) {
       return;
     }
 
     _markersVisible = shouldShowMarkers;
     _labelsVisible = shouldShowLabels;
+    _currentActiveCategory = activeCategory;
+    _isRoutingActive = isRoutingWithBoth;
 
     final selectedPoiId = context.read<MapProvider>().selectedPoi?.id;
 
@@ -497,12 +652,28 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       final annotation = entry.value;
       bool changed = false;
       
-      final targetIconOpacity = shouldShowMarkers 
-          ? (selectedPoiId != null && entry.key != selectedPoiId ? 0.3 : 1.0) 
-          : 0.0;
-      final targetTextOpacity = shouldShowLabels 
-          ? (selectedPoiId != null && entry.key != selectedPoiId ? 0.3 : 1.0) 
-          : 0.0;
+      final poi = PoiData.all.firstWhere((p) => p.id == entry.key);
+      final isFilteredOut = activeCategory != null && poi.category != activeCategory;
+      
+      double targetIconOpacity = 0.0;
+      double targetTextOpacity = 0.0;
+
+      if (isRoutingWithBoth) {
+        if (poi.id == _mapProvider.routeStart?.id || poi.id == _mapProvider.routeEnd?.id) {
+          targetIconOpacity = 1.0;
+          targetTextOpacity = 1.0;
+        } else {
+          targetIconOpacity = 0.0;
+          targetTextOpacity = 0.0;
+        }
+      } else {
+        targetIconOpacity = shouldShowMarkers 
+            ? (isFilteredOut ? 0.0 : (selectedPoiId != null && entry.key != selectedPoiId ? 0.3 : 1.0)) 
+            : 0.0;
+        targetTextOpacity = shouldShowLabels 
+            ? (isFilteredOut ? 0.0 : (selectedPoiId != null && entry.key != selectedPoiId ? 0.3 : 1.0)) 
+            : 0.0;
+      }
           
       if (annotation.iconOpacity != targetIconOpacity) {
         annotation.iconOpacity = targetIconOpacity;
@@ -520,8 +691,8 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
 
     if (_campusAnnotation != null) {
       bool changed = false;
-      final targetIconOpacity = shouldShowMarkers ? 0.0 : 1.0;
-      final targetTextOpacity = shouldShowMarkers ? 0.0 : 1.0;
+      final targetIconOpacity = (shouldShowMarkers || _isRoutingActive) ? 0.0 : 1.0;
+      final targetTextOpacity = (shouldShowMarkers || _isRoutingActive) ? 0.0 : 1.0;
       if (_campusAnnotation!.iconOpacity != targetIconOpacity) {
         _campusAnnotation!.iconOpacity = targetIconOpacity;
         changed = true;
@@ -542,106 +713,102 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     }
   }
 
+  Future<void> _flyToCategoryBounds(PoiCategory category) async {
+    final pois = PoiData.all.where((p) => p.category == category).toList();
+    if (pois.isEmpty || _mapboxMap == null) return;
+    
+    double minLat = 90.0, maxLat = -90.0, minLng = 180.0, maxLng = -180.0;
+    for (final p in pois) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    
+    final bounds = CoordinateBounds(
+      southwest: Point(coordinates: Position(minLng, minLat)),
+      northeast: Point(coordinates: Position(maxLng, maxLat)),
+      infiniteBounds: true,
+    );
+    
+    final state = await _mapboxMap!.getCameraState();
+    
+    final cameraOptions = await _mapboxMap!.cameraForCoordinateBounds(
+      bounds, 
+      MbxEdgeInsets(top: 150, left: 60, bottom: 60, right: 60),
+      state.bearing, 
+      state.pitch, 
+      null, null
+    );
+    
+    double targetZoom = cameraOptions.zoom ?? state.zoom;
+    if (targetZoom < 17.2) {
+      targetZoom = 17.2;
+    }
+    
+    await _mapboxMap!.flyTo(
+      CameraOptions(
+        center: cameraOptions.center,
+        zoom: targetZoom,
+        bearing: state.bearing,
+        pitch: state.pitch,
+      ), 
+      MapAnimationOptions(duration: 800)
+    );
+  }
+
   Future<void> _updateMarkerSelection(
       String? previousPoiId, String? newPoiId) async {
+    final updates = <PointAnnotation>[];
+
     // Restaurar el anterior
     if (previousPoiId != null && _annotations.containsKey(previousPoiId)) {
       final prev = _annotations[previousPoiId]!;
-      final poi = PoiData.all.firstWhere((p) => p.id == previousPoiId);
-      final targetIconImage = 'marker_${poi.category.name}_normal';
-      if (prev.iconImage != targetIconImage || prev.iconSize != 1.0) {
-        prev.iconImage = targetIconImage;
+      if (prev.iconSize != 1.0) {
         prev.iconSize = 1.0;
-        await _annotationManager?.update(prev);
+        updates.add(prev);
       }
     }
 
-    // Si no hay ninguno seleccionado (deselección global), restaurar opacidad de todos
-    if (newPoiId == null) {
-      _rotationController.stop();
-      final updates = <PointAnnotation>[];
-      for (final ann in _annotations.values) {
-        bool changed = false;
-        final targetIconOpacity = _markersVisible ? 1.0 : 0.0;
-        final targetTextOpacity = _labelsVisible ? 1.0 : 0.0;
-        if (ann.iconOpacity != targetIconOpacity) {
-          ann.iconOpacity = targetIconOpacity;
-          changed = true;
-        }
-        if (ann.textOpacity != targetTextOpacity) {
-          ann.textOpacity = targetTextOpacity;
-          changed = true;
-        }
-        if (changed) {
-          updates.add(ann);
-        }
-      }
-      if (updates.isNotEmpty) {
-        await Future.wait(updates.map((a) => _annotationManager!.update(a)));
-      }
-      return;
-    }
-
-    // Hay un nuevo seleccionado: oscurecer los demás
-    final updates = <PointAnnotation>[];
-    for (final entry in _annotations.entries) {
-      final ann = entry.value;
-      bool changed = false;
-      
-      if (entry.key == newPoiId) {
-        final poi = PoiData.all.firstWhere((p) => p.id == newPoiId);
-        final targetIconImage = 'marker_${poi.category.name}_selected';
-        final targetIconOpacity = _markersVisible ? 1.0 : 0.0;
-        final targetTextOpacity = _labelsVisible ? 1.0 : 0.0;
-        
-        if (ann.iconImage != targetIconImage) {
-          ann.iconImage = targetIconImage;
-          changed = true;
-        }
-        if (ann.iconOpacity != targetIconOpacity) {
-          ann.iconOpacity = targetIconOpacity;
-          changed = true;
-        }
-        if (ann.textOpacity != targetTextOpacity) {
-          ann.textOpacity = targetTextOpacity;
-          changed = true;
-        }
-      } else {
-        final targetIconOpacity = _markersVisible ? 0.3 : 0.0;
-        final targetTextOpacity = _labelsVisible ? 0.3 : 0.0;
-        if (ann.iconOpacity != targetIconOpacity) {
-          ann.iconOpacity = targetIconOpacity;
-          changed = true;
-        }
-        if (ann.textOpacity != targetTextOpacity) {
-          ann.textOpacity = targetTextOpacity;
-          changed = true;
-        }
-      }
-      
-      if (changed) {
+    // Seleccionar el nuevo
+    if (newPoiId != null && _annotations.containsKey(newPoiId)) {
+      final ann = _annotations[newPoiId]!;
+      if (ann.iconSize != 1.4) {
+        ann.iconSize = 1.4;
         updates.add(ann);
       }
+    } else if (newPoiId == null) {
+      _rotationController.stop();
     }
 
     if (updates.isNotEmpty) {
       await Future.wait(updates.map((a) => _annotationManager!.update(a)));
     }
+    
+    // Sincronizar opacidades usando la lógica centralizada
+    if (_mapboxMap != null) {
+      final state = await _mapboxMap!.getCameraState();
+      // Forzar actualización ignorando caché local para aplicar selecciones
+      _markersVisible = false; 
+      await _syncMarkerVisibility(state.zoom);
+    }
 
     // Iniciar pulso
-    _pulseMarker(newPoiId);
+    if (newPoiId != null) {
+      _pulseMarker(newPoiId);
+    }
   }
 
   Future<void> _pulseMarker(String poiId) async {
     final ann = _annotations[poiId];
     if (ann == null) return;
-    ann.iconSize = 1.4;
+    ann.iconSize = 1.6;
     await _annotationManager?.update(ann);
     await Future.delayed(const Duration(milliseconds: 200));
     
     final ann2 = _annotations[poiId];
     if (ann2 == null) return;
-    ann2.iconSize = 1.0;
+    ann2.iconSize = 1.4;
     await _annotationManager?.update(ann2);
   }
 

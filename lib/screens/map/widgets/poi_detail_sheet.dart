@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../models/poi_model.dart';
+import '../../../providers/map_provider.dart';
 
 /// Responsabilidad principal:
 /// Bottom sheet que muestra el detalle de un Punto de Interés (POI) seleccionado en el mapa (fotos, horarios, cómo llegar).
@@ -19,25 +21,15 @@ class PoiDetailSheet extends StatelessWidget {
   final PoiModel poi;
   final VoidCallback onClose;
   final void Function(PoiCategory)? onOpenDirectory;
+  final VoidCallback? onStartRouting;
 
   const PoiDetailSheet({
     super.key, 
     required this.poi, 
     required this.onClose,
     this.onOpenDirectory,
+    this.onStartRouting,
   });
-
-  IconData _getCategoryIcon(PoiCategory cat) {
-    switch (cat) {
-      case PoiCategory.academic: return Icons.school_rounded;
-      case PoiCategory.services: return Icons.business_center_rounded;
-      case PoiCategory.sports: return Icons.sports_basketball_rounded;
-      case PoiCategory.food: return Icons.restaurant_rounded;
-      case PoiCategory.admin: return Icons.admin_panel_settings_rounded;
-      case PoiCategory.other: 
-        return Icons.place_rounded;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +67,10 @@ class PoiDetailSheet extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxHeight < 60) return const SizedBox.shrink();
+                  return Column(
                 children: [
                   // Indicador de drag
                   Center(
@@ -131,7 +126,11 @@ class PoiDetailSheet extends StatelessWidget {
                         children: [
                           // Galería de fotos
                           if (poi.photoAssets.isNotEmpty)
-                            _PoiImageCarousel(photoAssets: poi.photoAssets)
+                            _PoiImageCarousel(
+                              photoAssets: poi.photoAssets,
+                              buildingNumber: poi.buildingNumber,
+                              category: poi.category,
+                            )
                           else
                             const SizedBox(height: 8),
 
@@ -141,47 +140,36 @@ class PoiDetailSheet extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Header
-                                Row(
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(poi.name,
-                                              style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Color(0xFF1D3557))),
-                                          const SizedBox(height: 4),
-                                          Text(poi.shortDescription,
-                                              style: TextStyle(
-                                                  fontSize: 13,
-                                                  color: Colors.grey.shade600,
-                                                  height: 1.4)),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    // Badge categoría
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1D3557).withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(_getCategoryIcon(poi.category), size: 14, color: const Color(0xFF1D3557)),
-                                          const SizedBox(width: 4),
-                                          Text(poi.category.label,
-                                              style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF1D3557))),
-                                        ],
+                                    Text(poi.name,
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF1D3557))),
+                                    const SizedBox(height: 4),
+                                    Text(poi.shortDescription,
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade600,
+                                            height: 1.4)),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        if (onStartRouting != null) {
+                                          onStartRouting!();
+                                        } else {
+                                          context.read<MapProvider>().startRoutingFromPoi(poi);
+                                        }
+                                      },
+                                      icon: const Icon(Icons.directions_walk_rounded),
+                                      label: const Text('Ir a este lugar'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFE63946),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
                                     ),
                                   ],
@@ -230,9 +218,11 @@ class PoiDetailSheet extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            );
-          },
+              );
+            }, // Cierre del LayoutBuilder
+          ),
+        );
+      }, // Cierre del builder de DraggableScrollableSheet
         ),
       ),
     );
@@ -262,8 +252,10 @@ class _SectionTitle extends StatelessWidget {
 
 class _PoiImageCarousel extends StatefulWidget {
   final List<String> photoAssets;
+  final String? buildingNumber;
+  final PoiCategory category;
 
-  const _PoiImageCarousel({required this.photoAssets});
+  const _PoiImageCarousel({required this.photoAssets, this.buildingNumber, required this.category});
 
   @override
   State<_PoiImageCarousel> createState() => _PoiImageCarouselState();
@@ -285,35 +277,135 @@ class _PoiImageCarouselState extends State<_PoiImageCarousel> {
     super.dispose();
   }
 
+  void _openFullScreenImage(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: InteractiveViewer(
+              minScale: 1.0,
+              maxScale: 5.0,
+              child: Center(
+                child: Image.asset(imagePath, fit: BoxFit.contain),
+              ),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: Material(
+              color: Colors.transparent,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         AspectRatio(
-          aspectRatio: 4 / 3,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Container(
-              color: Colors.black87,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: widget.photoAssets.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentImageIndex = index;
-                  });
-                },
-                itemBuilder: (_, index) => Image.asset(
-                  widget.photoAssets[index],
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Container(
-                    color: const Color(0xFF1D3557).withValues(alpha: 0.08),
-                    child: const Icon(Icons.image_not_supported_rounded, color: Colors.grey),
+          aspectRatio: 16 / 9,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: Container(
+                    color: Colors.black87,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: widget.photoAssets.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentImageIndex = index;
+                        });
+                      },
+                      itemBuilder: (_, index) => GestureDetector(
+                        onTap: () => _openFullScreenImage(context, widget.photoAssets[index]),
+                        child: Image.asset(
+                          widget.photoAssets[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            color: const Color(0xFF1D3557).withValues(alpha: 0.08),
+                            child: const Icon(Icons.image_not_supported_rounded, color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (widget.buildingNumber != null)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE63946),
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Edificio ${widget.buildingNumber!}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                bottom: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(widget.category.iconData, size: 14, color: const Color(0xFF1D3557)),
+                      const SizedBox(width: 4),
+                      Text(widget.category.label,
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1D3557))),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         if (widget.photoAssets.length > 1) ...[

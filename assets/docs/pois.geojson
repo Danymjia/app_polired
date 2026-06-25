@@ -15,7 +15,8 @@
           "assets/pois/poi_03_1.jpeg",
           "assets/pois/poi_03_2.jpeg",
           "assets/pois/poi_03_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "3"
       },
       "geometry": {
         "type": "Point",
@@ -39,7 +40,8 @@
           "assets/pois/poi_04_1.jpeg",
           "assets/pois/poi_04_2.jpeg",
           "assets/pois/poi_04_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "4"
       },
       "geometry": {
         "type": "Point",
@@ -59,6 +61,7 @@
         "shortDescription": "Ingeniería Eléctrica y Electrónica · FIEE",
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Entrada por la calle Isabel la Católica y Veintimilla",
+        "buildingNumber": "15",
         "images": [
           "assets/pois/poi_05_1.jpeg",
           "assets/pois/poi_05_2.jpeg",
@@ -83,6 +86,7 @@
         "shortDescription": "Ingeniería Química y Agroindustria · FIQA",
         "schedule": "Lun–Vie 07:00–19:00",
         "howToGet": "Acceso por la calle Alfredo Mena Caamaño y Andalucía",
+        "buildingNumber": "17",
         "images": [
           "assets/pois/poi_07_1.jpg",
           "assets/pois/poi_07_2.jpg",
@@ -111,7 +115,8 @@
           "assets/pois/poi_08_1.jpeg",
           "assets/pois/poi_08_2.jpeg",
           "assets/pois/poi_08_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "8"
       },
       "geometry": {
         "type": "Point",
@@ -135,7 +140,8 @@
           "assets/pois/poi_09_1.jpeg",
           "assets/pois/poi_09_2.jpeg",
           "assets/pois/poi_09_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "9"
       },
       "geometry": {
         "type": "Point",
@@ -159,7 +165,8 @@
           "assets/pois/poi_10_1.jpeg",
           "assets/pois/poi_10_2.jpeg",
           "assets/pois/poi_10_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "10"
       },
       "geometry": {
         "type": "Point",
@@ -183,7 +190,8 @@
           "assets/pois/poi_12_1.jpeg",
           "assets/pois/poi_12_2.jpeg",
           "assets/pois/poi_12_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "12"
       },
       "geometry": {
         "type": "Point",
@@ -207,7 +215,8 @@
           "assets/pois/poi_16_1.jpeg",
           "assets/pois/poi_16_2.jpeg",
           "assets/pois/poi_16_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "16"
       },
       "geometry": {
         "type": "Point",
@@ -231,7 +240,8 @@
           "assets/pois/poi_17_1.jpeg",
           "assets/pois/poi_17_2.jpeg",
           "assets/pois/poi_17_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "17"
       },
       "geometry": {
         "type": "Point",
@@ -255,7 +265,8 @@
           "assets/pois/poi_20_1.jpeg",
           "assets/pois/poi_20_2.jpeg",
           "assets/pois/poi_20_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "20"
       },
       "geometry": {
         "type": "Point",
@@ -279,7 +290,8 @@
           "assets/pois/poi_22_1.jpeg",
           "assets/pois/poi_22_2.jpeg",
           "assets/pois/poi_22_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "22"
       },
       "geometry": {
         "type": "Point",
@@ -303,7 +315,8 @@
           "assets/pois/poi_23_1.jpeg",
           "assets/pois/poi_23_2.jpeg",
           "assets/pois/poi_23_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "23"
       },
       "geometry": {
         "type": "Point",
@@ -327,7 +340,8 @@
           "assets/pois/poi_24_1.jpeg",
           "assets/pois/poi_24_2.jpeg",
           "assets/pois/poi_24_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "24"
       },
       "geometry": {
         "type": "Point",
@@ -351,7 +365,8 @@
           "assets/pois/poi_26_1.jpeg",
           "assets/pois/poi_26_2.jpeg",
           "assets/pois/poi_26_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "26"
       },
       "geometry": {
         "type": "Point",
@@ -375,7 +390,8 @@
           "assets/pois/poi_28_1.jpeg",
           "assets/pois/poi_28_2.jpeg",
           "assets/pois/poi_28_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "28"
       },
       "geometry": {
         "type": "Point",
@@ -399,7 +415,8 @@
           "assets/pois/poi_29_1.jpeg",
           "assets/pois/poi_29_2.jpeg",
           "assets/pois/poi_29_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "29"
       },
       "geometry": {
         "type": "Point",
@@ -423,7 +440,8 @@
           "assets/pois/poi_30_1.jpeg",
           "assets/pois/poi_30_2.jpeg",
           "assets/pois/poi_30_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "30"
       },
       "geometry": {
         "type": "Point",
@@ -447,7 +465,8 @@
           "assets/pois/poi_31_1.jpeg",
           "assets/pois/poi_31_2.jpeg",
           "assets/pois/poi_31_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "31"
       },
       "geometry": {
         "type": "Point",
@@ -471,7 +490,8 @@
           "assets/pois/poi_33_1.jpeg",
           "assets/pois/poi_33_2.jpeg",
           "assets/pois/poi_33_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "33"
       },
       "geometry": {
         "type": "Point",
@@ -495,7 +515,8 @@
           "assets/pois/poi_34_1.jpeg",
           "assets/pois/poi_34_2.jpeg",
           "assets/pois/poi_34_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "34"
       },
       "geometry": {
         "type": "Point",
@@ -519,7 +540,8 @@
           "assets/pois/poi_35_1.jpeg",
           "assets/pois/poi_35_2.jpeg",
           "assets/pois/poi_35_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "35"
       },
       "geometry": {
         "type": "Point",
@@ -543,7 +565,8 @@
           "assets/pois/poi_36_1.jpeg",
           "assets/pois/poi_36_2.jpeg",
           "assets/pois/poi_36_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "36"
       },
       "geometry": {
         "type": "Point",
@@ -567,7 +590,8 @@
           "assets/pois/poi_37_1.jpeg",
           "assets/pois/poi_37_2.jpeg",
           "assets/pois/poi_37_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "37"
       },
       "geometry": {
         "type": "Point",
@@ -591,7 +615,8 @@
           "assets/pois/poi_39_1.jpeg",
           "assets/pois/poi_39_2.jpeg",
           "assets/pois/poi_39_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "39"
       },
       "geometry": {
         "type": "Point",
@@ -615,7 +640,8 @@
           "assets/pois/poi_40_1.jpeg",
           "assets/pois/poi_40_2.jpeg",
           "assets/pois/poi_40_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "40"
       },
       "geometry": {
         "type": "Point",
@@ -639,7 +665,8 @@
           "assets/pois/poi_42_1.jpeg",
           "assets/pois/poi_42_2.jpeg",
           "assets/pois/poi_42_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "42"
       },
       "geometry": {
         "type": "Point",
@@ -663,7 +690,8 @@
           "assets/pois/poi_44_1.jpg",
           "assets/pois/poi_44_2.jpg",
           "assets/pois/poi_44_3.jpg"
-        ]
+        ],
+        "buildingNumber": "44"
       },
       "geometry": {
         "type": "Point",
@@ -687,7 +715,8 @@
           "assets/pois/poi_46_1.jpg",
           "assets/pois/poi_46_2.jpg",
           "assets/pois/poi_46_3.jpg"
-        ]
+        ],
+        "buildingNumber": "46"
       },
       "geometry": {
         "type": "Point",
@@ -711,7 +740,8 @@
           "assets/pois/poi_49_1.jpeg",
           "assets/pois/poi_49_2.jpeg",
           "assets/pois/poi_49_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "49"
       },
       "geometry": {
         "type": "Point",
@@ -735,7 +765,8 @@
           "assets/pois/poi_50_1.jpeg",
           "assets/pois/poi_50_2.jpeg",
           "assets/pois/poi_50_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "50"
       },
       "geometry": {
         "type": "Point",
@@ -759,7 +790,8 @@
           "assets/pois/poi_51_1.jpeg",
           "assets/pois/poi_51_2.jpeg",
           "assets/pois/poi_51_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "51"
       },
       "geometry": {
         "type": "Point",
@@ -783,7 +815,8 @@
           "assets/pois/poi_53_1.jpeg",
           "assets/pois/poi_53_2.jpeg",
           "assets/pois/poi_53_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "53"
       },
       "geometry": {
         "type": "Point",
@@ -807,7 +840,8 @@
           "assets/pois/poi_54_1.jpeg",
           "assets/pois/poi_54_2.jpeg",
           "assets/pois/poi_54_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "54"
       },
       "geometry": {
         "type": "Point",
@@ -831,7 +865,8 @@
           "assets/pois/poi_55_1.jpeg",
           "assets/pois/poi_55_2.jpeg",
           "assets/pois/poi_55_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "55"
       },
       "geometry": {
         "type": "Point",
@@ -855,7 +890,8 @@
           "assets/pois/poi_56_1.jpeg",
           "assets/pois/poi_56_2.jpeg",
           "assets/pois/poi_56_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "56"
       },
       "geometry": {
         "type": "Point",
@@ -879,7 +915,8 @@
           "assets/pois/poi_57_1.jpeg",
           "assets/pois/poi_57_2.jpeg",
           "assets/pois/poi_57_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "57"
       },
       "geometry": {
         "type": "Point",
@@ -903,7 +940,8 @@
           "assets/pois/poi_58_1.jpeg",
           "assets/pois/poi_58_2.jpeg",
           "assets/pois/poi_58_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "58"
       },
       "geometry": {
         "type": "Point",
@@ -927,7 +965,8 @@
           "assets/pois/poi_59_1.jpeg",
           "assets/pois/poi_59_2.jpeg",
           "assets/pois/poi_59_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "59"
       },
       "geometry": {
         "type": "Point",
@@ -951,7 +990,8 @@
           "assets/pois/poi_60_1.jpeg",
           "assets/pois/poi_60_2.jpeg",
           "assets/pois/poi_60_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "60"
       },
       "geometry": {
         "type": "Point",
@@ -975,7 +1015,8 @@
           "assets/pois/poi_61_1.jpeg",
           "assets/pois/poi_61_2.jpeg",
           "assets/pois/poi_61_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "61"
       },
       "geometry": {
         "type": "Point",
@@ -999,7 +1040,8 @@
           "assets/pois/poi_62_1.jpeg",
           "assets/pois/poi_62_2.jpeg",
           "assets/pois/poi_62_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "62"
       },
       "geometry": {
         "type": "Point",
@@ -1023,7 +1065,8 @@
           "assets/pois/poi_63_1.jpeg",
           "assets/pois/poi_63_2.jpeg",
           "assets/pois/poi_63_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "63"
       },
       "geometry": {
         "type": "Point",
@@ -1047,7 +1090,8 @@
           "assets/pois/poi_64_1.jpeg",
           "assets/pois/poi_64_2.jpeg",
           "assets/pois/poi_64_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "64"
       },
       "geometry": {
         "type": "Point",
@@ -1071,7 +1115,8 @@
           "assets/pois/poi_65_1.jpeg",
           "assets/pois/poi_65_2.jpeg",
           "assets/pois/poi_65_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "65"
       },
       "geometry": {
         "type": "Point",
@@ -1095,7 +1140,8 @@
           "assets/pois/poi_66_1.jpeg",
           "assets/pois/poi_66_2.jpeg",
           "assets/pois/poi_66_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "66"
       },
       "geometry": {
         "type": "Point",
@@ -1119,7 +1165,8 @@
           "assets/pois/poi_67_1.jpeg",
           "assets/pois/poi_67_2.jpeg",
           "assets/pois/poi_67_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "67"
       },
       "geometry": {
         "type": "Point",
@@ -1143,7 +1190,8 @@
           "assets/pois/poi_77_1.jpeg",
           "assets/pois/poi_77_2.jpeg",
           "assets/pois/poi_77_3.jpeg"
-        ]
+        ],
+        "buildingNumber": "77"
       },
       "geometry": {
         "type": "Point",

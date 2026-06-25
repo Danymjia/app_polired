@@ -40,11 +40,13 @@ class NetworkProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   List<dynamic> _redes = [];
+  List<dynamic> _todasLasRedes = [];
   bool _hasLoadedOnce = false;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   List<dynamic> get redes => _redes;
+  List<dynamic> get todasLasRedes => _todasLasRedes;
   bool get hasLoadedOnce => _hasLoadedOnce;
 
   int? _redesCount;
@@ -57,6 +59,7 @@ class NetworkProvider extends ChangeNotifier {
     _feedByNetwork.clear();
     _networkStories.clear();
     _redes.clear();
+    _todasLasRedes.clear();
     _redesCount = null;
     _selectedNetwork = null;
     _feedStatus = FeedStatus.idle;
@@ -285,7 +288,7 @@ class NetworkProvider extends ChangeNotifier {
     final result = await _networkService.getRedes();
 
     if (result.success && result.data != null) {
-      _redes = result.data!;
+      _todasLasRedes = result.data!;
     } else {
       _errorMessage = result.message;
     }

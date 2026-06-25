@@ -176,12 +176,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                     const SizedBox(height: 24),
                     
-                    if (networkProvider.isLoading && networkProvider.redes.isEmpty)
+                    if (networkProvider.isLoading && networkProvider.todasLasRedes.isEmpty)
                       const Center(child: CircularProgressIndicator())
-                    else if (networkProvider.redes.isEmpty)
+                    else if (networkProvider.todasLasRedes.isEmpty)
                       Text(networkProvider.errorMessage ?? 'No hay redes disponibles', style: const TextStyle(color: Colors.grey))
                     else
-                      ...networkProvider.redes.take(10).map((raw) {
+                      ...networkProvider.todasLasRedes.take(10).map((raw) {
                         if (raw is! Map) return const SizedBox.shrink();
                         final red = Map<String, dynamic>.from(raw);
                         final redId = parseMongoIdFromMap(red) ?? '';

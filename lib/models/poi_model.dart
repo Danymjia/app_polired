@@ -12,6 +12,8 @@
 ///
 /// Recordatorios técnicos y CQRS:
 /// - No participa del patrón CQRS. Es un modelo estático y de lectura para el subsistema de Mapas.
+import 'package:flutter/material.dart';
+
 enum PoiCategory {
   academic,    // Facultades, aulas, laboratorios
   services,    // Biblioteca, secretaría, imprenta
@@ -23,7 +25,7 @@ enum PoiCategory {
 
 extension PoiCategoryX on PoiCategory {
   String get label => switch (this) {
-    PoiCategory.academic => 'Académico',
+    PoiCategory.academic => 'Facultades',
     PoiCategory.services => 'Servicios',
     PoiCategory.food     => 'Alimentación',
     PoiCategory.sports   => 'Deportes',
@@ -31,13 +33,13 @@ extension PoiCategoryX on PoiCategory {
     PoiCategory.other    => 'Otros',
   };
 
-  String get svgIcon => switch (this) {
-    PoiCategory.academic => 'assets/icons/poi_academic.svg',
-    PoiCategory.services => 'assets/icons/poi_services.svg',
-    PoiCategory.food     => 'assets/icons/poi_food.svg',
-    PoiCategory.sports   => 'assets/icons/poi_sports.svg',
-    PoiCategory.admin    => 'assets/icons/poi_admin.svg',
-    PoiCategory.other    => 'assets/icons/poi_other.svg',
+  IconData get iconData => switch (this) {
+    PoiCategory.academic => Icons.school_rounded,
+    PoiCategory.services => Icons.business_center_rounded,
+    PoiCategory.food     => Icons.restaurant_rounded,
+    PoiCategory.sports   => Icons.sports_basketball_rounded,
+    PoiCategory.admin    => Icons.admin_panel_settings_rounded,
+    PoiCategory.other    => Icons.place_rounded,
   };
 }
 
@@ -53,6 +55,7 @@ class PoiModel {
   final List<String> photoAssets;   // ['assets/photos/biblioteca_1.jpg', ...]
   final String? floor;
   final String? building;
+  final String? buildingNumber;
   final String? phone;
   final String? email;
 
@@ -68,16 +71,27 @@ class PoiModel {
     this.photoAssets = const [],
     this.floor,
     this.building,
+    this.buildingNumber,
     this.phone,
     this.email,
   });
 
+  String _removeDiacritics(String str) {
+    const withDia = 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ';
+    const withoutDia = 'aeiouAEIOUaeiouAEIOUnN';
+    String result = str;
+    for (int i = 0; i < withDia.length; i++) {
+      result = result.replaceAll(withDia[i], withoutDia[i]);
+    }
+    return result;
+  }
+
   // Para búsqueda: devuelve true si el query coincide con nombre, desc o categoría
   bool matchesQuery(String query) {
-    final q = query.toLowerCase();
-    return name.toLowerCase().contains(q) ||
-        shortDescription.toLowerCase().contains(q) ||
-        category.label.toLowerCase().contains(q) ||
-        (building?.toLowerCase().contains(q) ?? false);
+    final q = _removeDiacritics(query).toLowerCase();
+    return _removeDiacritics(name).toLowerCase().contains(q) ||
+        _removeDiacritics(shortDescription).toLowerCase().contains(q) ||
+        _removeDiacritics(category.label).toLowerCase().contains(q) ||
+        (_removeDiacritics(building ?? '').toLowerCase().contains(q));
   }
 }

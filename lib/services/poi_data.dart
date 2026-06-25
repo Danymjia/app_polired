@@ -34,6 +34,7 @@ class PoiData {
         photoAssets: (props['images'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
         floor: props['floor'] as String?,
         building: props['building'] as String?,
+        buildingNumber: props['buildingNumber']?.toString(),
         phone: props['phone'] as String?,
         email: props['email'] as String?,
       );

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../models/poi_model.dart';
 import '../services/poi_data.dart';
 
@@ -81,6 +82,52 @@ class MapProvider extends ChangeNotifier {
 
   void setActiveCategory(PoiCategory? category) {
     _activeCategory = category;
+    notifyListeners();
+  }
+
+  // --- Motor de Rutas ---
+  bool _isRoutingMode = false;
+  bool get isRoutingMode => _isRoutingMode;
+
+  PoiModel? _routeStart;
+  PoiModel? get routeStart => _routeStart;
+
+  PoiModel? _routeEnd;
+  PoiModel? get routeEnd => _routeEnd;
+
+  List<Position> _activeRouteCoords = [];
+  List<Position> get activeRouteCoords => _activeRouteCoords;
+
+  void startRoutingFromPoi(PoiModel endPoi) {
+    _isRoutingMode = true;
+    _routeEnd = endPoi;
+    _routeStart = null;
+    _activeRouteCoords = [];
+    // Ocultar el sheet del POI al entrar en modo ruta
+    _selectedPoi = null; 
+    notifyListeners();
+  }
+
+  void setRouteStart(PoiModel? start) {
+    _routeStart = start;
+    notifyListeners();
+  }
+
+  void setRouteEnd(PoiModel? end) {
+    _routeEnd = end;
+    notifyListeners();
+  }
+
+  void setActiveRouteCoords(List<Position> coords) {
+    _activeRouteCoords = coords;
+    notifyListeners();
+  }
+
+  void exitRoutingMode() {
+    _isRoutingMode = false;
+    _routeStart = null;
+    _routeEnd = null;
+    _activeRouteCoords = [];
     notifyListeners();
   }
 }

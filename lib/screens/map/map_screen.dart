@@ -14,6 +14,8 @@ import 'utils/campus_polygon.dart';
 import '../../widgets/core/base_screen.dart';
 import '../../services/path_graph_service.dart';
 import 'widgets/route_selector_panel.dart';
+import 'models/map_view_mode.dart';
+import 'widgets/map_view_toggle_button.dart';
 
 /// Responsabilidad principal:
 /// Renderizar el mapa de la Escuela Politécnica Nacional usando Mapbox. Gestiona el "Fog of War" (polígono invertido oscuro fuera del campus), marcadores dinámicos y la cámara interactiva (Auto-rotación).
@@ -42,6 +44,7 @@ final _campusBounds = CoordinateBounds(
 
 class _MapStyles {
   static const campus = 'mapbox://styles/dany404/cmplst9ax000z01qvhgtxeu8r';
+  static const satellite = 'mapbox://styles/mapbox/satellite-v9';
   static const active = campus;
 }
 
@@ -81,8 +84,22 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   double _currentBearing = 0.0;
   bool _userInteracting = false;
   bool _isFlying = false;
+  bool _styleReady = false;
 
   late MapProvider _mapProvider;
+
+  double get _pitchForCurrentMode => _pitchForMode(context.read<MapProvider>().currentViewMode);
+
+  double _pitchForMode(MapViewMode mode) {
+    switch (mode) {
+      case MapViewMode.normal:
+        return 45.0;
+      case MapViewMode.lineal:
+        return 0.0;
+      case MapViewMode.satelite:
+        return 0.0; // satélite puro queda mejor cenital; confirmar con el usuario si prefiere inclinado
+    }
+  }
 
   @override
   void initState() {
@@ -98,7 +115,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   }
 
   void _onMapProviderChanged() async {
-    if (_mapboxMap != null && mounted) {
+    if (_mapboxMap != null && mounted && _styleReady) {
       final state = await _mapboxMap!.getCameraState();
       await _syncMarkerVisibility(state.zoom);
       await _syncRouteLine();
@@ -106,7 +123,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   }
 
   Future<void> _syncRouteLine() async {
-    if (_mapboxMap == null) return;
+    if (_mapboxMap == null || !_styleReady) return;
     final mapProvider = context.read<MapProvider>();
     final coords = mapProvider.activeRouteCoords;
     
@@ -201,12 +218,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               ),
               onMapCreated: _onMapCreated,
               onStyleLoadedListener: (_) async {
-                if (_mapboxMap != null) {
-                  await _mapboxMap!.style.setStyleImportConfigProperty("basemap", "showPointOfInterestLabels", false);
-                  await _mapboxMap!.style.setStyleImportConfigProperty("basemap", "showPlaceLabels", false);
-                }
-                await _addFogOfWarEffect();
-                await _loadMarkers();
+                await _onStyleLoaded();
               },
               onCameraChangeListener: (CameraChangedEventData event) {
                 if (!mounted) return;
@@ -269,7 +281,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                             center: cam.center,
                             zoom: targetZoom,
                             bearing: state.bearing,
-                            pitch: state.pitch,
+                            pitch: _pitchForCurrentMode,
                           ),
                           MapAnimationOptions(duration: 800)
                         );
@@ -335,18 +347,30 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             },
           ),
 
-          // BOTÓN DIRECTORIO (abajo izquierda)
+          // BOTÓN DIRECTORIO + UBICACIÓN (abajo izquierda)
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 24,
             left: 16,
-            child: _buildDirectoryButton(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDirectoryButton(),
+                const SizedBox(width: 8),
+                _buildResetButton(),
+              ],
+            ),
           ),
 
-          // BOTÓN RESET CÁMARA (abajo derecha)
+          // BOTÓN DE VISTAS DE MAPA (abajo derecha, reemplaza al reset)
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 24,
             right: 16,
-            child: _buildResetButton(),
+            child: Consumer<MapProvider>(
+              builder: (context, mapProvider, _) => MapViewToggleButton(
+                currentMode: mapProvider.currentViewMode,
+                onModeSelected: (mode) => _applyViewMode(mode),
+              ),
+            ),
           ),
 
           // PANEL INFERIOR: Detalle de POI seleccionado
@@ -368,7 +392,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                         CameraOptions(
                           center: state.center,
                           zoom: 17.0, // Moderate zoom out
-                          pitch: 45.0,
+                          pitch: _pitchForCurrentMode,
                           bearing: state.bearing,
                           padding: MbxEdgeInsets(top: 150, left: 0, bottom: 0, right: 0),
                         ),
@@ -386,7 +410,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                       CameraOptions(
                         center: state.center,
                         zoom: (state.zoom > 16.5) ? state.zoom - 1.0 : state.zoom,
-                        pitch: state.pitch,
+                        pitch: _pitchForCurrentMode,
                         bearing: state.bearing,
                       ),
                       MapAnimationOptions(duration: 800),
@@ -403,7 +427,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                       CameraOptions(
                         center: state.center,
                         zoom: (state.zoom > 16.5) ? state.zoom - 1.0 : state.zoom,
-                        pitch: state.pitch,
+                        pitch: _pitchForCurrentMode,
                         bearing: state.bearing,
                       ),
                       MapAnimationOptions(duration: 800),
@@ -454,8 +478,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   void _onMapCreated(MapboxMap map) async {
     _mapboxMap = map;
 
-    // 1. Aplicar configuración de estilo primero (Movido al onStyleLoadedListener para evitar que se ignore)
-
     await map.setBounds(CameraBoundsOptions(
       bounds: _campusBounds,
       minZoom: _minZoom,
@@ -470,22 +492,50 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       bearing: 0.0,
       padding: MbxEdgeInsets(top: 80, left: 0, bottom: 0, right: 0),
     ));
+  }
 
-    await map.style.addSource(GeoJsonSource(
+  Future<void> _onStyleLoaded() async {
+    if (_mapboxMap == null) return;
+    final mode = context.read<MapProvider>().currentViewMode;
+
+    await _mapboxMap!.style.setStyleImportConfigProperty("basemap", "showPointOfInterestLabels", false);
+    await _mapboxMap!.style.setStyleImportConfigProperty("basemap", "showPlaceLabels", false);
+
+    if (mode != MapViewMode.satelite) {
+      await _mapboxMap!.style.setStyleImportConfigProperty(
+        "basemap", "show3dObjects", mode == MapViewMode.normal,
+      );
+    }
+
+    await _mapboxMap!.setBounds(CameraBoundsOptions(
+      bounds: _campusBounds,
+      minZoom: _minZoom,
+      maxZoom: _maxZoom,
+    ));
+
+    await _mapboxMap!.style.addSource(GeoJsonSource(
       id: "route-source",
       data: '{"type": "FeatureCollection", "features": []}',
     ));
-    await map.style.addLayer(LineLayer(
+    await _mapboxMap!.style.addLayer(LineLayer(
       id: "route-layer",
       sourceId: "route-source",
-      lineColor: const Color(0xFF4CAF50).toARGB32(), // Verde para la ruta
+      lineColor: const Color(0xFF4CAF50).toARGB32(),
       lineWidth: 6.0,
       lineOpacity: 0.8,
       lineJoin: LineJoin.ROUND,
       lineCap: LineCap.ROUND,
     ));
 
-    _annotationManager = await map.annotations.createPointAnnotationManager();
+    if (mode != MapViewMode.satelite) {
+      await _addFogOfWarEffect();
+    }
+
+    if (_annotationManager != null) {
+      await _annotationManager!.deleteAll();
+      await _mapboxMap!.annotations.removeAnnotationManager(_annotationManager!);
+    }
+    _annotationManager = await _mapboxMap!.annotations.createPointAnnotationManager();
     _annotationManager!.tapEvents(onTap: (annotation) async {
       final poi = _findPoiByAnnotationId(annotation.id);
       if (poi != null) {
@@ -495,6 +545,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         _flyToPoi(poi);
       }
     });
+    await _loadMarkers();
+
+    await _syncRouteLine();
+
+    _styleReady = true;
   }
 
   Future<void> _addFogOfWarEffect() async {
@@ -751,7 +806,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         center: cameraOptions.center,
         zoom: targetZoom,
         bearing: state.bearing,
-        pitch: state.pitch,
+        pitch: _pitchForCurrentMode,
       ), 
       MapAnimationOptions(duration: 800)
     );
@@ -836,7 +891,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       CameraOptions(
         center: Point(coordinates: Position(poi.longitude, poi.latitude)),
         zoom: 18.5,
-        pitch: 55.0,
+        pitch: _pitchForCurrentMode,
         bearing: 15.0,
         padding: MbxEdgeInsets(
           top: topPadding,
@@ -862,6 +917,59 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     }
   }
 
+  Future<void> _applyViewMode(MapViewMode mode) async {
+    if (_mapboxMap == null) return;
+
+    final previousMode = context.read<MapProvider>().currentViewMode;
+    final wasOnCampusStyle = previousMode != MapViewMode.satelite;
+    final willBeOnCampusStyle = mode != MapViewMode.satelite;
+
+    // Caso A: cambio ENTRE Normal y Lineal (mismo estilo base, liviano)
+    if (wasOnCampusStyle && willBeOnCampusStyle) {
+      final show3dObjects = mode == MapViewMode.normal;
+      await _mapboxMap!.style.setStyleImportConfigProperty(
+        "basemap", "show3dObjects", show3dObjects,
+      );
+
+      final state = await _mapboxMap!.getCameraState();
+      await _mapboxMap!.flyTo(
+        CameraOptions(
+          center: state.center,
+          zoom: state.zoom,
+          pitch: _pitchForMode(mode),
+          bearing: state.bearing,
+        ),
+        MapAnimationOptions(duration: 800),
+      );
+
+      if (!mounted) return;
+      context.read<MapProvider>().setViewMode(mode);
+      return;
+    }
+
+    // Caso B: entrando o saliendo de Satélite (cambia el estilo base, requiere reconstruir todo)
+    final targetStyleUri = mode == MapViewMode.satelite
+        ? _MapStyles.satellite
+        : _MapStyles.campus;
+
+    if (mounted) {
+      context.read<MapProvider>().setViewMode(mode);
+    }
+
+    await _mapboxMap!.loadStyleURI(targetStyleUri);
+
+    final state = await _mapboxMap!.getCameraState();
+    await _mapboxMap!.flyTo(
+      CameraOptions(
+        center: state.center,
+        zoom: state.zoom,
+        pitch: _pitchForMode(mode),
+        bearing: state.bearing,
+      ),
+      MapAnimationOptions(duration: 800),
+    );
+  }
+
   Future<void> _resetCamera() async {
     _isFlying = true;
     final previousId = context.read<MapProvider>().selectedPoi?.id;
@@ -872,7 +980,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       CameraOptions(
         center: _campusCenter,
         zoom: 15.2,
-        pitch: 45.0,
+        pitch: _pitchForCurrentMode,
         bearing: 0.0,
         padding: MbxEdgeInsets(top: 80, left: 0, bottom: 0, right: 0),
       ),
@@ -905,7 +1013,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         CameraOptions(
           center: state.center,
           zoom: (state.zoom > 16.5) ? state.zoom - 1.0 : state.zoom,
-          pitch: state.pitch,
+          pitch: _pitchForCurrentMode,
           bearing: state.bearing,
         ),
         MapAnimationOptions(duration: 800),

@@ -49,8 +49,6 @@ class _PoiDirectorySheetState extends State<PoiDirectorySheet> {
       case PoiCategory.academic: return Icons.school_rounded;
       case PoiCategory.services: return Icons.room_service_rounded;
       case PoiCategory.sports: return Icons.sports_soccer_rounded;
-      case PoiCategory.food: return Icons.restaurant_rounded;
-      case PoiCategory.admin: return Icons.admin_panel_settings_rounded;
       case PoiCategory.other: 
         return Icons.place_rounded;
     }

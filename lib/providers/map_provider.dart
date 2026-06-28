@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../models/poi_model.dart';
 import '../services/poi_data.dart';
+import '../screens/map/models/map_view_mode.dart';
 
 /// Responsabilidad principal:
 /// Mantiene el estado interactivo de la UI del Mapa del Campus (puntos de interés, cámara, selección y filtros visuales).
@@ -50,6 +51,10 @@ class MapProvider extends ChangeNotifier {
   PoiCategory? _activeCategory;
   PoiCategory? get activeCategory => _activeCategory;
 
+  // Modo de vista del mapa
+  MapViewMode _currentViewMode = MapViewMode.normal;
+  MapViewMode get currentViewMode => _currentViewMode;
+
   // --- Métodos ---
 
   void onZoomChanged(double zoom) {
@@ -82,6 +87,11 @@ class MapProvider extends ChangeNotifier {
 
   void setActiveCategory(PoiCategory? category) {
     _activeCategory = category;
+    notifyListeners();
+  }
+
+  void setViewMode(MapViewMode mode) {
+    _currentViewMode = mode;
     notifyListeners();
   }
 

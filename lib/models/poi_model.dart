@@ -17,9 +17,7 @@ import 'package:flutter/material.dart';
 enum PoiCategory {
   academic,    // Facultades, aulas, laboratorios
   services,    // Biblioteca, secretaría, imprenta
-  food,        // Cafeterías, comedores, kioscos
   sports,      // Canchas, gimnasio, piscina
-  admin,       // Rectorado, DOBE, financiero
   other,       // Baños, parqueaderos, entradas
 }
 
@@ -27,18 +25,14 @@ extension PoiCategoryX on PoiCategory {
   String get label => switch (this) {
     PoiCategory.academic => 'Facultades',
     PoiCategory.services => 'Servicios',
-    PoiCategory.food     => 'Alimentación',
     PoiCategory.sports   => 'Deportes',
-    PoiCategory.admin    => 'Administración',
     PoiCategory.other    => 'Otros',
   };
 
   IconData get iconData => switch (this) {
     PoiCategory.academic => Icons.school_rounded,
     PoiCategory.services => Icons.business_center_rounded,
-    PoiCategory.food     => Icons.restaurant_rounded,
     PoiCategory.sports   => Icons.sports_basketball_rounded,
-    PoiCategory.admin    => Icons.admin_panel_settings_rounded,
     PoiCategory.other    => Icons.place_rounded,
   };
 }

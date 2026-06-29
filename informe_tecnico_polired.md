@@ -2,7 +2,7 @@
 
 ## 1. Introducción Técnica
 
-**PoliRed** es una aplicación móvil desarrollada en Flutter orientada a conectar estudiantes en redes o comunidades académicas y sociales. El proyecto está construido para plataformas móviles (Android/iOS) con un diseño técnico moderno que combina el manejo de estado reactivo mediante Provider, una capa de servicios orientada a la inyección de dependencias, y la implementación de un patrón CQRS (Command Query Responsibility Segregation) para el manejo de mutaciones complejas (como la interacción con publicaciones). El objetivo general es proveer una plataforma altamente interactiva que soporte feeds de publicaciones, mensajería en tiempo real, notificaciones push, gestión de redes comunitarias y visualización de mapas integrados.
+**PoliRed** es una aplicación móvil desarrollada en Flutter orientada a conectar estudiantes en redes o comunidades académicas y sociales. El proyecto está construido para Android con un diseño técnico moderno que combina el manejo de estado reactivo mediante Provider, una capa de servicios orientada a la inyección de dependencias, y la implementación de un patrón CQRS (Command Query Responsibility Segregation) para el manejo de mutaciones complejas (como la interacción con publicaciones). El objetivo general es proveer una plataforma altamente interactiva que soporte feeds de publicaciones, mensajería en tiempo real, notificaciones push, gestión de redes comunitarias y visualización de mapas integrados.
 
 ## 2. Tecnologías y Dependencias Principales
 
@@ -43,7 +43,7 @@ graph TD
 
 ### 3.2. Estructura del Proyecto (lib/)
 
-A continuación se detalla la estructura completa de carpetas basada en los archivos reales encontrados en el proyecto:
+A continuación se detalla la estructura completa de carpetas basada en los archivos reales en el proyecto:
 
 ```text
 lib/
@@ -345,7 +345,6 @@ La aplicación consume una API REST desplegada en https://polired-api.vercel.app
 
 - Usa un archivo theme.dart centralizado para tipografías (Google Fonts) y colores consistentes.
 - Existen gran variedad de BottomSheets modulares: comment_tree_sheet.dart, likes_bottom_sheet.dart, network_options_bottom_sheet.dart, report_post_bottom_sheet.dart.
-  - **Nota Técnica (`comment_tree_sheet.dart`)**: Análisis técnico confirma un riesgo potencial de OOM (Out of Memory) en este componente, ya que el árbol de comentarios se descarga y procesa completamente en una sola petición. La solución requiere cambios en el backend para soportar un endpoint paginado (con cursor y `limit`). Se tomó la decisión consciente de postergar esta optimización para una fase posterior al lanzamiento inicial. La propuesta arquitectónica de integrar un `CommentQueryProvider` queda registrada como plan de implementación futuro.
 - Utiliza carruseles de imágenes interactivos (post_image_carousel.dart) y un visualizador en pantalla completa (fullscreen_image_viewer.dart).
 - Avatares de red seguros (network_avatar.dart, safe_network_image.dart) previenen crashes por URLs inválidas.
 - Overlays restrictivos para control de acceso como `suspended_overlay.dart` para usuarios y `disabled_network_overlay.dart` para redes sancionadas.
@@ -383,8 +382,7 @@ Para examinar el desglose técnico detallado, los fragmentos de código de los e
 1. **Pusher Channels Fijos:** En el archivo socket_service.dart, la apiKey y el cluster de Pusher están quemados (*hardcoded*) directamente en la inicialización en vez de estar inyectados desde .env. Es un riesgo potencial si se requiere rotar credenciales.
 2. **Dependencia Fuerte a Singletons Dinámicos:** El modelo CQRS mezclado con Proveedores inyectados hace que el tracing del flujo de un comando pueda ser oscuro para nuevos desarrolladores.
 3. **Escalabilidad del Cache:** ReadModelCacheService actualmente reside en memoria temporal. Para una experiencia offline pura o persistencia a largo plazo, migrar a Hive, Isar o SQLite (vía sqflite) brindaría un rendimiento inmensamente superior.
-4. **Manejo de Excepciones del Socket:** La conexión con Pusher realiza intentos de reconexión, sin embargo, el encolamiento de mensajes enviados offline no parece estar cubierto, por lo que podrían perderse si la red falla temporalmente.
-5. **Código Muerto/Comentado:** En constants.dart aún yacen comentadas configuraciones de localhost, lo cual sugiere un entorno de desarrollo algo manual en vez del uso de sabores (*flavors*) nativos de Flutter.
+4. **Manejo de Excepciones del Socket:** La conexión con Pusher realiza intentos de reconexión, sin embargo, el encolamiento de mensajes enviados offline no está cubierto, por lo que podrían perderse si la red falla temporalmente.
 
 ## 10. Conclusiones Técnicas
 

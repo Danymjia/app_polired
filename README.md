@@ -4,7 +4,7 @@
 
   ![Flutter](https://img.shields.io/badge/Flutter-%5E3.10.1-02569B?style=flat&logo=flutter&logoColor=white)
   ![Dart](https://img.shields.io/badge/Dart-Enabled-0175C2?style=flat&logo=dart&logoColor=white)
-  ![Plataformas](https://img.shields.io/badge/Plataformas-Android%20%7C%20iOS-lightgrey)
+  ![Plataformas](https://img.shields.io/badge/Plataformas-Android-lightgrey)
   ![Arquitectura](https://img.shields.io/badge/Arquitectura-CQRS%20%2B%20Provider-success)
 </div>
 
@@ -14,7 +14,7 @@
 
 **PoliRed** es una aplicación móvil desarrollada en Flutter diseñada para transformar la manera en la que los estudiantes interactúan en su ecosistema universitario. El objetivo de la plataforma es crear redes académicas y sociales seguras, permitiendo a los usuarios descubrir comunidades, consumir noticias relevantes, acceder a cursos y participar en un marketplace exclusivo.
 
-El cliente (Frontend) consume los servicios del `BackendV2`, el cual provee un robusto ecosistema de APIs para autenticación, mensajería en tiempo real, feeds dinámicos y publicaciones.
+El cliente (Frontend) consume los servicios del backend `Polired`, el cual provee un robusto ecosistema de APIs para autenticación, mensajería en tiempo real, feeds dinámicos y publicaciones.
 
 ## ✨ Características Principales
 
@@ -47,7 +47,7 @@ El proyecto sigue una arquitectura limpia orientada por capas y hace uso de patr
 ### Requisitos Previos
 - SDK de Flutter compatible (`^3.10.1`).
 - Dispositivo físico o emulador (Android SDK / iOS Simulator).
-- Acceso a `BackendV2` (ya sea localmente o mediante la URL de producción).
+- Acceso a `Polired` (ya sea localmente o mediante la URL de producción).
 
 ### Instalación
 1. Abre tu terminal en la carpeta principal del proyecto:

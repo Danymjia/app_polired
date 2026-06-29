@@ -492,33 +492,4 @@ Durante el ciclo de desarrollo de las pruebas automatizadas, se detectaron y res
 | Widget | profile_screen_test.dart | 1 | Aprobado |
 | Widget | post_card_test.dart | 1 | Aprobado |
 
-**Total:** 20 tests, 10 archivos, 100% en verde.
-
----
-
-## Fase 3 - Pruebas de Compatibilidad
-
-### Tabla de Resultados
-
-| Dispositivo / Emulador | Versión Android | Pantalla | Observaciones / Anomalías Visuales | Estado |
-| :--- | :--- | :--- | :--- | :--- |
-| | | Login | | |
-| | | Feed (Home) | | |
-| | | Perfil | | |
-| | | Chat (Inbox) | | |
-| | | Login | | |
-| | | Feed (Home) | | |
-| | | Perfil | | |
-| | | Chat (Inbox) | | |
-
-### Checklist de Validación Manual
-
-- [ ] Login: campos no quedan ocultos bajo el teclado virtual
-- [ ] Login: mensajes de error se visualizan correctamente
-- [ ] Feed: scroll fluido en PostCards con y sin imágenes
-- [ ] Feed: botón "me gusta" cambia visualmente al tocar
-- [ ] Feed: bottom sheet de opciones se muestra completo
-- [ ] Perfil: cambio entre tabs no desborda la pantalla
-- [ ] Perfil: iniciales del avatar centradas correctamente sin foto
-- [ ] Chat: lista de conversaciones legible y con buen contraste
-- [ ] Chat: caja de texto inferior accesible en pantallas pequeñas
+**Total:** 20 tests, 10 archivos.

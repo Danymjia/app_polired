@@ -199,7 +199,7 @@ class NetworkService {
       'cantidadMiembros': cantidadMiembros,
       'correoInstitucional': correoInstitucional.trim(),
     };
-    return await _api.post('${AppConstants.adminRedBaseEndpoint}${AppConstants.redesSolicitarVerificacionEndpoint}', body);
+    return await _api.post(AppConstants.redesSolicitarVerificacionEndpoint, body);
   }
 
   // ─── Solicitar oficialización de red ──────────────────────────────────────
@@ -223,7 +223,7 @@ class NetworkService {
       'correoInstitucional': correoInstitucional.trim(),
       'justificacion': justificacion.trim(),
     };
-    return await _api.post('${AppConstants.adminRedBaseEndpoint}${AppConstants.redesSolicitarOficializacionEndpoint}', body);
+    return await _api.post(AppConstants.redesSolicitarOficializacionEndpoint, body);
   }
 
   // ─── Reportar red ─────────────────────────────────────────────────────────

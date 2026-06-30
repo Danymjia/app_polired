@@ -430,7 +430,7 @@ class _NetworkOfficializationScreenState extends State<NetworkOfficializationScr
                     final bool cumple = (diasDeVida != null && diasDeVida >= 30) && profile.cantidadMiembros >= 30;
 
                     return ElevatedButton.icon(
-                      onPressed: (_isSubmitting || !cumple) ? null : () => _submit(profile.nombre, profile.creadaPor, profile.cantidadMiembros),
+                      onPressed: (_isSubmitting || !cumple) ? null : () => _submit(profile.nombre, profile.createdAt ?? '', profile.cantidadMiembros),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1D3557),
                         foregroundColor: Colors.white,
